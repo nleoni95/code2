@@ -1112,7 +1112,7 @@ int main(int argc, char **argv){
   VectorXd hpars_koh(4);
   hpars_koh << 1e-4,7.8e-8,1e-2,1e-4; //SEK, prior 1/sedm2 fin
 
-  /*
+  
   cout << "début du travail KOH" << endl;
   auto begin_koh=chrono::steady_clock::now(
   );
@@ -1122,7 +1122,7 @@ int main(int argc, char **argv){
   auto opti_koh=chrono::steady_clock::now();
 
   cout << "hpars_koh :" << hpars_koh.transpose() << endl;
-  //run une chain
+
   
   MainDensity.Run_MCMC_fixed_hpars(nombre_steps_mcmc,nombre_samples_collected,COV_init,hpars_koh,generator);
   MainDensity.Autocor_diagnosis(nautocor,"results/diag/autocorkohmat5.gnu");
@@ -1134,7 +1134,8 @@ int main(int argc, char **argv){
   MainDensity.WritePredictions(VectorXd::Random(1),"results/preds/diamkohmat5.gnu");
   MainDensity.WritePriorPredictionsF(VectorXd::Random(1),"results/preds/diampriormat5F.gnu",generator);
   auto pred_koh=chrono::steady_clock::now();
-*/
+
+exit(0);
 
 /*
   //no edm

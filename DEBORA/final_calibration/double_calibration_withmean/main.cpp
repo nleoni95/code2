@@ -1280,6 +1280,31 @@ int main(int argc, char **argv){
     MainDensity_diam.SetDataExp(data_exp_diam);
     MainDensity_diam.SetXprofile(Xgrid_num);
 
+      //minitest
+      {
+  VectorXd thetatest(5);
+  VectorXd hpars_koh(3);
+  hpars_koh << 1e-4,1e-6,0.1;
+  thetatest << 0.5,0.5,0.5,0.5,0.5;
+  cout << "hparskoh : " << hpars_koh.transpose() << endl;
+  cout << "ll : " << MainDensity_alpha.loglikelihood_theta(thetatest,hpars_koh) << endl;
+  hpars_koh(2)*=2;
+  cout << "hparskoh : " << hpars_koh.transpose() << endl;
+  cout << "ll : " << MainDensity_alpha.loglikelihood_theta(thetatest,hpars_koh) << endl;
+  hpars_koh(2)*=2;
+  cout << "hparskoh : " << hpars_koh.transpose() << endl;
+  cout << "ll : " << MainDensity_alpha.loglikelihood_theta(thetatest,hpars_koh) << endl;
+  hpars_koh(2)*=50;
+  cout << "hparskoh : " << hpars_koh.transpose() << endl;
+  cout << "ll : " << MainDensity_alpha.loglikelihood_theta(thetatest,hpars_koh) << endl;
+  hpars_koh(2)*=1000;
+  cout << "hparskoh : " << hpars_koh.transpose() << endl;
+  cout << "ll : " << MainDensity_alpha.loglikelihood_theta(thetatest,hpars_koh) << endl;
+  hpars_koh(2)*=1000;
+  exit(0);
+  //findetest
+      }
+
     //on va juste afficher dans un .gnu les prédictions du code de calcul aux valeurs nominales.
 
     {

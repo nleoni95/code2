@@ -183,7 +183,7 @@ def initialize_case(case):
 def exp_datab(i):
     #renvoie les données expérimentales du cas i.
     casestr=str(i)
-    kennel=np.loadtxt('/home/nl255551/Documents/Code/Ravik/courbes_ravik/Kennel'+casestr+'.csv',delimiter=",")
+    kennel=np.loadtxt('/home/catB/nl255551/Documents/Code/Ravik/courbes_ravik/Kennel'+casestr+'.csv',delimiter=",")
     return kennel.tolist()
 
 def exp_case():

@@ -94,6 +94,7 @@ const double Big = -1.e16;
 
 int main(int argc, char **argv){
   generator.seed(123478);
+  cout << "salut" << endl;
 
   vector<VectorXd> Target; //les observations
   int n=400;

@@ -2,6 +2,7 @@ LIBLOC = /usr/local/lib
 EIGEN = $(LIBLOC)/eigen-3.3.7
 STOCH = $(LIBLOC)/StochTk++
 ARCH  = OLM
+BOOST = $(LIBLOC)/boost_1_68_0
 BAYESOPT = $(LIBLOC)/bayesopt
 
 

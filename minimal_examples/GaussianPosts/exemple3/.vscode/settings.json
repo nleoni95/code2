@@ -57,24 +57,6 @@
         "streambuf": "cpp",
         "thread": "cpp",
         "cinttypes": "cpp",
-        "typeinfo": "cpp",
-        "dense": "cpp",
-        "core": "cpp",
-        "superlusupport": "cpp",
-        "*.evaluator": "cpp",
-        "*.traits": "cpp",
-        "adolcforward": "cpp",
-        "alignedvector3": "cpp",
-        "autodiff": "cpp",
-        "bvh": "cpp",
-        "eulerangles": "cpp",
-        "fft": "cpp",
-        "kroneckerproduct": "cpp",
-        "mprealsupport": "cpp",
-        "numericaldiff": "cpp",
-        "openglsupport": "cpp",
-        "specialfunctions": "cpp",
-        "splines": "cpp",
-        "unordered_set": "cpp"
+        "typeinfo": "cpp"
     }
 }

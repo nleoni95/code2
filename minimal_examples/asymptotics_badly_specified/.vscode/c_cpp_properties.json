@@ -4,9 +4,9 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/usr/local/lib/eigen-3.3.7",
-                "/usr/local/lib/StochTk++/includes",
-                "/home/nl255551/miniconda3/envs/ravik_env/include/python3.8"
+                "/home/catB/nl255551/include",
+                "/home/catB/nl255551/lib/eigen-3.3.7",
+                "/home/catB/nl255551/lib/StochTk++/includes"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/g++",

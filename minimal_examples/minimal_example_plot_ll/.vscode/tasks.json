@@ -12,11 +12,11 @@
                 "-I",
                 "/home/catB/nl255551/lib/eigen-3.3.7",
                 "-I",
+                "/home/catB/nl255551/include",
+                "-I",
                 "/home/catB/nl255551/lib/StochTk++/includes",
                 "-I",
                 "/home/catB/nl255551/miniconda3/envs/ravik_env/include/python3.8",
-                "-I",
-                "/home/catB/nl255551/include",
                 "${fileDirname}/main.cpp",
                 "${fileDirname}/densities.cpp",
                 "-L/home/catB/nl255551/lib/StochTk++/lib",
@@ -24,12 +24,8 @@
                 "-lgp++",
                 "-lnlopt",
                 "-lpython3.8",
-                "-lpthread",
-                 "-ldl", 
-                 "-lutil", 
-                 "-lrt",
                 "-o",
-                "${fileDirname}/main.exe"
+                "${fileDirname}/${fileBasenameNoExtension}.exe"
             ],
             "problemMatcher": [
                 "$gcc"

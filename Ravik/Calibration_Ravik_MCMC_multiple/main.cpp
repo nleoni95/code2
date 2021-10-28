@@ -319,6 +319,7 @@ int main(int argc, char **argv){
     cout << "\t Number of obs, seed_obs\n";
     exit(0);
   }
+  cout << "omygod" << endl;
   int nd  = atoi(argv[1]);
   uint32_t seed_obs=atoi(argv[2]);//
   int cas=23;
@@ -359,7 +360,7 @@ int main(int argc, char **argv){
 
   pFunc_model = PyObject_GetAttrString(pModule, (char*)"run_model");//nom de la fonction. on est obligés de setup le chosen_case.
   //récupération des observations. Attention au déréférencement du pointeur et au nombre de données.
-  if(PyList_Check(pValue)!=1){cerr << "erreur : la fonction exp_datab n'a pas renvoyé une liste" << endl;}
+  //if(PyList_Check(pValue)!=1){cerr << "erreur : la fonction exp_datab n'a pas renvoyé une liste" << endl;}
 
   cout << "Cas expérimental : " << cas <<", Nombre d'observations : "<< PyList_Size(pValue) << endl;
 

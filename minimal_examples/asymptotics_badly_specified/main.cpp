@@ -351,7 +351,7 @@ int main(int argc, char **argv){
   VectorXd lb_t(dim_theta); lb_t(0)=-2; //0.2 avant
   VectorXd ub_t(dim_theta); ub_t(0)=2;
 
-  VectorXd lb_hpars(dim_hpars); lb_hpars(0)=1e-4;lb_hpars(1)=1e-2;
+  VectorXd lb_hpars(dim_hpars); lb_hpars(0)=0;lb_hpars(1)=1e-2;
   VectorXd ub_hpars(dim_hpars); ub_hpars(0)=3;ub_hpars(1)=20;
 
   //fonctions pour obtenir des observations.
@@ -889,9 +889,12 @@ int main(int argc, char **argv){
         VectorXd theta(dim_theta); theta=X.head(dim_theta);
         VectorXd hpars(dim_hpars); hpars=X.tail(dim_hpars);
         double res=0;
+        //cout << "res : ";
         for(int i=0;i<Dens_v.size();i++){
+          //cout << d << "+";
           res+=Dens_v[i].loglikelihood_theta(theta,hpars);
         }
+        //cout << endl << "res = " << res << endl;
         return res;
       };
 
@@ -910,10 +913,8 @@ int main(int argc, char **argv){
         }
         return true;
       };
-      double lambda=pow(2.38,2)/2;
-      double gamma=0.01;
       //auto res=Run_MCMC(nombre_steps_mcmc,X_init,COV_init,scoring_function,in_bounds,generator); //tuple qui contient tous les samples et 
-      auto res=Run_MCMC_adapt(nombre_steps_mcmc,X_init,COV_init,scoring_function,in_bounds,lambda,gamma,generator); //tuple qui contient tous les samples et toutes les données.
+      auto res=Run_MCMC(nombre_steps_mcmc,X_init,COV_init,scoring_function,in_bounds,generator); //tuple qui contient tous les samples et toutes les données.
       //sélection des samples 
       tuple<vector<VectorXd>,vector<double>> selected_res;
       vector<VectorXd> selected_samples;
@@ -985,117 +986,422 @@ int main(int argc, char **argv){
     
     return make_tuple(get<0>(tp_gauss),get<1>(tp_gauss)); //renvoie les params du fit gaussien sur les samples.
   };
+
+  auto run_analysis_light=[noise,&generator,nombre_steps_mcmc,nombre_samples_collected,lb_t,ub_t,lb_hpars,ub_hpars,dim_theta,dim_hpars](string foldname,VectorXd const &Xobs,VectorXd const &Yobs){
+    //fonction qui trouve un échantillon de la postérieure à partir du grid, des observations, et écrit tout dans un dossier.
+    int nobs=Xobs.size();
+    string endname=".gnu";
+    int dim_x=1; // On considère que x vit seulement dans [0,1]. A normaliser si jamais on va en plus grande dimension.
+    
+
+    int samp_size=80; //80 avant
+    VectorXd X_predictions(samp_size); for (int i=0;i<samp_size;i++){X_predictions(i)=Xobs(nobs-1)*double(i)/double(samp_size);}  
+
+    //pour la MCMC
+
+    int nautocor=500;
+    int nsel=nombre_samples_collected; //c'est la même variable avec 2 noms
+
+    VectorXd X_init(dim_theta+dim_hpars);
+    X_init.head(dim_theta)=0.5*(lb_t+ub_t);
+    //X_init(1)=1e-2;
+    //X_init(2)=1;
+    X_init.tail(dim_hpars)=0.5*(lb_hpars+ub_hpars);
+    MatrixXd COV_init=MatrixXd::Identity(dim_theta+dim_hpars,dim_theta+dim_hpars);
+    COV_init(0,0)=2e-2; //pour KOH separate : 1e-2 partout fonctionne bien.
+    COV_init(1,1)=1e-1;
+    COV_init(2,2)=1.4;
   
+
+    auto lambda_model=[](VectorXd const & Xprofile, VectorXd const & theta){
+      //le vecteur Xprofile contient tous les x scalaires. Il faut renvoyer une prédiction de même taille que Xprofile.
+      VectorXd res(Xprofile.size());
+      for(int i=0;i<res.size();i++){
+        double x=Xprofile(i)*2*M_PI;
+        res(i)=sin(x)*exp(x/10)-sqrt(pow(theta(0),2)-theta(0)+1)*(sin(theta(0)*x)+cos(theta(0)*x));
+      }
+      return res;
+    };
+
+    auto logprior_pars=[](VectorXd const &p){
+      return 0;
+    };
+
+    auto logprior_hpars=[](VectorXd const &h){
+      return 0;
+    };
+    auto lambda_priormean=[](VectorXd const &X,VectorXd const &h){
+      return VectorXd::Zero(X.size());
+    };
+
+    vector<AUGDATA> augdata; //remplir les données ici.
+
+    AUGDATA a; a.SetX(Xobs); a.SetValue(Yobs);
+    augdata.push_back(a);
+    //calcul des samples bayes et de l'approximation gaussienne/
+    DoE doe_init(lb_t,ub_t,200,10); // DoE Halton
+    string fname_data=foldname+"obs"+endname;
+    WriteObs(fname_data,augdata);
+
+    Density Dens(doe_init);
+    Dens.SetModel(lambda_model);
+    Dens.SetKernel(kernel); //n'utilisons pas les dérivées pour ce cas.
+    Dens.SetHparsBounds(lb_hpars,ub_hpars);
+    Dens.SetLogPriorHpars(logprior_hpars);
+    Dens.SetLogPriorPars(logprior_pars);
+    Dens.SetPriorMean(lambda_priormean);
+
+
+
+    Dens.SetDataExp(augdata);
+    Dens.SetXprofile(augdata[0].GetX()); 
+
+
+    //phase Full Bayes
+    
+      //on a écrit une fonction de MCMC. Il faut juste lui donner la fonction de scoring.
+      // c'est là-dedans qu'on va sommer sur la dimension de vecteur des observations ? 
+      auto scoring_function=[Dens,dim_theta,dim_hpars](VectorXd const & X){
+        VectorXd theta(dim_theta); theta=X.head(dim_theta);
+        VectorXd hpars(dim_hpars); hpars=X.tail(dim_hpars);
+        return Dens.loglikelihood_theta(theta,hpars); //priors uniformes
+      };
+
+      auto in_bounds=[lb_hpars,ub_hpars,lb_t,ub_t,dim_theta,dim_hpars](VectorXd const &X){
+        VectorXd theta=X.head(dim_theta);
+        VectorXd hpars=X.tail(dim_hpars);
+        for(int i=0;i<dim_theta;i++){
+          if(theta(i)>ub_t(i) || theta(i)<lb_t(i)){
+            return false;
+          }
+        }
+        for(int i=0;i<dim_hpars;i++){
+          if(hpars(i)>ub_hpars(i) || hpars(i)<lb_hpars(i)){
+            return false;
+          }
+        }
+        return true;
+      };
+      double lambda=pow(2.38,2)/2;
+      double gamma=0.01;
+      auto res=Run_MCMC(nombre_steps_mcmc,X_init,COV_init,scoring_function,in_bounds,generator); //tuple qui contient tous les samples et 
+      //auto res=Run_MCMC_adapt(nombre_steps_mcmc,X_init,COV_init,scoring_function,in_bounds,lambda,gamma,generator); //tuple qui contient tous les samples et toutes les données.
+      //sélection des samples 
+      tuple<vector<VectorXd>,vector<double>> selected_res;
+      vector<VectorXd> selected_samples;
+      vector<double> selected_ll;
+      //sélection uniforme
+      /*
+      for(int i=0;i<nsel;i++){
+        int id=i*get<0>(res).size()/nsel;
+        selected_samples.push_back(get<0>(res)[id]);
+        selected_ll.push_back(get<1>(res)[id]);
+      }
+      */
+      //on prend la seconde partie des samples de la chaîne.
+      for(int i=0;i<nsel;i++){
+        int id=get<0>(res).size()-1-i;
+        selected_samples.push_back(get<0>(res)[id]);
+        selected_ll.push_back(get<1>(res)[id]);
+      }
+      
+      vector<VectorXd> sel_thetas(nsel);
+      vector<VectorXd> sel_hpars(nsel);  
+      for(int i=0;i<nsel;i++){
+        VectorXd X=selected_samples[i];
+        sel_thetas[i]=X.head(dim_theta);
+        sel_hpars[i]=X.tail(dim_hpars);
+      }
+      //on met dans la densité
+      Dens.SetNewAllSamples(get<0>(res));
+      Dens.SetNewSamples(sel_thetas);
+      Dens.SetNewHparsOfSamples(sel_hpars);
+      //vérification du mélange de la MCMC
+
+      string fname=foldname+"autocor"+endname;
+      Dens.Autocor_diagnosis(nautocor,fname);
+
+      // écriture des samples et aussi quelques prédictions pour test visuel
+      Dens.WriteSamples(foldname+"samples"+endname);
+      //fit d'une gaussienne
+      auto tp_gauss=GaussFit(selected_samples);
+      cout << "gaussfit : " << get<0>(tp_gauss).transpose() << endl; //moyenne
+      cout << get<1>(tp_gauss) << endl; //covariance matrix
+
+      //écriture dans un fichier
+      fname=foldname+"gaussfit"+endname;
+      ofstream ofile(fname);
+      ofile << " moyenne gaussienne : " << endl << get<0>(tp_gauss).transpose() << endl;
+      ofile << "stds : " << sqrt(get<1>(tp_gauss)(0,0)) << " " << sqrt(get<1>(tp_gauss)(1,1)) << " "<< sqrt(get<1>(tp_gauss)(2,2)) << endl;
+      ofile << "matrice de variance : " << endl << get<1>(tp_gauss) << endl;
+
+      ofile.close();
+
+      //calcul des quantiles normalisés et affichage dans un fichier
+      MatrixXd Quant=QQplot(selected_samples,generator);
+      fname=foldname+"qqplot"+endname;
+      ofile.open(fname);
+      for(int i=0;i<Quant.rows();i++){
+        for(int j=0;j<Quant.cols();j++){
+          ofile << Quant(i,j) << " ";
+        }
+        ofile << endl;
+      }
+      ofile.close();
+
+      fname=foldname+"obs"+endname;
+      //WriteObs(fname,Xobs,Yobs);
+    
+    return make_tuple(get<0>(tp_gauss),get<1>(tp_gauss)); //renvoie les params du fit gaussien sur les samples.
+  };
   
+
+
+  auto draw_pts=[&generator](vector<int> pts_depart, int taille_finale){
+    //pour retirer un certain nombre de points d'une liste d'indices.
+    uniform_real_distribution<double> distU(0,1);
+    vector<int> pts_arrivee=pts_depart;
+    while(pts_arrivee.size()>taille_finale){
+      int ind_remove=pts_arrivee.size()*distU(generator);
+      pts_arrivee.erase(pts_arrivee.begin()+ind_remove);
+    };
+  return pts_arrivee;
+  };
+
+  //fct pour créer des obs grid FD en conservant des observations.
+  auto create_obsFD_total=[true_fct_scalar,noise,&generator,draw_pts](int nobs){
+    //on remplit le grix au max
+    VectorXd gridmaxFD(nobs*45);
+    VectorXd yobsmaxFD(nobs*45);
+    for(int i=0;i<nobs*45;i++){
+      double x=i*1.0/(nobs*45);
+      gridmaxFD(i)=x;
+      yobsmaxFD(i)=true_fct_scalar(gridmaxFD(i))+noise*distN(generator);
+    }
+    vector<int> ind45(nobs*45); for(int i=0;i<ind45.size();i++){ind45[i]=i;}
+    vector<int> ind30=draw_pts(ind45,nobs*30);
+    VectorXd grid6FD(nobs*30);
+    VectorXd yobs6FD(nobs*30);
+    //mettre les nouveaux pts
+    for(int i=0;i<nobs*30;i++){grid6FD(i)=gridmaxFD(ind30[i]); yobs6FD(i)=yobsmaxFD(ind30[i]);}
+    //tirer les points à enlever
+    for(int i=0;i<nobs*30;i++){ind30[i]=i;}
+    vector<int> ind15=draw_pts(ind30,nobs*15);
+    VectorXd grid5FD(nobs*15);
+    VectorXd yobs5FD(nobs*15);
+    //mettre les nouveaux pts
+    for(int i=0;i<nobs*15;i++){grid5FD(i)=grid6FD(ind15[i]); yobs5FD(i)=yobs6FD(ind15[i]);}
+    for(int i=0;i<nobs*15;i++){ind15[i]=i;}
+    vector<int> ind=draw_pts(ind15,nobs);
+    VectorXd grid4FD(nobs*5);
+    VectorXd yobs4FD(nobs*5);
+    for(int i=0;i<nobs*5;i++){grid4FD(i)=grid5FD(ind[i]); yobs4FD(i)=yobs5FD(ind[i]);}    
+    return make_tuple(grid4FD,yobs4FD,grid5FD,yobs5FD,grid6FD,yobs6FD,gridmaxFD,yobsmaxFD);
+  };
+  auto create_obsID_total=[true_fct_scalar,noise,&generator](int nobs){
+    //on remplit le grix au max
+    VectorXd gridmaxID(nobs*45);
+    VectorXd yobsmaxID(nobs*45);
+    for(int i=0;i<nobs*45;i++){
+      double x=i*45.0/(nobs*45);
+      gridmaxID(i)=x;
+      yobsmaxID(i)=true_fct_scalar(gridmaxID(i))+noise*distN(generator);
+    }
+    VectorXd grid6ID(nobs*30);
+    VectorXd yobs6ID(nobs*30);
+    //mettre les nouveaux pts
+    for(int i=0;i<nobs*30;i++){grid6ID(i)=gridmaxID(i); yobs6ID(i)=yobsmaxID(i);}
+    //tirer les points à enlever
+    VectorXd grid5ID(nobs*15);
+    VectorXd yobs5ID(nobs*15);
+    //mettre les nouveaux pts
+    for(int i=0;i<nobs*15;i++){grid5ID(i)=grid6ID(i); yobs5ID(i)=yobs6ID(i);}
+    VectorXd grid4ID(nobs*5);
+    VectorXd yobs4ID(nobs*5);
+    for(int i=0;i<nobs*5;i++){grid4ID(i)=grid5ID(i); yobs4ID(i)=yobs5ID(i);}    
+    return make_tuple(grid4ID,yobs4ID,grid5ID,yobs5ID,grid6ID,yobs6ID,gridmaxID,yobsmaxID);
+  };
+  auto create_obsRD_total=[true_fct_scalar,noise,&generator](int nobs){
+    //on remplit le grix au max
+    VectorXd grid(nobs);
+    vector<VectorXd> yobsmaxRD(45);
+    vector<VectorXd> yobs6RD(30);
+    vector<VectorXd> yobs5RD(15);
+    vector<VectorXd> yobs4RD(5);
+    for(int i=0;i<nobs;i++){
+      double x=i*1.0/(nobs);
+      grid(i)=x;
+    }
+    for(int j=0;j<45;j++){
+      VectorXd y(nobs);
+      for(int i=0;i<nobs;i++){
+        y(i)=true_fct_scalar(grid(i))+noise*distN(generator);
+      }
+      yobsmaxRD[j]=y;
+    }
+    for(int j=0;j<30;j++){yobs6RD[j]=yobsmaxRD[j];}
+    for(int j=0;j<15;j++){yobs5RD[j]=yobsmaxRD[j];}
+    for(int j=0;j<5;j++){yobs4RD[j]=yobsmaxRD[j];}
+    return make_tuple(grid,yobs4RD,yobs5RD,yobs6RD,yobsmaxRD);
+  };
+  auto runanal=[run_analysis_light,&generator](VectorXd const & grid, VectorXd const& obs,string foldname){
+    auto tp=run_analysis_light(foldname,grid,obs);
+    double t=get<0>(tp)(0);
+    double s=get<0>(tp)(1);
+    double tstd=get<1>(tp)(0,0);
+    double sstd=get<1>(tp)(1,1);
+    cout << " t : " << t << " " << sqrt(tstd) << endl;
+    cout << " s : " << s << " " << sqrt(sstd) << endl;
+  };
+  auto runanal_RD=[run_analysis_RD,&generator](VectorXd const & grid, vector<VectorXd> const& obs,string foldname){
+    auto tp=run_analysis_RD(foldname,grid,obs);
+    double t=get<0>(tp)(0);
+    double s=get<0>(tp)(1);
+    double tstd=get<1>(tp)(0,0);
+    double sstd=get<1>(tp)(1,1);
+    cout << " t : " << t << " " << sqrt(tstd) << endl;
+    cout << " s : " << s << " " << sqrt(sstd) << endl;
+  };
+
+  //on va tester 
   generator.seed(56974364);
-  string foldname="results/init/";
-  auto tp=run_analysis_MCMCadapt(foldname,initgrid,yobs_init);
-  double t=get<0>(tp)(0);
-  double s=get<0>(tp)(1);
-  double tstd=get<1>(tp)(0,0);
-  double sstd=get<1>(tp)(1,1);
-  cout << " t : " << t << " " << sqrt(tstd) << endl;
-  cout << " s : " << s << " " << sqrt(sstd) << endl;
   
+  auto tup=create_obsFD_total(nobs);
+  string fname="results/4FD/";
+  runanal(get<0>(tup),get<1>(tup),fname);
 
-  foldname="results/2ID/";
-  tp=run_analysis_MCMCadapt(foldname,grid2ID,yobs_2ID);
-  t=get<0>(tp)(0);
-  s=get<0>(tp)(1);
-  tstd=get<1>(tp)(0,0);
-  sstd=get<1>(tp)(1,1);
-  cout << " t : " << t << " " << sqrt(tstd) << endl;
-  cout << " s : " << s << " " << sqrt(sstd) << endl;
+  cout << "FD5" << endl;
+  fname="results/5FD/";
+  runanal(get<2>(tup),get<3>(tup),fname);
 
-  foldname="results/3ID/";
-  tp=run_analysis_MCMCadapt(foldname,grid3ID,yobs_3ID);
-  t=get<0>(tp)(0);
-  s=get<0>(tp)(1);
-  tstd=get<1>(tp)(0,0);
-  sstd=get<1>(tp)(1,1);
-  cout << " t : " << t << " " << sqrt(tstd) << endl;
-  cout << " s : " << s << " " << sqrt(sstd) << endl;
+  cout << "FD6" << endl;
+  fname="results/6FD/";
+  runanal(get<4>(tup),get<5>(tup),fname);
 
-
-  foldname="results/4ID/";
-  tp=run_analysis_MCMCadapt(foldname,grid4ID,yobs_4ID);
-  t=get<0>(tp)(0);
-  s=get<0>(tp)(1);
-  tstd=get<1>(tp)(0,0);
-  sstd=get<1>(tp)(1,1);
-  cout << " t : " << t << " " << sqrt(tstd) << endl;
-  cout << " s : " << s << " " << sqrt(sstd) << endl;
+  cout << "FD7" << endl;
+  fname="results/7FD/";
+  runanal(get<6>(tup),get<7>(tup),fname);
   
+  exit(0);
 
-  foldname="results/2FD/";
-  tp=run_analysis_MCMCadapt(foldname,grid2FD,yobs_2FD);
-  t=get<0>(tp)(0);
-  s=get<0>(tp)(1);
-  tstd=get<1>(tp)(0,0);
-  sstd=get<1>(tp)(1,1);
-  cout << " t : " << t << " " << sqrt(tstd) << endl;
-  cout << " s : " << s << " " << sqrt(sstd) << endl;
+  auto tupID=create_obsID_total(nobs);
+  cout << "ID4" << endl;
+  fname="results/4ID/";
+  runanal(get<0>(tupID),get<1>(tupID),fname);
+/*
+  cout << "ID5" << endl;
+  fname="results/5ID/";
+  runanal(get<2>(tupID),get<3>(tupID),fname);
+
+  cout << "ID6" << endl;
+  fname="results/6ID/";
+  runanal(get<4>(tupID),get<5>(tupID),fname);
+
+  cout << "ID7" << endl;
+  fname="results/7ID/";
+  runanal(get<6>(tupID),get<7>(tupID),fname);
+*/
+  auto tupRD=create_obsRD_total(nobs);
+  cout << "RD4" << endl;
+  fname="results/4RD/";
+  runanal_RD(get<0>(tupRD),get<1>(tupRD),fname);
+/*
+  cout << "RD5" << endl;
+  fname="results/5RD/";
+  runanal_RD(get<0>(tupRD),get<2>(tupRD),fname);
+
+  cout << "RD6" << endl;
+  fname="results/6RD/";
+  runanal_RD(get<0>(tupRD),get<3>(tupRD),fname);
+
+  cout << "RD7" << endl;
+  fname="results/7RD/";
+  runanal_RD(get<0>(tupRD),get<4>(tupRD),fname);
+*/
+  exit(0);
 
 
-  foldname="results/3FD/";
-  tp=run_analysis_MCMCadapt(foldname,grid3FD,yobs_3FD);
-  t=get<0>(tp)(0);
-  s=get<0>(tp)(1);
-  tstd=get<1>(tp)(0,0);
-  sstd=get<1>(tp)(1,1);
-  cout << " t : " << t << " " << sqrt(tstd) << endl;
-  cout << " s : " << s << " " << sqrt(sstd) << endl;
+  //fct pour créer des obs grid FD (mais pas en conservant les observations)
+  auto create_obsFD=[true_fct_scalar,noise,&generator](int nobs,int mult){
+    VectorXd gridmaxFD(nobs*mult);
+    VectorXd yobsmaxFD(nobs*mult);
+    for(int i=0;i<nobs*mult;i++){
+      double x=i*1.0/(nobs*mult);
+      gridmaxFD(i)=x;
+      yobsmaxFD(i)=true_fct_scalar(gridmaxFD(i))+noise*distN(generator);
+    }
+    return make_tuple(gridmaxFD,yobsmaxFD);
+  };
+
+  auto create_obsID=[true_fct_scalar,noise,&generator](int nobs,int mult){
+    VectorXd gridmaxID(nobs*mult);
+    VectorXd yobsmaxID(nobs*mult);
+    for(int i=0;i<nobs*mult;i++){
+      double x=i*mult*1.0/(nobs*mult);
+      gridmaxID(i)=x;
+      yobsmaxID(i)=true_fct_scalar(gridmaxID(i))+noise*distN(generator);
+    }
+    return make_tuple(gridmaxID,yobsmaxID);
+  };
+
+  auto create_obsRD=[true_fct_scalar,noise,&generator](int nobs,int mult){
+    VectorXd gridmaxID(nobs);
+    vector<VectorXd> yobs(mult);
+    for(int j=0;j<mult;j++){
+      VectorXd y(nobs);
+      for(int i=0;i<nobs;i++){
+        double x=i*1.0/(nobs);
+        gridmaxID(i)=x;
+        y(i)=true_fct_scalar(x)+noise*distN(generator);
+      }
+      yobs[j]=y;
+    }
+    return make_tuple(gridmaxID,yobs);
+  };
 
 
-  foldname="results/4FD/";
-  tp=run_analysis_MCMCadapt(foldname,grid4FD,yobs_4FD);
-  t=get<0>(tp)(0);
-  s=get<0>(tp)(1);
-  tstd=get<1>(tp)(0,0);
-  sstd=get<1>(tp)(1,1);
-  cout << " t : " << t << " " << sqrt(tstd) << endl;
-  cout << " s : " << s << " " << sqrt(sstd) << endl;
+
   
+  //maintenant les analyses
+  /*
+  cout << "FD5" << endl;
+  generator.seed(56974364);
+  auto FD4=create_obsFD(nobs,15);
+  string fname="results/5FD/";
+  runanal(get<0>(FD4),get<1>(FD4),fname);
+    cout << "FD7" << endl;
 
-  vector<VectorXd> yobs_RD2(2);
-  vector<VectorXd> yobs_RD4(4);
-  for(int i=0;i<2;i++){
-    yobs_RD2[i]=yobs_RD8[i];
-    yobs_RD4[i]=yobs_RD8[i];
-    yobs_RD4[i+2]=yobs_RD8[i+2];
-  }
+  auto FD5=create_obsFD(nobs,30);
+  fname="results/6FD/";
+  runanal(get<0>(FD5),get<1>(FD5),fname);
+  cout << "FD7" << endl;
 
-  foldname="results/2RD/";
-  tp=run_analysis_RD(foldname,initgrid,yobs_RD2);
-  t=get<0>(tp)(0);
-  s=get<0>(tp)(1);
-  tstd=get<1>(tp)(0,0);
-  sstd=get<1>(tp)(1,1);
-  cout << " t : " << t << " " << sqrt(tstd) << endl;
-  cout << " s : " << s << " " << sqrt(sstd) << endl;
+  auto FD6=create_obsFD(nobs,45);
+  fname="results/7FD/";
+  runanal(get<0>(FD6),get<1>(FD6),fname);
+    cout << "ID5" << endl;
+
+  auto ID4=create_obsID(nobs,15);
+  fname="results/5ID/";
+  runanal(get<0>(ID4),get<1>(ID4),fname);
+  cout << "ID6" << endl;
+
+  auto ID5=create_obsID(nobs,30);
+  fname="results/6ID/";
+  runanal(get<0>(ID5),get<1>(ID5),fname);
+  cout << "ID7" << endl;
+
+  auto ID6=create_obsID(nobs,45);
+  fname="results/7ID/";
+  runanal(get<0>(ID6),get<1>(ID6),fname);
+    cout << "RD5" << endl;
+    */
 
 
-  foldname="results/3RD/";
-  tp=run_analysis_RD(foldname,initgrid,yobs_RD4);
-  t=get<0>(tp)(0);
-  s=get<0>(tp)(1);
-  tstd=get<1>(tp)(0,0);
-  sstd=get<1>(tp)(1,1);
-  cout << " t : " << t << " " << sqrt(tstd) << endl;
-  cout << " s : " << s << " " << sqrt(sstd) << endl;
-
-
-  foldname="results/4RD/";
-  tp=run_analysis_RD(foldname,initgrid,yobs_RD8);
-  t=get<0>(tp)(0);
-  s=get<0>(tp)(1);
-  tstd=get<1>(tp)(0,0);
-  sstd=get<1>(tp)(1,1);
-  cout << " t : " << t << " " << sqrt(tstd) << endl;
-  cout << " s : " << s << " " << sqrt(sstd) << endl;
-  
 
   exit(0);
+
+
 
 }
 

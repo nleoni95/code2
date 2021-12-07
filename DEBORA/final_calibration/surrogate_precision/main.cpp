@@ -306,7 +306,7 @@ double tdv_moyen_given_vari(GP & gp, int indice, double var, default_random_engi
 
 
 //tirage d'échantillons de vecteur de gp.
-vector<vector<DATA>> PerformPCA(map_doe const &m, map_results const &mr, int qte, MatrixXd & VP, MatrixXd &Acoefs, VectorXd &featureMeans, int nmodes){
+vector<vector<DATA>> PerformPCA(map_doe const &m, map_results const &mr, int qte, MatrixXd & VP, MatrixXd &Acoefs, VectorXd &featureMeans, int nmodes,double &nrj){
   //réalise la PCA de la quantité qte. 1=tdv, 2=diametre. VP = vecteurs propres réduits, Acoefs = normalisation des coefficients appris. nmodes = nombre de modes choisis.
   //construction de la matrice des données
   int ncalcs=mr.size(); //nombre de calculs réussis
@@ -340,7 +340,8 @@ vector<vector<DATA>> PerformPCA(map_doe const &m, map_results const &mr, int qte
   VP=VPs.rowwise().reverse();
   cout << "Sélection de " << nmodes << " modes." << endl;
   cout << "VP principales : " << lambdas_red.transpose()<< endl;
-  cout << "Quantité d'énergie conservée : " << 100*lambdas_red.array().sum()/lambdas.array().sum() << " %" << endl;
+  nrj=100*lambdas_red.array().sum()/lambdas.array().sum();
+  cout << "Quantité d'énergie conservée : " << nrj << " %" << endl;
   //vérification qu'on a bien choisi des vecteurs propres : on a bien vecred.transpose()*vecred=Id
   //calcul de la matrice des coefficients à apprendre
   MatrixXd A=VP.transpose()*U; //(nmodes,ncalcs)
@@ -756,10 +757,11 @@ int main(int argc, char **argv){
     //initialisation des variables
     int ncalcs=mr.size(); //nombre de calculs réussis
     int nrayons=mr.at(1)[0].size(); //nombre de points de mesure en rayon.
+    double nrj=0;
     MatrixXd VP(nrayons,nmodes);
     MatrixXd Acoefs(nmodes,nmodes);
     VectorXd featureMeans(nrayons);
-    vector<vector<DATA>> full_data=PerformPCA(m,mr,1,VP,Acoefs,featureMeans,nmodes); //PCA du taux de vide
+    vector<vector<DATA>> full_data=PerformPCA(m,mr,1,VP,Acoefs,featureMeans,nmodes,nrj); //PCA du taux de vide
 
     //construction des gps
     vector<GP> vgp(nmodes);
@@ -794,7 +796,7 @@ int main(int argc, char **argv){
     }
     auto p=compute_erreurs_validation(1,m_lhs,mr_lhs,vgp,VP,Acoefs,featureMeans);
     cout << "modes :" << nmodes << ", erreur tot : " << p.first << ", erreur projection : " << p.second << endl;
-    ofile << nmodes << " " << p.first << " " << p.second << endl;
+    ofile << nmodes << " " << p.first << " " << p.second << " " << nrj <<  endl;
   };
   
 
@@ -806,7 +808,8 @@ int main(int argc, char **argv){
     MatrixXd VP(nrayons,nmodes);
     MatrixXd Acoefs(nmodes,nmodes);
     VectorXd featureMeans(nrayons);
-    vector<vector<DATA>> full_data=PerformPCA(m,mr,2,VP,Acoefs,featureMeans,nmodes); //PCA du taux de vide
+    double nrj=0;
+    vector<vector<DATA>> full_data=PerformPCA(m,mr,2,VP,Acoefs,featureMeans,nmodes,nrj); //PCA du taux de vide
 
     //construction des gps
     vector<GP> vgp(nmodes);
@@ -841,7 +844,7 @@ int main(int argc, char **argv){
     }
     auto p=compute_erreurs_validation(2,m_lhs,mr_lhs,vgp,VP,Acoefs,featureMeans);
     cout << "modes :" << nmodes << ", erreur tot : " << p.first << ", erreur projection : " << p.second << endl;
-    ofile << nmodes << " " << p.first << " " << p.second << endl;
+    ofile << nmodes << " " << p.first << " " << p.second << " " << nrj <<  endl;
   };
   
   
@@ -854,6 +857,7 @@ compute_pca_alpha(5);
 compute_pca_alpha(6);
 compute_pca_alpha(7);
 compute_pca_alpha(8);
+
 
   compute_pca_diam(1);
   compute_pca_diam(2);

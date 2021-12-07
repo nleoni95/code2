@@ -1547,7 +1547,7 @@ double DensityOpt::EstimatePredError(VectorXd const & theta) const {
 
 VectorXd DensityOpt::EvaluateVarHparOpt(VectorXd const & theta) const {
   //estimateur de l'erreur de prédiction des hGPs en un point theta. Fait à partir de la variance de prédiction des hGPs.
-  //les prédictions GPs sont déjà scalées par les stds donc on peut les utiliser tel quel.
+  //les prédictions GPs sont déjà scalées par les stds donc on peut les utiliser tel quel car elles sont du même OdG.
   int nmodes=m_vgp_hpars_opti.size();
   VectorXd vargps(nmodes); //on stocke les variances de prédiction de chaque GP.
   for(int i=0;i<nmodes;i++){

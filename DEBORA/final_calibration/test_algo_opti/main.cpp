@@ -1,7 +1,9 @@
-// Dans ce fichier : on lit les données du calcul et on les post-traite à notre souhait.
+// Dans ce fichier : 
 // Calibration avec le taux de vide et le diamètre en même temps.
-// On n'a pas encore déterminé l'algortihme de sampling adaptatif pour Opti : comment sélectionner les points ?
-// pour le moment je vais simplement faire KOH et Bayes.
+//on teste l'algorithme de sampling adaptatif pour Opti. C'est la version avec le resampling dans le sample MCMC.
+//on dispose d'un échantillon de la véritable densité de p_fmp. Comme solution de référence on a un surrogate qui serait construit à partir de cet échantillon.
+//on compare aussi avec un QMC et un LHS, pourquoi pas.
+
 
 
 #include <iostream>
@@ -315,13 +317,7 @@ double logprior_pars(VectorXd const &pars){
 //myoptfunc_gp est définie dans densities.cpp
 
 
-void PrintVector(VectorXd &X, VectorXd &values,const char* file_name){
-  FILE* out=fopen(file_name,"w");
-  for (int i=0;i<X.size();i++){
-    fprintf(out,"%e %e\n",X(i),values(i));
-  }
-  fclose(out);
-}
+
 
 
 VectorXd RtoGP(const VectorXd & X){
@@ -584,12 +580,31 @@ VectorXd interpolate(VectorXd const & Yorig,VectorXd const & Xorig,VectorXd cons
   return Ynew;
 }
 
-void PrintVector(vector<VectorXd> &X, VectorXd &values,const char* file_name){
-  FILE* out=fopen(file_name,"w");
-  for (int i=0;i<X.size();i++){
-    fprintf(out,"%e %e\n",X[i](0),values(i));
+void PrintVector(vector<VectorXd> const &X1,const string & filename){
+  ofstream ofile(filename);
+    for (int i=0;i<X1.size();i++){
+      for(int j=0;j<X1[i].size();j++){
+        ofile << X1[i](j) << " ";
+      }
+    ofile << endl;
   }
-  fclose(out);
+}
+
+void PrintVectors(vector<VectorXd> const &X1,vector<VectorXd> const &X2,vector<VectorXd> const &X3,const string & filename){
+  //les trois vecteurs doivent être de même taille.
+  ofstream ofile(filename);
+  for (int i=0;i<X1.size();i++){
+    for(int j=0;j<X1[i].size();j++){
+      ofile << X1[i](j) << " ";
+    }
+    for(int j=0;j<X2[i].size();j++){
+      ofile << X2[i](j) << " ";
+    }
+        for(int j=0;j<X3[i].size();j++){
+      ofile << X3[i](j) << " ";
+    }
+    ofile << endl;
+  }
 }
 
 //fonctions de MCMC. Autant en faire une unique, et on spécifie seulement la fonction de vraisemblance. Dans ce cas la fonction de vraisemblance doit prendre en argument l'état actuel, pour pouvoir faire opti modif.
@@ -904,11 +919,10 @@ tuple<vector<VectorXd>,vector<VectorXd>,vector<VectorXd>> read_sample_reference(
   return tp;
 }
 
-tuple<vector<VectorXd>,vector<VectorXd>,vector<VectorXd>> read_sample_reference_firsttime(string &filename){
+tuple<vector<VectorXd>,vector<VectorXd>> read_sample_reference_firsttime(string &filename){
   //lit un vecteur de thetas, hpars alpha, hpars diam.
   vector<VectorXd> grid_verif;
   vector<VectorXd> halpha_verif;
-  vector<VectorXd> hdiam_verif;
   ifstream ifile(filename);
   if(ifile){
     string line;
@@ -931,7 +945,7 @@ tuple<vector<VectorXd>,vector<VectorXd>,vector<VectorXd>> read_sample_reference_
     }
   }
   cout << "number of samples loaded in the verif grid : " << grid_verif.size() << endl;
-  auto tp=make_tuple(grid_verif,halpha_verif,hdiam_verif);
+  auto tp=make_tuple(grid_verif,halpha_verif);
   return tp;
 }
 
@@ -1390,6 +1404,8 @@ int main(int argc, char **argv){
     int nombre_samples_collected=3000;
     int nautocor=5000;
 
+    int gridsize_max=1200; //taille max. des grids comparés.
+
     //construction du grid
     int npts_init=2000;
     DoE doe_init(lb_t,ub_t,npts_init,1);
@@ -1442,6 +1458,31 @@ int main(int argc, char **argv){
     VectorXd evidence_ref(2);//hparsoptimises5
     evidence_ref << 1.68306e269,4.0732e266; //calculés avec 5000000 samples, sur la densité opt construite avec les hyperparamètres optimisés de hparsoptimises5.gnu.
 
+    //lecture des hpars optimaux dans un fichier où seuls les hpars theta sont affichés.
+    /*
+    string s1="sampoptalpha.gnu";
+    string s2="sampoptdiam.gnu";
+    auto tp1=read_sample_reference_firsttime(s1);
+    auto tp2=read_sample_reference_firsttime(s2);
+    //recalcul des hyperparamètres optimaux.
+    vector<VectorXd> theta_recalculate=get<0>(tp1);
+    vector<VectorXd> halpha_recalculated(theta_recalculate.size());
+    vector<VectorXd> hdiam_recalculated(theta_recalculate.size());
+
+    DensityOpt Denalpha(MainDensity_alpha);     
+    DensityOpt Dendiam(MainDensity_diam);
+    for(int i=0;i<theta_recalculate.size();i++){
+      VectorXd t=theta_recalculate[i];
+      VectorXd ha=Denalpha.HparsOpt(t,hpars_z_guess_alpha,1);
+      VectorXd hd=Dendiam.HparsOpt(t,hpars_z_guess_diam,1);
+      halpha_recalculated[i]=ha;
+      hdiam_recalculated[i]=hd;
+    }
+
+    //écriture dans un fichier, par exemple hparsoptimisés5.gnu...
+    
+    PrintVectors(theta_recalculate,halpha_recalculated,hdiam_recalculated,filename);
+    */
     string filename="hparsoptimises5.gnu";
     auto tref=read_sample_reference(filename);
     vector<VectorXd> thetas_ref=get<0>(tref);
@@ -1478,83 +1519,7 @@ int main(int argc, char **argv){
       }
     }
 
-    //petit test du calcul de DKL par KDE. On créé 2 paires de densité, l'une avec les samples de référence, l'autre avec peu de samples (50 par exemple. Il faut échantilonner les 2 (assez rapide) puis comparer les KDE de chacune.)
-    /*
-    {
-      DensityOpt DensOpt_alpha(MainDensity_alpha);     
-      DensityOpt DensOpt_diam(MainDensity_diam);
-      DensityOpt DensOpt_alpha2(MainDensity_alpha);     
-      DensityOpt DensOpt_diam2(MainDensity_diam);
-      //les premières contiennent l'échantillon hparsoptimisés5.
-      DensOpt_alpha.SetNewSamples(thetas_ref);
-      DensOpt_diam.SetNewSamples(thetas_ref);
 
-   
-      auto get_hpars_opti2=[&DensOpt_alpha2,&DensOpt_diam2](VectorXd const & X){
-        VectorXd hparsopt_alpha=DensOpt_alpha2.EvaluateHparOpt(X);
-        VectorXd hparsopt_diam=DensOpt_diam2.EvaluateHparOpt(X);
-        auto p=make_pair(hparsopt_alpha,hparsopt_diam);
-        return p;
-      };
-
-      auto compute_score_opti2=[&DensOpt_alpha2,&DensOpt_diam2](pair<VectorXd,VectorXd> p, VectorXd const &X){
-        double ll1=DensOpt_alpha2.loglikelihood_theta(X,p.first);
-        double ll2=DensOpt_diam2.loglikelihood_theta(X,p.second);
-        return ll1+ll2;
-      };
-
-      string filenamepoor="samplepoor.gnu";
-      auto thetas_poor=read_sample_reference_thetaonly(filenamepoor);
-
-      DensOpt_alpha2.SetNewSamples(thetas_poor);
-      DensOpt_diam2.SetNewSamples(thetas_poor);
-
-      //calcul des windows de KDE
-      VectorXd w1=DensOpt_alpha.GetKDEWindow();
-      VectorXd w2=DensOpt_alpha2.GetKDEWindow();
-      cout << "w1 : " << w1.transpose() << endl;
-      cout << "w2 : " << w2.transpose() << endl;
-
-      //lambda functions KDE
-      auto kde_ref=[w1,&DensOpt_alpha,&DensOpt_diam](VectorXd const & theta){
-        return DensOpt_alpha.KDE(theta,w1);
-      };
-      auto kde_test=[w2,&DensOpt_alpha2,&DensOpt_diam2](VectorXd const & theta){
-        return DensOpt_alpha2.KDE(theta,w2);
-      };
-
-      //juste check si les KDE intègrent à 1
-      double a=0;
-      double b=0;
-      for(const auto &s:grid_thetas1){
-        a+=kde_ref(s);
-        b+=kde_test(s);
-      }
-      a/=grid_thetas1.size();
-      b/=grid_thetas1.size();
-
-      
-
-      cout << a << ", " << b << endl;
-
-      //lambda functions KDE
-      auto kde_ref2=[w1,&DensOpt_alpha,a](VectorXd const & theta){
-        return DensOpt_alpha.KDE(theta,w1)/a;
-      };
-      auto kde_test2=[w2,&DensOpt_alpha2,&DensOpt_diam2,b](VectorXd const & theta){
-        return DensOpt_alpha2.KDE(theta,w2)/b;
-      };
-
-      //calcul DKL
-      cout << "DKL : " << endl;
-      auto begin=chrono::steady_clock::now();
-      cout << estimate_DKL_from_KDE(kde_ref2,kde_test2,thetas_ref) << endl;
-      auto end=chrono::steady_clock::now();
-      cout <<  " time : " << chrono::duration_cast<chrono::seconds>(end-begin).count() << endl;
-
-      exit(0);
-    }
-    */
 
 ////on réutilise les 1500 optimisations déjà faites en considérant que le sample est bon. On va créer des densités sur ce sample et calculer l'évidence avec.
 
@@ -1609,7 +1574,7 @@ int main(int argc, char **argv){
     }
 */
 
-
+/*
     ///phase opti avec choix de points de training (1)
       
     {
@@ -1651,8 +1616,8 @@ int main(int argc, char **argv){
       //phase de rajout d'hyperparamètres par MCMC, avec sélection par la variance de prédiction.
       //test de la performance du grid initial.
 
-        auto add_npoints=[&DensOpt_diam,&DensOpt_alpha,&nombre_steps_mcmc,&Xinit,&COV_init,&compute_score_opti,&get_hpars_opti,&in_bounds,&Bounds_hpars_gp,&hpars_gp_guess](int npoints,default_random_engine &generator, int & npts_total, int nsamples_mcmc){
-          //ajout de n points obtenus à partir d'une MCMC.
+      auto add_npoints_new=[&DensOpt_diam,&DensOpt_alpha,&nombre_steps_mcmc,&Xinit,&COV_init,&compute_score_opti,&get_hpars_opti,&in_bounds,&Bounds_hpars_gp,&hpars_gp_guess](int npoints,default_random_engine &generator, int & npts_total, int nsamples_mcmc){
+          //ajout de n points obtenus à partir d'une MCMC. version NEW avec resampling.
           auto begin=chrono::steady_clock::now();
           //récupération de nsamples_mcmc points de la MCMC.
           auto res=Run_MCMC(nombre_steps_mcmc,nsamples_mcmc,Xinit,COV_init,compute_score_opti,get_hpars_opti,in_bounds,generator);
@@ -1661,26 +1626,18 @@ int main(int argc, char **argv){
           vector<double> scores_of_samples=get<3>(res);
 
           //calcul du critère en chaque point.
-          vector<double> varpreds(samples_opti.size());
-          for(int j=0;j<varpreds.size();j++){
+          vector<double> weights(samples_opti.size());
+          for(int j=0;j<weights.size();j++){
             double a=DensOpt_alpha.EstimatePredError(samples_opti[j]);
             double b=DensOpt_diam.EstimatePredError(samples_opti[j]);
-            varpreds[j]=(a+b)*exp(scores_of_samples[j]);
+            weights[j]=a+b;
           }
-          vector<VectorXd> selected_thetas;
-          while(samples_opti.size()>0 && selected_thetas.size()<npoints){
-            //on trouve le meilleur point
-            auto itmax=max_element(varpreds.begin(),varpreds.end());
-            int indmax=distance(varpreds.begin(),itmax);
-            //on le rajoute aux thetas selectionnés
-            selected_thetas.push_back(samples_opti[indmax]);
-            //on enlève de la liste de base tous les points corrélés à celui-là.
-            for(int i=samples_opti.size()-1;i>=0;i--){
-              if(DensOpt_alpha.correlated_points(selected_thetas.back(),samples_opti[i],0.3) && DensOpt_diam.correlated_points(selected_thetas.back(),samples_opti[i],0.3)){
-                samples_opti.erase(samples_opti.begin()+i);
-                varpreds.erase(varpreds.begin()+i);
-              }
-            }
+          vector<VectorXd> selected_thetas(npoints);
+          for(int i=0;i<npoints;i++){
+            std::discrete_distribution<int> distribution(weights.begin(), weights.end());
+            int drawn = distribution(generator);
+            weights[drawn]=0;
+            selected_thetas[i]=samples_opti[drawn];
           }
           //simple check
           cout << "rajout de " << selected_thetas.size() << " points :" << endl;
@@ -1696,8 +1653,8 @@ int main(int argc, char **argv){
         string filename_adapt="results/erroradapt.gnu";
         int npts_total=50;
         test_hGPs(DensOpt_alpha,DensOpt_diam,thetas_ref,halpha_ref,hdiam_ref,evidence_ref,scores_ref,filename_adapt,grid_thetas1,npts_total);
-        while(npts_total<2000){
-          add_npoints(50,generator,npts_total,750);
+        while(npts_total<gridsize_max){
+          add_npoints_new(50,generator,npts_total,1000);
           test_hGPs(DensOpt_alpha,DensOpt_diam,thetas_ref,halpha_ref,hdiam_ref,evidence_ref,scores_ref,filename_adapt,grid_thetas1,npts_total);
         }      
     }
@@ -1743,8 +1700,8 @@ int main(int argc, char **argv){
       //phase de rajout d'hyperparamètres par MCMC, avec sélection par la variance de prédiction.
       //test de la performance du grid initial.
 
-        auto add_npoints=[&DensOpt_diam,&DensOpt_alpha,&nombre_steps_mcmc,&Xinit,&COV_init,&compute_score_opti,&get_hpars_opti,&in_bounds,&Bounds_hpars_gp,&hpars_gp_guess](int npoints,default_random_engine &generator, int & npts_total, int nsamples_mcmc){
-          //ajout de n points obtenus à partir d'une MCMC.
+         auto add_npoints_new=[&DensOpt_diam,&DensOpt_alpha,&nombre_steps_mcmc,&Xinit,&COV_init,&compute_score_opti,&get_hpars_opti,&in_bounds,&Bounds_hpars_gp,&hpars_gp_guess](int npoints,default_random_engine &generator, int & npts_total, int nsamples_mcmc){
+          //ajout de n points obtenus à partir d'une MCMC. version NEW avec resampling.
           auto begin=chrono::steady_clock::now();
           //récupération de nsamples_mcmc points de la MCMC.
           auto res=Run_MCMC(nombre_steps_mcmc,nsamples_mcmc,Xinit,COV_init,compute_score_opti,get_hpars_opti,in_bounds,generator);
@@ -1753,26 +1710,18 @@ int main(int argc, char **argv){
           vector<double> scores_of_samples=get<3>(res);
 
           //calcul du critère en chaque point.
-          vector<double> varpreds(samples_opti.size());
-          for(int j=0;j<varpreds.size();j++){
+          vector<double> weights(samples_opti.size());
+          for(int j=0;j<weights.size();j++){
             double a=DensOpt_alpha.EstimatePredError(samples_opti[j]);
             double b=DensOpt_diam.EstimatePredError(samples_opti[j]);
-            varpreds[j]=(a+b)*exp(scores_of_samples[j]);
+            weights[j]=a+b;
           }
           vector<VectorXd> selected_thetas;
-          while(samples_opti.size()>0 && selected_thetas.size()<npoints){
-            //on trouve le meilleur point
-            auto itmax=max_element(varpreds.begin(),varpreds.end());
-            int indmax=distance(varpreds.begin(),itmax);
-            //on le rajoute aux thetas selectionnés
-            selected_thetas.push_back(samples_opti[indmax]);
-            //on enlève de la liste de base tous les points corrélés à celui-là.
-            for(int i=samples_opti.size()-1;i>=0;i--){
-              if(DensOpt_alpha.correlated_points(selected_thetas.back(),samples_opti[i],0.3) && DensOpt_diam.correlated_points(selected_thetas.back(),samples_opti[i],0.3)){
-                samples_opti.erase(samples_opti.begin()+i);
-                varpreds.erase(varpreds.begin()+i);
-              }
-            }
+          for(int i=0;i<npoints;i++){
+            std::discrete_distribution<int> distribution(weights.begin(), weights.end());
+            int drawn = distribution(generator);
+            weights[drawn]=0;
+            selected_thetas.push_back(samples_opti[drawn]);
           }
           //simple check
           cout << "rajout de " << selected_thetas.size() << " points :" << endl;
@@ -1788,8 +1737,8 @@ int main(int argc, char **argv){
         string filename_adapt="results/erroradapt2.gnu";
         int npts_total=50;
         test_hGPs(DensOpt_alpha,DensOpt_diam,thetas_ref,halpha_ref,hdiam_ref,evidence_ref,scores_ref,filename_adapt,grid_thetas1,npts_total);
-        while(npts_total<2000){
-          add_npoints(100,generator,npts_total,1500);
+        while(npts_total<gridsize_max){
+          add_npoints_new(100,generator,npts_total,2000);
           test_hGPs(DensOpt_alpha,DensOpt_diam,thetas_ref,halpha_ref,hdiam_ref,evidence_ref,scores_ref,filename_adapt,grid_thetas1,npts_total);
         }      
     }
@@ -1830,13 +1779,15 @@ int main(int argc, char **argv){
       DensOpt_diam.BuildHGPs_noPCA(Kernel_GP_Matern32,Bounds_hpars_gp,hpars_gp_guess);
       DensOpt_diam.opti_allgps(hpars_gp_guess);
       //DensOpt_diam.Test_hGPs()
-      
+
+      string name_print_training="results/samples/training.gnu";
+      PrintVector(doe_light.GetGrid(),name_print_training);
 
       //phase de rajout d'hyperparamètres par MCMC, avec sélection par la variance de prédiction.
       //test de la performance du grid initial.
 
-        auto add_npoints=[&DensOpt_diam,&DensOpt_alpha,&nombre_steps_mcmc,&Xinit,&COV_init,&compute_score_opti,&get_hpars_opti,&in_bounds,&Bounds_hpars_gp,&hpars_gp_guess](int npoints,default_random_engine &generator, int & npts_total, int nsamples_mcmc){
-          //ajout de n points obtenus à partir d'une MCMC.
+        auto add_npoints_old=[&DensOpt_diam,&DensOpt_alpha,&nombre_steps_mcmc,&Xinit,&COV_init,&compute_score_opti,&get_hpars_opti,&in_bounds,&Bounds_hpars_gp,&hpars_gp_guess](int npoints,default_random_engine &generator, int & npts_total, int nsamples_mcmc){
+          //ajout de n points obtenus à partir d'une MCMC. version OLD (calcul d'un critère et maximisation dessus). On est passés maintenant au resampling
           auto begin=chrono::steady_clock::now();
           //récupération de nsamples_mcmc points de la MCMC.
           auto res=Run_MCMC(nombre_steps_mcmc,nsamples_mcmc,Xinit,COV_init,compute_score_opti,get_hpars_opti,in_bounds,generator);
@@ -1877,15 +1828,58 @@ int main(int argc, char **argv){
           auto end_hgps=chrono::steady_clock::now();
         };
 
+        auto add_npoints_new_withprint=[&DensOpt_diam,&DensOpt_alpha,&nombre_steps_mcmc,&Xinit,&COV_init,&compute_score_opti,&get_hpars_opti,&in_bounds,&Bounds_hpars_gp,&hpars_gp_guess](int npoints,default_random_engine &generator, int & npts_total, int nsamples_mcmc){
+          //ajout de n points obtenus à partir d'une MCMC. version NEW avec resampling.
+          string name_print="results/samples/candidate"+to_string(npts_total)+".gnu";
+          string name_print_training="results/samples/training"+to_string(npts_total)+".gnu";
+          auto begin=chrono::steady_clock::now();
+          //récupération de nsamples_mcmc points de la MCMC.
+          auto res=Run_MCMC(nombre_steps_mcmc,nsamples_mcmc,Xinit,COV_init,compute_score_opti,get_hpars_opti,in_bounds,generator);
+          auto begin_hgps=chrono::steady_clock::now();
+          vector<VectorXd> samples_opti=get<0>(res);
+          //affichage des points candidats
+          PrintVector(samples_opti,name_print);
+          vector<double> scores_of_samples=get<3>(res);
+
+          //calcul du critère en chaque point.
+          vector<double> weights(samples_opti.size());
+          for(int j=0;j<weights.size();j++){
+            double a=DensOpt_alpha.EstimatePredError(samples_opti[j]);
+            double b=DensOpt_diam.EstimatePredError(samples_opti[j]);
+            weights[j]=a+b;
+          }
+          vector<VectorXd> selected_thetas;
+          for(int i=0;i<npoints;i++){
+            std::discrete_distribution<int> distribution(weights.begin(), weights.end());
+            int drawn = distribution(generator);
+            weights[drawn]=0;
+            selected_thetas.push_back(samples_opti[drawn]);
+          }
+          //simple check
+          cout << "rajout de " << selected_thetas.size() << " points :" << endl;
+          npts_total+=selected_thetas.size();
+
+          PrintVector(selected_thetas,name_print_training);
+          //rajout des points 
+          DensOpt_alpha.update_hGPs_noPCA(selected_thetas,Kernel_GP_Matern32,Bounds_hpars_gp,hpars_gp_guess,1);
+          DensOpt_diam.update_hGPs_noPCA(selected_thetas,Kernel_GP_Matern32,Bounds_hpars_gp,hpars_gp_guess,1);
+          DensOpt_alpha.opti_allgps(hpars_gp_guess);
+          DensOpt_diam.opti_allgps(hpars_gp_guess);
+          auto end_hgps=chrono::steady_clock::now();
+        };
+
         string filename_adapt="results/erroradapt3.gnu";
         int npts_total=50;
         test_hGPs(DensOpt_alpha,DensOpt_diam,thetas_ref,halpha_ref,hdiam_ref,evidence_ref,scores_ref,filename_adapt,grid_thetas1,npts_total);
-        while(npts_total<2000){
-          add_npoints(200,generator,npts_total,3000);
+        while(npts_total<gridsize_max){
+          add_npoints_new_withprint(200,generator,npts_total,4000);
           test_hGPs(DensOpt_alpha,DensOpt_diam,thetas_ref,halpha_ref,hdiam_ref,evidence_ref,scores_ref,filename_adapt,grid_thetas1,npts_total);
         }      
     }
+
     
+
+     
   
 
   //phase opti en rajoutant des points du sample d'origine.
@@ -1948,7 +1942,7 @@ int main(int argc, char **argv){
 
       int npts_total=50;
       test_hGPs(DensOpt_alpha,DensOpt_diam,thetas_ref,halpha_ref,hdiam_ref,evidence_ref,scores_ref,filename_debeste,grid_thetas1,npts_total);
-      while(npts_total<2000){
+      while(npts_total<gridsize_max){
           add_npoints_debeste(100,generator,npts_total);
           test_hGPs(DensOpt_alpha,DensOpt_diam,thetas_ref,halpha_ref,hdiam_ref,evidence_ref,scores_ref,filename_debeste,grid_thetas1,npts_total);
       }  
@@ -2017,9 +2011,76 @@ int main(int argc, char **argv){
       int npts_total=50;
       test_hGPs(DensOpt_alpha,DensOpt_diam,thetas_ref,halpha_ref,hdiam_ref,evidence_ref,scores_ref,filename_qmc,grid_thetas1,npts_total);
       
-      while(npts_total<2000){
+      while(npts_total<gridsize_max){
           add_npoints_qmc(100,generator,npts_total);
                   test_hGPs(DensOpt_alpha,DensOpt_diam,thetas_ref,halpha_ref,hdiam_ref,evidence_ref,scores_ref,filename_qmc,grid_thetas1,npts_total);
+      }  
+    }
+    */
+ 
+       ///phase opti avec gros grid LHS
+      
+    {
+      cout << "début double calibration opti avec nsteps =" << nombre_steps_mcmc <<endl;
+      DensityOpt DensOpt_alpha(MainDensity_alpha);     
+      DensityOpt DensOpt_diam(MainDensity_diam);
+
+      DoE doe_new_opti(lb_t,ub_t,50,1);
+      DensOpt_alpha.SetNewDoE(doe_new_opti);
+      DensOpt_diam.SetNewDoE(doe_new_opti);
+      
+      DensOpt_alpha.Compute_optimal_hpars(2);
+      DensOpt_diam.Compute_optimal_hpars(2);
+
+      string filename_lhs="results/errorlhs.gnu";
+
+      DensOpt_alpha.BuildHGPs_noPCA(Kernel_GP_Matern32,Bounds_hpars_gp,hpars_gp_guess);
+      DensOpt_alpha.opti_allgps(hpars_gp_guess);
+
+      DensOpt_diam.BuildHGPs_noPCA(Kernel_GP_Matern32,Bounds_hpars_gp,hpars_gp_guess);
+      DensOpt_diam.opti_allgps(hpars_gp_guess);
+
+      DoE doe_lhs(lb_t,ub_t,1500,generator);
+      vector<VectorXd> thetas_lhs=doe_lhs.GetGrid();
+
+      auto get_hpars_opti=[&DensOpt_alpha,&DensOpt_diam](VectorXd const & X){
+        VectorXd hparsopt_alpha=DensOpt_alpha.EvaluateHparOpt(X);
+        VectorXd hparsopt_diam=DensOpt_diam.EvaluateHparOpt(X);
+        auto p=make_pair(hparsopt_alpha,hparsopt_diam);
+        return p;
+      };
+        
+            
+      auto compute_score_opti=[&data_exp_alpha,&data_exp_diam,&DensOpt_alpha,&DensOpt_diam](pair<VectorXd,VectorXd> p, VectorXd const &X){
+        double ll1=DensOpt_alpha.loglikelihood_theta(X,p.first);
+        double ll2=DensOpt_diam.loglikelihood_theta(X,p.second);
+        return ll1+ll2;
+      };
+
+      auto add_npoints_qmc=[&thetas_lhs,&DensOpt_diam,&DensOpt_alpha,&nombre_steps_mcmc,&Xinit,&COV_init,&compute_score_opti,&get_hpars_opti,&in_bounds,&Bounds_hpars_gp,&hpars_gp_guess](int npoints,default_random_engine &generator, int & npts_total){
+        //ajout de n points obtenus à partir du QMC  
+        vector<VectorXd> selected_thetas;
+         for(int i=0;i<npoints;i++){
+            if(npts_total+i<thetas_lhs.size()){
+              selected_thetas.push_back(thetas_lhs[npts_total+i]);
+            }
+          }
+          //simple check
+          cout << "rajout de " << selected_thetas.size() << " points :" << endl;
+          npts_total+=selected_thetas.size();
+          //rajout des points 
+          DensOpt_alpha.update_hGPs_noPCA(selected_thetas,Kernel_GP_Matern32,Bounds_hpars_gp,hpars_gp_guess,1);
+          DensOpt_diam.update_hGPs_noPCA(selected_thetas,Kernel_GP_Matern32,Bounds_hpars_gp,hpars_gp_guess,1);
+          DensOpt_alpha.opti_allgps(hpars_gp_guess);
+          DensOpt_diam.opti_allgps(hpars_gp_guess);
+          auto end_hgps=chrono::steady_clock::now();
+      };
+      int npts_total=50;
+      test_hGPs(DensOpt_alpha,DensOpt_diam,thetas_ref,halpha_ref,hdiam_ref,evidence_ref,scores_ref,filename_lhs,grid_thetas1,npts_total);
+      
+      while(npts_total<gridsize_max){
+          add_npoints_qmc(100,generator,npts_total);
+                  test_hGPs(DensOpt_alpha,DensOpt_diam,thetas_ref,halpha_ref,hdiam_ref,evidence_ref,scores_ref,filename_lhs,grid_thetas1,npts_total);
       }  
     }
     

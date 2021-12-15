@@ -1310,6 +1310,25 @@ double Density::DIC()const{
   return dic;
 }
 
+bool DensityOpt::correlated_points(Eigen::VectorXd const & theta1, Eigen::VectorXd const & theta2,double threshold) const{
+  //check si deux points sont suffisamment proches pour être "corrélés". C'est une première estimation, on regarde comment se compare leur distance aux longueurs de corélation pour les hyperparamètres optimaux.
+  //la comparaison se fait avec tous les hGPs puisqu'on prend les mêmes points d'évaluation pour chaque hGP.
+  //fonction à matcher avec la fonction Kernel des hGPs. Dans notre cas, les longueurs de corrélation sont les hyperparamètres aux indices 1,3,4,5,6.
+  VectorXd d=VectorXd::Zero(theta1.size());
+  for(int i=0;i<d.size();i++){
+    d(i)=abs(theta1(i)-theta2(i));
+  }
+  bool close=false;
+  for(int i=0;i<m_vhpars_pour_gp.size();i++){
+    VectorXd h=m_vhpars_pour_gp[i];
+    if(d(0)<threshold*h(1) && d(1)<threshold*h(3) && d(2)<threshold*h(4) && d(3)<threshold*h(5) && d(4)<threshold*h(6)){
+      close=true;
+    }
+  }
+  return close;
+}
+
+
 double DensityOpt::DIC()const{
   //calcul de la moyenne à posteriori.
   //le hpars post est l'optimal (et non la moyenne des samples)
@@ -1586,25 +1605,27 @@ Eigen::VectorXd DensityOpt::Test_hGPs_on_sample(std::vector<Eigen::VectorXd> con
     true_logliks[i]=loglikelihood_theta(theta_ref[i],hpars_ref[i])+m_logpriorhpars(hpars_ref[i]);
     approx_logliks[i]=loglikelihood_theta(theta_ref[i],approx_hpars[i])+m_logpriorhpars(approx_hpars[i]);
   }
-    //calcul de l'erreur moyenne en log-vraisemblance
+    //calcul de l'erreur moyenne en DKL
   double errmoy=0;
-  for(int i=0;i<true_logliks.size();i++){errmoy+=pow(true_logliks[i]-approx_logliks[i],2);
+  for(int i=0;i<true_logliks.size();i++){
+    errmoy+=abs(true_logliks[i]-approx_logliks[i]);
   
-  if(true_logliks[i]-approx_logliks[i]>1){cerr << "erreur ll true sous-estimation. " <<endl;
+  if(approx_logliks[i]>0.001+true_logliks[i]){cerr << "erreur !! ll true surestimation. " <<endl;
   cerr<< "hpars true : " << hpars_ref[i].transpose()<< endl;
   cerr<< "hpars approx : " <<approx_hpars[i].transpose()<< endl;
   cerr<< "ll true : " << true_logliks[i]<< ", ll approx : "<< approx_logliks[i] <<endl;
   cerr <<"in bounds hpars approx ? "<<in_bounds_hpars(approx_hpars[i])<< endl;}
   
-  /*
-  if(approx_logliks[i]>0.1+true_logliks[i]){cerr << "erreur ll true surestimation. " <<endl;
+  if(true_logliks[i]-approx_logliks[i]>0.5){cerr << "erreur ll true sévère sous-estimation. " <<endl;
   cerr<< "hpars true : " << hpars_ref[i].transpose()<< endl;
   cerr<< "hpars approx : " <<approx_hpars[i].transpose()<< endl;
   cerr<< "ll true : " << true_logliks[i]<< ", ll approx : "<< approx_logliks[i] <<endl;
-  cerr <<"in bounds hpars approx ? "<<in_bounds_hpars(approx_hpars[i])<< endl;}*/
+  cerr <<"in bounds hpars approx ? "<<in_bounds_hpars(approx_hpars[i])<< endl;
   }
+  }
+  
   //valeur rms
-  errmoy=sqrt(errmoy/true_logliks.size()); //erreur moyenne en log-probabilité.
+  errmoy/=true_logliks.size(); //erreur moyenne en log-probabilité.
   //calcul de l'erreur moyenne sur chaque hpar
   VectorXd errmoy_hpars=VectorXd::Zero(m_dim_hpars);
   VectorXd cumsum_hpars=VectorXd::Zero(m_dim_hpars);

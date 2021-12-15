@@ -1,0 +1,215 @@
+Size of initial DoE: 2040 points.
+ Size of initial DoE: 2040 points.
+2017 simulations read.
+2025 simulations read.
+Sélection de 3 modes.
+VP principales :   0.181969 0.00923633 0.00190104
+Quantité d'énergie conservée : 99.9401 %
+The GP will use 2017 observations
+The GP will use 2017 observations
+The GP will use 2017 observations
+sur tout le domaine : 
+répartition de l'erreur entre projection et GP : 0.65096, 0.34904
+pct moyen erreur L2 : 0.830528
+à la paroi : 
+répartition de l'erreur entre projection et GP : 0.799148, 0.212401
+pct moyen erreur L2 : 0.577938
+au milieu du canal : 
+répartition de l'erreur entre projection et GP : 0.661155, 0.351031
+pct moyen erreur L2 : 1.0226
+au coeur du canal : 
+répartition de l'erreur entre projection et GP : 0.449393, 0.517442
+pct moyen erreur L2 : 1.93031
+Sélection de 5 modes.
+VP principales : 6.29199e-07 4.77325e-08 4.76152e-09 2.07583e-09 7.47785e-10
+Quantité d'énergie conservée : 99.9307 %
+The GP will use 2017 observations
+The GP will use 2017 observations
+The GP will use 2017 observations
+The GP will use 2017 observations
+The GP will use 2017 observations
+sur tout le domaine : 
+répartition de l'erreur entre projection et GP : 0.657087, 0.342913
+pct moyen erreur L2 : 1.49448
+à la paroi : 
+répartition de l'erreur entre projection et GP : 0.905626, 0.112941
+pct moyen erreur L2 : 1.76587
+au milieu du canal : 
+répartition de l'erreur entre projection et GP : 0.300742, 0.653017
+pct moyen erreur L2 : 1.10457
+au coeur du canal : 
+répartition de l'erreur entre projection et GP : 0.472603, 0.539529
+pct moyen erreur L2 : 1.85227
+COV_init : 
+0.01    0    0    0    0
+   0 0.01    0    0    0
+   0    0 0.01    0    0
+   0    0    0 0.01    0
+   0    0    0    0 0.01
+Prepare Halton sequence of size 2000
+hpars koh double (guess):   0.047  0.0021  0.0014  0.0003 6.7e-07   0.006
+fin de l'opt koh : message 4
+time : 201 s.
+hpars koh after optimisation : 0.000376722 7.33502e-07  0.00465788
+
+Début KOH
+hpars koh diam : 0.000376722 7.33502e-07  0.00465788
+burn phase over.  time : 9 s, accept rate : 27.847 pct. 
+new cov matrix : 
+   0.0215998   0.00168979  -0.00256157  -0.00214926 -0.000604507
+  0.00168979    0.0426355    0.0148341  -0.00750922   0.00211719
+ -0.00256157    0.0148341    0.0135657 -0.000913466  -0.00740684
+ -0.00214926  -0.00750922 -0.000913466     0.103173  -0.00253806
+-0.000604507   0.00211719  -0.00740684  -0.00253806    0.0578347
+no scaling
+MCMC phase over.  time : 51 s, accept rate : 13.6431 pct. 
+number of samples : 3003
+0.0935119  0.571285  0.101991 0.0571992  0.315105
+0.0610381  0.417127  0.126956  0.627537 0.0688654
+0.135896 0.578898 0.208173  0.48749 0.193819
+0.406229 0.925863 0.098041 0.591036 0.178012
+ 0.03429 0.977379 0.283318 0.947266 0.132586
+Temps pour KOH : 261
+intégrales avec nautocor = 5000
+21.9617 21.6815 24.2432 21.3185 31.7955
+maximum : 31.7955
+computing predictions with 3003 samples...
+theta mean post : 0.175717 0.683271 0.152048 0.487554  0.23439
+début double calibration opti avec nsteps =1000000
+Prepare Halton sequence of size 50
+ fin de calcul des hpars opti sur le grid. Moyenne : 0.000310118 6.77277e-07  0.00298102
+stds  : 9.15141e-05 6.4962e-08 0.00087458 
+moyenne des logposts:456.988
+temps de calcul : 100 s
+construction des hGPs individuels sans PCA : 
+The GP will use 50 observations
+The GP will use 50 observations
+The GP will use 50 observations
+optimisation du gp pour hpars numero 0
+par after opt :  1.14705 0.168785   0.0001 0.610859 0.548388 0.607476  2.25295
+temps pour optimisation : 0 s
+optimisation du gp pour hpars numero 1
+par after opt :  1.69088  1.70084   0.0001  0.60344 0.866513  0.24184        5
+temps pour optimisation : 0 s
+optimisation du gp pour hpars numero 2
+par after opt :    1.02432   0.354558 0.00010953   0.443303   0.466875    1.14873    3.03666
+temps pour optimisation : 0 s
+burn phase over.  time : 11 s, accept rate : 31.814 pct. 
+new cov matrix : 
+  0.0276473  0.00519977 -0.00163649 -0.00451588 5.54939e-06
+ 0.00519977   0.0367802  0.00910632 -0.00294848  0.00471577
+-0.00163649  0.00910632   0.0110869 0.000812164  -0.0061044
+-0.00451588 -0.00294848 0.000812164   0.0986566 -0.00117993
+5.54939e-06  0.00471577  -0.0061044 -0.00117993   0.0683638
+no scaling
+MCMC phase over.  time : 67 s, accept rate : 15.8805 pct. 
+number of samples : 3999
+ 0.28971 0.897234 0.293448  0.38127 0.212823
+ 0.427334  0.886317  0.141652 0.0163352 0.0269122
+ 0.223976  0.899069  0.229391  0.210622 0.0524882
+0.348009 0.769927 0.234104 0.458157 0.231329
+ 0.285775  0.727124  0.190481  0.571051 0.0506588
+rajout de 200 points :
+updating hGPs with 200new points...
+new number of points for hGPs : 250
+construction des hGPs individuels sans PCA : 
+The GP will use 250 observations
+The GP will use 250 observations
+The GP will use 250 observations
+optimisation du gp pour hpars numero 0
+par after opt :  2.02756 0.370866   0.0001 0.691169 0.335302 0.315307  1.07156
+temps pour optimisation : 1 s
+optimisation du gp pour hpars numero 1
+par after opt :    3.689 0.772643   0.0001 0.427739 0.239677  1.70459 0.989902
+temps pour optimisation : 1 s
+optimisation du gp pour hpars numero 2
+par after opt :   1.13043  0.529055 0.0713868  0.419604  0.205952   1.12351   1.05016
+temps pour optimisation : 1 s
+burn phase over.  time : 11 s, accept rate : 28.772 pct. 
+new cov matrix : 
+  0.0285417  0.00276744 -0.00317261  -0.0017719  0.00361517
+ 0.00276744   0.0421809   0.0138422 -0.00353362  0.00327957
+-0.00317261   0.0138422   0.0133314 0.000244468 -0.00585699
+ -0.0017719 -0.00353362 0.000244468   0.0989471  0.00402711
+ 0.00361517  0.00327957 -0.00585699  0.00402711   0.0582606
+no scaling
+MCMC phase over.  time : 65 s, accept rate : 13.8702 pct. 
+number of samples : 3999
+ 0.188458  0.984021   0.32061  0.548967 0.0599316
+ 0.286337  0.634973 0.0532828 0.0980372  0.151778
+ 0.38383  0.80809 0.266921 0.214319  0.10813
+0.0376014  0.759771  0.131643  0.151658   0.84277
+ 0.327496  0.527361  0.108036  0.770831 0.0383712
+rajout de 200 points :
+updating hGPs with 200new points...
+new number of points for hGPs : 450
+construction des hGPs individuels sans PCA : 
+The GP will use 450 observations
+The GP will use 450 observations
+The GP will use 450 observations
+optimisation du gp pour hpars numero 0
+par after opt :  1.52417 0.326903   0.0001 0.469562 0.324915 0.241307 0.937733
+temps pour optimisation : 6 s
+optimisation du gp pour hpars numero 1
+par after opt :   2.4472 0.485874   0.0001 0.338672 0.176034 0.972219 0.715374
+temps pour optimisation : 6 s
+optimisation du gp pour hpars numero 2
+par after opt :   1.16904   0.47406 0.0662953  0.392531  0.185855  0.607998    1.0318
+temps pour optimisation : 3 s
+burn phase over.  time : 13 s, accept rate : 28.454 pct. 
+new cov matrix : 
+   0.0268254   0.00240651  -0.00362333 -0.000985896   0.00441842
+  0.00240651    0.0442466    0.0143406  -0.00616257   0.00373476
+ -0.00362333    0.0143406    0.0127084 -0.000973961  -0.00602371
+-0.000985896  -0.00616257 -0.000973961     0.100573   0.00123287
+  0.00441842   0.00373476  -0.00602371   0.00123287    0.0554592
+no scaling
+MCMC phase over.  time : 69 s, accept rate : 14.4459 pct. 
+number of samples : 3003
+   0.029597    0.794473    0.077618    0.397055 0.000390173
+0.0148265  0.716751  0.168845  0.518311  0.134289
+ 0.138554  0.657036   0.12778  0.934286 0.0686362
+ 0.533858  0.930015 0.0526396 0.0555078  0.148324
+ 0.177312  0.345875 0.0587694  0.488649  0.056284
+Temps pour OPT : 761
+intégrales avec nautocor = 5000
+29.3149 19.1326 23.0787  22.852 24.2086
+maximum : 29.3149
+computing predictions with 3003 samples...
+theta mean post : 0.206807 0.697965 0.153785 0.487771 0.236804
+début double calibration full bayes
+COV init fb : 
+0.0025      0      0      0      0      0      0      0
+     0 0.0025      0      0      0      0      0      0
+     0      0 0.0025      0      0      0      0      0
+     0      0      0 0.0025      0      0      0      0
+     0      0      0      0 0.0025      0      0      0
+     0      0      0      0      0  8e-08      0      0
+     0      0      0      0      0      0  8e-16      0
+     0      0      0      0      0      0      0  2e-06
+nombre steps mcmc full bayes :6000000
+burn phase over.  time : 86 s, accept rate : 22.6167 pct. 
+new cov matrix : 
+   0.0272734   0.00363832   0.00688076  -0.00170771   0.00848506  3.43286e-06  2.49027e-10  -3.5686e-05
+  0.00363832    0.0265862    0.0105006   -0.0035497   0.00342503  3.65768e-06 -2.37381e-10 -6.82438e-07
+  0.00688076    0.0105006    0.0163807   -0.0011201  0.000593432 -1.17542e-05  5.57874e-10 -5.85257e-05
+ -0.00170771   -0.0035497   -0.0011201    0.0612961   0.00239261   5.8521e-06 -8.33448e-10  1.40752e-05
+  0.00848506   0.00342503  0.000593432   0.00239261    0.0382402 -3.07755e-06  4.19244e-10 -5.94531e-05
+ 3.43286e-06  3.65768e-06 -1.17542e-05   5.8521e-06 -3.07755e-06  4.55082e-07 -9.21308e-14  1.30434e-06
+ 2.49027e-10 -2.37381e-10  5.57874e-10 -8.33448e-10  4.19244e-10 -9.21308e-14  9.85591e-15  1.10191e-11
+ -3.5686e-05 -6.82438e-07 -5.85257e-05  1.40752e-05 -5.94531e-05  1.30434e-06  1.10191e-11  4.60591e-06
+no scaling
+MCMC phase over.  time : 382 s, accept rate : 6.39985 pct. 
+number of samples : 2999
+  0.0409168    0.529441   0.0893268    0.915463     0.12711  0.00363784 7.17972e-07   0.0129303
+  0.0624412    0.922393    0.431849     0.42814   0.0371392  0.00104908 6.95731e-07  0.00849918
+   0.291606    0.881084    0.264052    0.748199    0.674957 0.000404547 9.51741e-07  0.00440101
+  0.0822466    0.401652    0.034382    0.228145    0.353507  0.00102541 7.69104e-07  0.00694587
+   0.441987    0.616434   0.0806813     0.65378  0.00568017 0.000559537 6.06575e-07  0.00572288
+Temps pour BAYES : 468
+intégrales avec nautocor = 5000
+83.5591 96.8191 77.2163 80.9714   110.9 112.661 75.0468 97.3812
+maximum : 112.661
+computing predictions with 2999 samples...
+theta mean post : 0.206602 0.689544 0.157257 0.485476 0.230186
+[1] + Done                       "/usr/bin/gdb" --interpreter=mi --tty=${DbgTerm} 0<"/tmp/Microsoft-MIEngine-In-5e31yw2h.kz1" 1>"/tmp/Microsoft-MIEngine-Out-df0g1pm0.muw"

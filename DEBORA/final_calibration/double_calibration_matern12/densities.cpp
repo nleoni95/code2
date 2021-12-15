@@ -1386,9 +1386,27 @@ VectorXd DensityOpt::HparsOpt(VectorXd const & theta, VectorXd const & hpars_gue
   VectorXd Fpred=m_model(m_data_exp[0].GetX(),theta);
   obsmtheta=Yexp-Fpred; //la priormean sera mise dans optfuncopt
   auto p=make_pair(&obsmtheta,this);
-  int fin=optroutine_withgrad(optfuncOpt_withgrad,&p,guess,m_lb_hpars,m_ub_hpars,max_time);
+  int fin=optroutine(optfuncOpt_nograd,&p,guess,m_lb_hpars,m_ub_hpars,max_time);
   return guess;
 }
+double DensityOpt::optfuncOpt_nograd(const std::vector<double> &x, std::vector<double> &grad, void *data){
+  /* fonction à optimiser pour trouver les hpars optimaux.*/
+  //cast du null pointer
+  pair<const VectorXd*,const DensityOpt*> *p=(pair<const VectorXd*,const DensityOpt*> *) data;
+  const VectorXd *obs=p->first;
+  const DensityOpt *d=p->second;
+  VectorXd hpars=VtoVXD(x);
+  VectorXd pmean=d->EvaluatePMean(d->GetXprofile(),hpars);
+  VectorXd obsmodif=*obs-pmean;
+  const vector<VectorXd> *xconv=d->GetXconverted();
+  LDLT<MatrixXd> ldlt(d->Gamma(*xconv,hpars));
+  double ll=d->loglikelihood_fast(obsmodif,ldlt);
+  double lp=d->m_logpriorhpars(hpars);
+  //cout << "hpars testés : " << hpars.transpose() << endl;
+  //cout << "ll :" << ll << ", lp : " << lp << endl;
+  return ll+lp;
+};
+
 
 VectorXd DensityOpt::HparsOpt_quick(VectorXd const & theta, VectorXd const & hpars_guess, double max_time) const{
   VectorXd guess=hpars_guess;
@@ -1540,7 +1558,7 @@ void DensityOpt::Compute_optimal_hpars(double max_time){
   SecondMoment/=m_hpars_opti.size();
   MatrixXd Var=SecondMoment-mean*mean.transpose();
   cout << " fin de calcul des hpars opti sur le grid. Moyenne : " << mean.transpose() << endl;
-  cout << "stds  : " << sqrt(Var(0,0)) << " " << sqrt(Var(1,1)) << " " <<sqrt(Var(2,2)) << " " << endl;
+  cout << "stds  : " << sqrt(Var(0,0)) << " " << endl;
   cout << "moyenne des logposts:" << mean_lp << endl;
   cout << "temps de calcul : " << chrono::duration_cast<chrono::seconds>(end-begin).count() << " s" << endl;
 }

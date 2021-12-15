@@ -860,7 +860,7 @@ VectorXd HparsKOH_double(VectorXd const & hpars_guess,VectorXd const & lb_hpars,
     Residustheta2.col(i)=data_exp_2[0].Value()-D2.EvaluateModel(data_exp_2[0].GetX(),theta);
   }
   auto tp=make_tuple(&Residustheta1,&Residustheta2,&D1,&D2);
-  guess=optroutine(optfuncKOH_Double,&tp,guess,lb_hpars,ub_hpars,600); //max_time en secondes
+  guess=optroutine(optfuncKOH_Double,&tp,guess,lb_hpars,ub_hpars,500); //max_time en secondes
   return guess;
 }
 
@@ -1379,10 +1379,12 @@ int main(int argc, char **argv){
       MainDensity_diam.WritePredictionsF(Xgrid_num,"results/preds/predskohdiamF.gnu");
       MainDensity_alpha.WritePredictions(Xgrid_num,"results/preds/predskohalpha.gnu");
       MainDensity_diam.WritePredictions(Xgrid_num,"results/preds/predskohdiam.gnu");
+      auto end2=chrono::steady_clock::now();
+      cout << "Temps pour prédictions KOH : " << chrono::duration_cast<chrono::seconds>(end2-end).count() << endl;
     }
 
+
     exit(0);
-        
 
 
     ///phase opti avec choix de points de training
@@ -1398,8 +1400,8 @@ int main(int argc, char **argv){
       DensOpt_alpha.SetNewDoE(doe_light);
       DensOpt_diam.SetNewDoE(doe_light);
 
-      DensOpt_alpha.Compute_optimal_hpars(2);
-      DensOpt_diam.Compute_optimal_hpars(2);
+      DensOpt_alpha.Compute_optimal_hpars(0.5);
+      DensOpt_diam.Compute_optimal_hpars(0.5);
 
       DensOpt_alpha.BuildHGPs_noPCA(Kernel_GP_Matern32,Bounds_hpars_gp,hpars_gp_guess);
       DensOpt_alpha.opti_allgps(hpars_gp_guess);
@@ -1457,8 +1459,8 @@ int main(int argc, char **argv){
           //simple check
           cout << "rajout de " << selected_thetas.size() << " points :" << endl;
           //rajout des points 
-          DensOpt_alpha.update_hGPs_noPCA(selected_thetas,Kernel_GP_Matern32,Bounds_hpars_gp,hpars_gp_guess,1);
-          DensOpt_diam.update_hGPs_noPCA(selected_thetas,Kernel_GP_Matern32,Bounds_hpars_gp,hpars_gp_guess,1);
+          DensOpt_alpha.update_hGPs_noPCA(selected_thetas,Kernel_GP_Matern32,Bounds_hpars_gp,hpars_gp_guess,0.5);
+          DensOpt_diam.update_hGPs_noPCA(selected_thetas,Kernel_GP_Matern32,Bounds_hpars_gp,hpars_gp_guess,0.5);
           DensOpt_alpha.opti_allgps(hpars_gp_guess);
           DensOpt_diam.opti_allgps(hpars_gp_guess);
           auto end_hgps=chrono::steady_clock::now();
@@ -1535,7 +1537,6 @@ int main(int argc, char **argv){
         //cout << DensOpt_diam.Test_hGPs_on_sample(thetas_ref,hdiam_ref).transpose() << endl;
       
     }
-    exit(0);
 
     
   
@@ -1585,9 +1586,9 @@ int main(int argc, char **argv){
         cout << "COV init fb : " << endl << COV_init_fb << endl;
 
         //run de la MCMC
-        cout << "nombre steps mcmc full bayes :" << 6*nombre_steps_mcmc << endl;
+        cout << "nombre steps mcmc full bayes :" << 8*nombre_steps_mcmc << endl;
 
-      auto res=Run_MCMC(6*nombre_steps_mcmc,nombre_samples_collected,Xinit_fb,COV_init_fb,compute_score_fb,get_hpars_fb,in_bounds,generator);
+      auto res=Run_MCMC(8*nombre_steps_mcmc,nombre_samples_collected,Xinit_fb,COV_init_fb,compute_score_fb,get_hpars_fb,in_bounds,generator);
       auto end=chrono::steady_clock::now();
       cout << "Temps pour BAYES : " << chrono::duration_cast<chrono::seconds>(end-begin).count() << endl;
         //diviser les samples en theta et hpars

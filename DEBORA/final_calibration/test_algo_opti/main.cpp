@@ -590,6 +590,22 @@ void PrintVector(vector<VectorXd> const &X1,const string & filename){
   }
 }
 
+void PrintVectors(vector<VectorXd> const &X1,vector<double> const &X2,vector<double> const &X3,const string & filename){
+  //les trois vecteurs doivent être de même taille.
+  ofstream ofile(filename);
+  for (int i=0;i<X1.size();i++){
+    for(int j=0;j<X1[i].size();j++){
+      ofile << X1[i](j) << " ";
+    }
+      ofile << X2[i] << " ";
+    
+       
+      ofile << X3[i];
+    
+    ofile << endl;
+  }
+}
+
 void PrintVectors(vector<VectorXd> const &X1,vector<VectorXd> const &X2,vector<VectorXd> const &X3,const string & filename){
   //les trois vecteurs doivent être de même taille.
   ofstream ofile(filename);
@@ -1743,6 +1759,8 @@ int main(int argc, char **argv){
         }      
     }
 
+    */
+
         ///phase opti avec choix de points de training (3)
       
     {
@@ -1830,8 +1848,11 @@ int main(int argc, char **argv){
 
         auto add_npoints_new_withprint=[&DensOpt_diam,&DensOpt_alpha,&nombre_steps_mcmc,&Xinit,&COV_init,&compute_score_opti,&get_hpars_opti,&in_bounds,&Bounds_hpars_gp,&hpars_gp_guess](int npoints,default_random_engine &generator, int & npts_total, int nsamples_mcmc){
           //ajout de n points obtenus à partir d'une MCMC. version NEW avec resampling.
+          //on va aussi faire comme conseillé par OLM. c.a.d calculer sur le candidateset la valeur de la densité, et la valeur des poids.
           string name_print="results/samples/candidate"+to_string(npts_total)+".gnu";
           string name_print_training="results/samples/training"+to_string(npts_total)+".gnu";
+          string name_print_scores="results/samples/candidate+"+to_string(npts_total)+".gnu";
+          string name_print_selected="results/samples/candidate++"+to_string(npts_total)+".gnu";
           auto begin=chrono::steady_clock::now();
           //récupération de nsamples_mcmc points de la MCMC.
           auto res=Run_MCMC(nombre_steps_mcmc,nsamples_mcmc,Xinit,COV_init,compute_score_opti,get_hpars_opti,in_bounds,generator);
@@ -1843,18 +1864,25 @@ int main(int argc, char **argv){
 
           //calcul du critère en chaque point.
           vector<double> weights(samples_opti.size());
+          vector<double> scores(samples_opti.size());
           for(int j=0;j<weights.size();j++){
             double a=DensOpt_alpha.EstimatePredError(samples_opti[j]);
             double b=DensOpt_diam.EstimatePredError(samples_opti[j]);
             weights[j]=a+b;
           }
+          PrintVectors(samples_opti,scores_of_samples,weights,name_print_scores);
           vector<VectorXd> selected_thetas;
+          vector<double> selected_scores;
+          vector<double> selected_weights;
           for(int i=0;i<npoints;i++){
             std::discrete_distribution<int> distribution(weights.begin(), weights.end());
             int drawn = distribution(generator);
-            weights[drawn]=0;
             selected_thetas.push_back(samples_opti[drawn]);
+            selected_scores.push_back(scores_of_samples[drawn]);
+            selected_weights.push_back(weights[drawn]);
+            weights[drawn]=0;
           }
+          PrintVectors(selected_thetas,selected_scores,selected_weights,name_print_selected);
           //simple check
           cout << "rajout de " << selected_thetas.size() << " points :" << endl;
           npts_total+=selected_thetas.size();
@@ -1877,9 +1905,12 @@ int main(int argc, char **argv){
         }      
     }
 
+
+
+
     
 
-     
+     /*
   
 
   //phase opti en rajoutant des points du sample d'origine.

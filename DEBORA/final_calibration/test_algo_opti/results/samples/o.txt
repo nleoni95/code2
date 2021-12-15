@@ -1,0 +1,1000 @@
+  762  gnuplot
+  763  ls
+  764  cd 7RD
+  765  l
+  766  ls -lrt
+  767  ipconfig
+  768  ifconfig
+  769  hostname -I
+  770  ip a
+  771  wget https://ipecho.net/plain -O - -q ; echo
+  772  dig +short -6 myip.opendns.com aaaa @resolver1.ipv6-sandbox.opendns.com
+  773  cd 
+  774  cd Documents/Code/minimal_examples/resampling/
+  775  l
+  776  cd results/
+  777  l
+  778  gnuplot
+  779  cd
+  780  cd Documents/Journal/
+  781  l
+  782  cd Thesis/abstract/
+  783  l
+  784  rm -rf v1/
+  785  mv gausspost.tex abstract.tex
+  786  rm gausspost.*
+  787  cd
+  788  cd Téléchargements/
+  789  l
+  790  dpkg -i pdfsam_4.2.7-1_amd64.deb 
+  791  sudo dpkg -i pdfsam_4.2.7-1_amd64.deb 
+  792  sudo apt install pdfsam
+  793  cd 
+  794  cd Documents/Code/
+  795  l
+  796  cd minimal_examples/asymptotics_badly_specified/
+  797  cd results/
+  798  mkdir maxID
+  799  mkdir maxRD
+  800  l
+  801  conda activate snowflakes_env
+  802  j
+  803  cd ..
+  804  j
+  805  cd ..
+  806  l
+  807  cd ..
+  808  l
+  809  cd Exemple1Article/
+  810  l
+  811  gedit main.cpp 
+  812  l
+  813  cd Documents/Journal/
+  814  l
+  815  cd Thesis/
+  816  l
+  817  cd ..
+  818  cd Sujets/Calibration/
+  819  l
+  820  cd Analyse/
+  821  l
+  822  cd ..
+  823  l
+  824  cd GaussPost/
+  825  l
+  826  cd ..
+  827  cp -r GaussPost/ ../../Thesis/abstract
+  828  cd ../..
+  829  cd Thesis/abstract/
+  830  cd
+  831  cd Téléchargements/
+  832  l
+  833  cd Zotero_linux-x86_64/
+  834  ./zotero
+  835  cd 
+  836  cd Documents/
+  837  l
+  838  mkdir Lettres
+  839  cd Lettres/
+  840  mkdir GMO
+  841  cd GMO/
+  842  gedit main.tex
+  843  gedit lettre-nicolas.cfg
+  844  cd ../..
+  845  l
+  846  cd Code/
+  847  l
+  848  cd Exemple1Article/
+  849  l
+  850  cd ../minimal_examples/
+  851  l
+  852  cd GaussianPosts/
+  853  l
+  854  cd exemple1/
+  855  l
+  856  gedit main.cpp 
+  857  cd ..
+  858  l
+  859  cd ..
+  860  cp -r GaussianPosts/exemple1/ resampling
+  861  cd ..
+  862  l
+  863  cd minimal_examples/
+  864  l
+  865  cd resampling/
+  866  cp -r ../asymptotics_badly_specified/.vscode/ .
+  867  cd ..
+  868  l
+  869  cd ..
+  870  l
+  871  cd DEBORA/final_calibration/
+  872  l
+  873  cd double_calibration_withmean/
+  874  l
+  875  gedit main.cpp 
+  876  cd
+  877  cd Documents/Journal/
+  878  l
+  879  cd article_ijuq/
+  880  l
+  881  cd
+  882  cd Documents/Code/DEBORA/final_calibration/
+  883  l
+  884  cd double_calibration_withmean/
+  885  gedit main.cpp 
+  886  cd
+  887  cd Documents/Code/minimal_examples/resampling/
+  888  l
+  889  cd results/
+  890  l
+  891  gedit hparsopt.gnu 
+  892  l
+  893  gedit sampkoh.gnu 
+  894  gedit sampbayes.gnu 
+  895  ge
+  896  l
+  897  gedit sampopt.gnu 
+  898  gedit sampbayes.gnu 
+  899  gedit weights.gnu 
+  900  l
+  901  gnuplot
+  902  cd ../..
+  903  cp -r resampling/ surrogate_ll_hgps
+  904  cd resampling/results/
+  905  l
+  906  ls -lrt
+  907  gnuplot
+  908  cd ..
+  909  cd ../..
+  910  l
+  911  cd figures/
+  912  l
+  913  conda activate snowflakes_env
+  914  j
+  915  cd res
+  916  mkdir results
+  917  cd results
+  918  ls -lrt
+  919  l
+  920  mv results/ results300
+  921  mkdir results
+  922  cp -r results300/ results
+  923  ls results
+  924  cd results
+  925  l
+  926  mv results300/* .
+  927  l
+  928  rm -rf results300/
+  929  cd ..
+  930  mv results results200
+  931  cp -r results200/ results
+  932  cp -r results results100
+  933  cd asymptotics_badly_specified/
+  934  l
+  935  gedit main.cpp 
+  936  l
+  937  cd results/
+  938  l
+  939  cd
+  940  cd Documents/Journal/Thesis/
+  941  l
+  942  cd abstract/
+  943  l
+  944  mkdir v2
+  945  mv v2/ v1
+  946  cp abstract.tex v1/
+  947  cp abstract.pdf v1/
+  948  cd
+  949  cd Documents/Code/minimal_examples/asymptotics_well_specified/
+  950  l
+  951  cd results/
+  952  ls -lrt
+  953  cd 7RD/
+  954  ls -lrt
+  955  python
+  956  cd Documents/Code/minimal_examples/resampling/
+  957  conda activate snowflakes_env
+  958  j
+  959  cd ..
+  960  l
+  961  cd ..
+  962  l
+  963  cd ..
+  964  cd figures/
+  965  l
+  966  conda activate snowflakes_env
+  967  j
+  968  cd ..
+  969  l
+  970  cd minimal_examples/
+  971  l
+  972  j
+  973  cd results
+  974  l
+  975  mv sampoptfull.gnu sampoptfullref.gnu
+  976  gedit descriptifs_autres
+  977  cd ..
+  978  l
+  979  cd Journal/Prez/
+  980  l
+  981  cd 2020_10_08_Semdoct/
+  982  l
+  983  cd tex
+  984  l
+  985  gedit template_Beamer.t
+  986  gedit template_Beamer.tex 
+  987  l
+  988  cd ..
+  989  l
+  990  cd ..
+  991  l
+  992  gedit */errors.gnu
+  993  grep -rnw . -e "expected improvement"
+  994  rm results/autocoroptfull.gnu 
+  995  cp -r results results100
+  996  cd results100
+  997  ls results/
+  998  ls -lrt
+  999  cd results/
+ 1000  ls -lrt
+ 1001  cd ../..
+ 1002  cd results
+ 1003  l
+ 1004  ls -lrt
+ 1005  cd ..
+ 1006  rm -rf results100
+ 1007  cp -r results results100
+ 1008  l
+ 1009  rm -rf results150
+ 1010  cp -r results results150
+ 1011  l
+ 1012  rm -rf results200/
+ 1013  cp -r results results200
+ 1014  rm -rf results250
+ 1015  cp -r results results250
+ 1016  rm -rf results300
+ 1017  cp -r results results300
+ 1018  cp -r results results350
+ 1019  rm -rf results50
+ 1020  cp -r results results50
+ 1021  ls
+ 1022  l
+ 1023  clear
+ 1024  rm -rf *
+ 1025  cd ..
+ 1026  gedit c
+ 1027  cd
+ 1028  cd Documents/Journal/
+ 1029  l
+ 1030  git add .
+ 1031  git commit -m "chap 5 avancé + chap debora commencé"
+ 1032  git push
+ 1033  cd ../Code/
+ 1034  l
+ 1035  git add .
+ 1036  git commit -m "code exemples"
+ 1037  git push
+ 1038  shutdown
+ 1039  cd results
+ 1040  l
+ 1041  gedit tempscalcul.gnu 
+ 1042  gedit errors.gnu 
+ 1043  cd ..
+ 1044  cp -r results results50
+ 1045  ls results
+ 1046  cd ..
+ 1047  l
+ 1048  cd resampling/
+ 1049  l
+ 1050  conda activate snowflakes_env
+ 1051  j
+ 1052  cd results350/
+ 1053  l
+ 1054  gedit tempscalcul.gnu 
+ 1055  python
+ 1056  cd
+ 1057  cd Téléchargements/
+ 1058  l
+ 1059  dpkg -i teams_1.4.00.26453_amd64.deb 
+ 1060  sudo dpkg -i teams_1.4.00.26453_amd64.deb 
+ 1061  rm -rf teams_1.4.00.26453_amd64.deb 
+ 1062  l
+ 1063  cd
+ 1064  l
+ 1065  pwd
+ 1066  cd /nfs/home/catB/nl255551/
+ 1067  l
+ 1068  cd SAUVEGARDE_IS255551/
+ 1069  l
+ 1070  cp neptune.tar.gz ~/Téléchargements/
+ 1071  cd ~/Téléchargements/
+ 1072  l
+ 1073  tar -xvf neptune.tar.gz 
+ 1074  l
+ 1075  mv Neptune/ ~/Documents/
+ 1076  ls -lrt
+ 1077  ./main.exe 
+ 1078  cd ..
+ 1079  l
+ 1080  cp -r surrogate_ll_hgps/ intelligent_sampling
+ 1081  l
+ 1082  cd intelligent_sampling/
+ 1083  l
+ 1084  cd ..
+ 1085  l
+ 1086  cd surrogate_ll_hgps/
+ 1087  l
+ 1088  ls -lrt
+ 1089  ./main.exe 
+ 1090  ls -lrt
+ 1091  ./main.exe 
+ 1092  cd results/
+ 1093  l
+ 1094  gedit hparsopt.gnu 
+ 1095  gedit
+ 1096  l
+ 1097  cd surrogate_ll_hgps/
+ 1098  l
+ 1099  conda activate snowflakes_env
+ 1100  j
+ 1101  cd ..
+ 1102  l
+ 1103  rm -rf surrogate_ll_hgps/
+ 1104  cp -r resampling/ surrogate_ll_hgps
+ 1105  cd resampling/results
+ 1106  l
+ 1107  gedit sampopt.gnu 
+ 1108  gedit weights
+ 1109  gedit weights.gnu 
+ 1110  l
+ 1111  cd 
+ 1112  cd Documents/Code/minimal_examples/
+ 1113  l
+ 1114  conda activate snowflakes_env
+ 1115  j
+ 1116  cd results/
+ 1117  l
+ 1118  zotero
+ 1119  cd
+ 1120  l
+ 1121  cd Téléchargements/Zotero_linux-x86_64/
+ 1122  l
+ 1123  ./zotero
+ 1124  cd ~/Documents/
+ 1125  l
+ 1126  cd Lettres/
+ 1127  l
+ 1128  cd GMO/
+ 1129  l
+ 1130  mkdir ../tmp
+ 1131  l
+ 1132  vm * ../tmp/
+ 1133  l
+ 1134  mv * ../tmp/
+ 1135  cd ..
+ 1136  l
+ 1137  mv tmp/ GMO/
+ 1138  cd GMO/
+ 1139  l
+ 1140  mv tmp/ lettre1
+ 1141  cp -r lettre1/ lettre2
+ 1142  python
+ 1143  zotero
+ 1144  cd
+ 1145  cd Téléchargements/Zotero_linux-x86_64/
+ 1146  ./zotero
+ 1147  cd Documents/Neptune/docs/DEBORA/
+ 1148  l
+ 1149  cd ../..
+ 1150  l
+ 1151  evince vnv.pdf 
+ 1152  cobalt
+ 1153  cd Documents/
+ 1154  l
+ 1155  cd Neptune/
+ 1156  l
+ 1157  mkdir ResultatsSimu
+ 1158  mkdir OATs
+ 1159  cd OATs/
+ 1160  l
+ 1161  mkdir -p /tmp/DIST/COBALT/
+ 1162  sshfs leoninic@cobalt.ccc.cea.fr:/ccc/scratch/cont002/den/leoninic /tmp/DIST/COBALT/ -o reconnect,ServerAliveInterval=20,ServerAliveCountMax=30
+ 1163  cd Documents/Neptune/ResultatsSimu/A6_reference/
+ 1164  l
+ 1165  cd RESU/
+ 1166  l
+ 1167  scp -r leoninic@cobalt.ccc.cea.fr:/ccc/scratch/cont002/den/leoninic/DEBORA/A6_reference/RESU/20211129-0817 .
+ 1168  javaws
+ 1169  sudo apt install javaws
+ 1170  sudo apt install java
+ 1171  sudo apt install openjdk
+ 1172  java
+ 1173  sudo apt install java-common
+ 1174  sudo apt install default-jre
+ 1175  cd ..
+ 1176  l
+ 1177  ls -lrt
+ 1178  java session_47679.jnlp
+ 1179  java -version
+ 1180  default-jre
+ 1181  l
+ 1182  chmod -x session_47679.jnlp 
+ 1183  jtreg session_47679.jnlp 
+ 1184  javaws
+ 1185  javaws-viewer
+ 1186  javaws -viewer
+ 1187  sudo apt update
+ 1188  apt list --upgradable
+ 1189  java
+ 1190  javaws
+ 1191  javavs
+ 1192  sudo apt install icedtea-netx
+ 1193  icedtea
+ 1194  sudo apt install default-jre
+ 1195  javaws
+ 1196  python
+ 1197  cd
+ 1198  cd Documents/Journal/Prez/
+ 1199  l
+ 1200  mkdir poster_semneptune
+ 1201  l
+ 1202  ssh leoninic@topaze.ccc.cea.fr
+ 1203  turbovm
+ 1204  turbovmc
+ 1205  vmc
+ 1206  l
+ 1207  cd final_calibration/surrogate_precision/
+ 1208  l
+ 1209  cd results/
+ 1210  l
+ 1211  gedit nrj.gnu 
+ 1212  gedit errors.gnu 
+ 1213  l
+ 1214  python
+ 1215  cobalt
+ 1216  cd
+ 1217  l
+ 1218  cd Documents/Lettres/
+ 1219  l
+ 1220  cd GMO/
+ 1221  l
+ 1222  cp -r lettre2/ lettre3
+ 1223  cd lettre2/
+ 1224  l
+ 1225  gedit notes.gnu
+ 1226  cd
+ 1227  l
+ 1228  cobalt
+ 1229  python
+ 1230  cobalt
+ 1231  cd
+ 1232  cd Documents/Journal/pres_skype/
+ 1233  l
+ 1234  cp -r 21_0729/ 21_1125
+ 1235  cd
+ 1236  l
+ 1237  cd Documents/Neptune/ResultatsSimu/OATs/
+ 1238  l
+ 1239  cd A6_T+
+ 1240  l
+ 1241  gedit profil_z_3484.dat 
+ 1242  pwd
+ 1243  cobalt
+ 1244  l
+ 1245  cd
+ 1246  clear
+ 1247  cd Documents/Code/
+ 1248  l
+ 1249  cd figures/
+ 1250  l
+ 1251  conda activate snowflakes_env
+ 1252  j
+ 1253  convert
+ 1254  cp pid_full2.png pid_full3.jpg
+ 1255  convert -resize 1024x768 pid_full3.jpg pid_full4.jpg
+ 1256  mogrify
+ 1257  l
+ 1258  cp -r pid_full2.png pid_full3.png
+ 1259  mogrify -resize 50% pid_full3.png 
+ 1260  gedit {errors_alpha.gnu,errors_diam.gnu}
+ 1261  cobalt
+ 1262  cd 
+ 1263  cd Documents/Neptune/
+ 1264  l
+ 1265  cd src/
+ 1266  l
+ 1267  grep -rnw . -e "algo_ev"
+ 1268  gedit prevap.c 
+ 1269  cd
+ 1270  cd Documents/Journal/
+ 1271  l
+ 1272  la
+ 1273  gedit .gitignore 
+ 1274  cd ~/Téléchargements/
+ 1275  l
+ 1276  unzip elsarticle.zip 
+ 1277  cd elsarticle/
+ 1278  l
+ 1279  latex elsarticle.ins
+ 1280  l
+ 1281  mv elsarticle.cls ~/Documents/Journal/article_methodo/
+ 1282  cd ../..
+ 1283  l
+ 1284  cd Documents/
+ 1285  l
+ 1286  cd Neptune/
+ 1287  l
+ 1288  cd docs/DEBORA/
+ 1289  l
+ 1290  evince Gueguen2013_These_Model-multidim-eclt-bouillant-convectif-HP.pdf 
+ 1291  cd
+ 1292  cd Documents/
+ 1293  l
+ 1294  cd Code/
+ 1295  l
+ 1296  cd DEBORA/
+ 1297  l
+ 1298  cd final_calibration/
+ 1299  l
+ 1300  cd double_calibration_withmean/
+ 1301  l
+ 1302  cd Télé
+ 1303  cd
+ 1304  cd Téléchargements/
+ 1305  l
+ 1306  cd /nfs/home/nl255551
+ 1307  cd /nfs/home/
+ 1308  l
+ 1309  cd ..
+ 1310  l
+ 1311  k
+ 1312  l
+ 1313  cd home/
+ 1314  l
+ 1315  cd nl255551
+ 1316  cd catB
+ 1317  cd nl255551/
+ 1318  l
+ 1319  cd SAUVEGARDE_IS255551/
+ 1320  l
+ 1321  cd Code/
+ 1322  l
+ 1323  cd ..
+ 1324  l
+ 1325  cd
+ 1326  cd Documents/Code/
+ 1327  l
+ 1328  cd DEBORA/
+ 1329  l
+ 1330  cd data/
+ 1331  l
+ 1332  cd exp/
+ 1333  l
+ 1334  cd ../qmc/
+ 1335  l
+ 1336  cd 263
+ 1337  l
+ 1338  gedit clean_profile.dat 
+ 1339  cd ../..
+ 1340  l
+ 1341  cd ..
+ 1342  l
+ 1343  cd final_calibration/
+ 1344  l
+ 1345  cd double_calibration_withmean/
+ 1346  l
+ 1347  gedit clean_exp.dat 
+ 1348  la
+ 1349  cd ...
+ 1350  l
+ 1351  cd ..
+ 1352  l
+ 1353  cd surrogate_precision/
+ 1354  l
+ 1355  la
+ 1356  cd ../..
+ 1357  la
+ 1358  cd
+ 1359  cd Documents/Journal/article_ijuq/
+ 1360  l
+ 1361  gedit comments.gnu &
+ 1362  meld
+ 1363  cd
+ 1364  cd Documents/
+ 1365  l
+ 1366  cd ../Téléchargements/
+ 1367  l
+ 1368  cd /nfs/home/catB/nl255551/
+ 1369  l
+ 1370  cd SAUVEGARDE_IS255551/
+ 1371  l
+ 1372  cp articlesravik.tar.gz ~/Documents/
+ 1373  cd Doc
+ 1374  cd ~/Documents/
+ 1375  l
+ 1376  tar -xvf articlesravik.tar.gz 
+ 1377  l
+ 1378  cd articles_ravik/
+ 1379  l
+ 1380  cd ..
+ 1381  rm articlesravik.tar.gz 
+ 1382  cd articles_ravik/
+ 1383  l
+ 1384  evince Kommajosyula-PhD-MechE-2020.pdf 
+ 1385  cd
+ 1386  cd Téléchargements/Zotero_linux-x86_64/
+ 1387  l
+ 1388  ./zotero
+ 1389  cd
+ 1390  cd /nfs/home/catB/nl255551
+ 1391  l
+ 1392  cd SAUVEGARDE_IS255551/
+ 1393  l
+ 1394  cd ordi_fixe/
+ 1395  l
+ 1396  cd PFE/
+ 1397  l
+ 1398  cd ..
+ 1399  l
+ 1400  cd 1.\ Stages/
+ 1401  l
+ 1402  cd Stage_PFE/
+ 1403  m
+ 1404  l
+ 1405  cd ..
+ 1406  l
+ 1407  cd Stage_bulles/
+ 1408  l
+ 1409  cd ..
+ 1410  l
+ 1411  cd ..
+ 1412  l
+ 1413  cd Neptune_days/
+ 1414  l
+ 1415  evince presentation.pdf 
+ 1416  zotero
+ 1417  cd
+ 1418  cd Téléchargements/Zotero_linux-x86_64/
+ 1419  ./zotero
+ 1420  cd Documents/Code/DEBORA/
+ 1421  l
+ 1422  conda activate snowflakes_env
+ 1423  j
+ 1424  cd final_calibration/surrogate_precision/
+ 1425  l
+ 1426  mkdir results
+ 1427  l
+ 1428  mkdir results
+ 1429  l
+ 1430  cd Documents/Code/
+ 1431  l
+ 1432  cd Exemple1Article/
+ 1433  l
+ 1434  gedit main.cpp 
+ 1435  cd ..
+ 1436  l
+ 1437  cd Algo_HD/
+ 1438  l
+ 1439  cd ..
+ 1440  l
+ 1441  cd Obs_sensitivity/
+ 1442  l
+ 1443  cd ..
+ 1444  l
+ 1445  cd Python_embedding_obs_sensitivity/
+ 1446  l
+ 1447  cd ..
+ 1448  l
+ 1449  cd Ravik/
+ 1450  l
+ 1451  cd Calibration_Ravik
+ 1452  l
+ 1453  cd ravik/
+ 1454  l
+ 1455  cd ..
+ 1456  l
+ 1457  gedit main.cpp 
+ 1458  cd ../..
+ 1459  l
+ 1460  cd Exemple1Article/
+ 1461  l
+ 1462  cd ..
+ 1463  mkdir temp
+ 1464  mv Exemple1Article/* temp/
+ 1465  mv temp/ Exemple1Article/
+ 1466  cd Exemple1Article/
+ 1467  l
+ 1468  mv temp/ ByMCMC
+ 1469  cp -r ByMCMC/ ByQuadrature
+ 1470  l
+ 1471  la
+ 1472  cp -r .vscode/ ByMCMC/
+ 1473  cp -r .vscode/ ByQuadrature/
+ 1474  r
+ 1475  la
+ 1476  rm -rf .vscode/
+ 1477  cd ..
+ 1478  l
+ 1479  cd minimal_examples/
+ 1480  l
+ 1481  cd minimal_example_plot_ll/
+ 1482  l
+ 1483  cd ..
+ 1484  la
+ 1485  cd surrogate_ll_hgps/
+ 1486  l
+ 1487  la
+ 1488  gedit .vscode/c_cpp_properties.json 
+ 1489  cd ..
+ 1490  l
+ 1491  cd surrogate_ll_hgps/
+ 1492  l
+ 1493  cp -r .vscode/ ../../Exemple1Article/ByQuadrature/
+ 1494  cp -r .vscode/ ../../Exemple1Article/ByMCMC/
+ 1495  cd ../..
+ 1496  l
+ 1497  cd Exemple1Article/
+ 1498  l
+ 1499  cd ByQuadrature/
+ 1500  l
+ 1501  cd results/
+ 1502  l
+ 1503  gedit popt.gnu 
+ 1504  l
+ 1505  gnuplot
+ 1506  gedit pbayes.gnu 
+ 1507  l
+ 1508  gnuplot
+ 1509  cd ../..
+ 1510  cd ByMCMC/
+ 1511  l
+ 1512  cd .vscode/
+ 1513  l
+ 1514  gedit *
+ 1515  cd..
+ 1516  cd ..
+ 1517  l
+ 1518  cd ../ByQuadrature/
+ 1519  l
+ 1520  cd results/
+ 1521  l
+ 1522  ls -lrt
+ 1523  rm *before.gnu
+ 1524  rm *after.gnu
+ 1525  l
+ 1526  gnuplot
+ 1527  gedit margbayes*
+ 1528  gedit pbayes.gnu 
+ 1529  python
+ 1530  l
+ 1531  gedit margbayes*
+ 1532  gnuplot
+ 1533  ssh leoninic@topaze.ccc.cea.fr
+ 1534  l
+ 1535  cd final_calibration/double_calibration_
+ 1536  cd final_calibration/double_calibration_withmean/
+ 1537  l
+ 1538  mkdir result
+ 1539  l
+ 1540  mkdir results
+ 1541  cd result
+ 1542  l
+ 1543  cd ..
+ 1544  l
+ 1545  rm -rf result
+ 1546  cd results/
+ 1547  l
+ 1548  mkdir save
+ 1549  cd save/
+ 1550  l
+ 1551  ls ..
+ 1552  l
+ 1553  gedit sampoptalpha.gnu 
+ 1554  gedit sampoptdiam.gnu 
+ 1555  l
+ 1556  cp * ../../../test_algo_opti/
+ 1557  cd ../../../test_algo_opti/
+ 1558  ls results/
+ 1559  cd ..
+ 1560  cd double_calibration_
+ 1561  cd double_calibration_withmean/
+ 1562  l
+ 1563  cd results/
+ 1564  l
+ 1565  mkdir preds
+ 1566  mkdir diag
+ 1567  ls
+ 1568  cd preds/
+ 1569  l
+ 1570  cd ../..
+ 1571  l
+ 1572  cd ..
+ 1573  l
+ 1574  cp - double_calibration_withmean/ simple_calibration_alpha
+ 1575  cp -r double_calibration_withmean/ simple_calibration_alpha
+ 1576  cp -r double_calibration_withmean/ simple_calibration_diam
+ 1577  cd simple_calibration_alpha/
+ 1578  l
+ 1579  cd res
+ 1580  cd ../simple_calibration_diam/
+ 1581  l
+ 1582  cd ..
+ 1583  rm -rf simple_calibration_alpha/
+ 1584  cp -r simple_calibration_diam/ simple_calibration_alpha
+ 1585  cd simple_calibration_alpha/results/
+ 1586  l
+ 1587  rm *.gnu
+ 1588  rm */*.gnu
+ 1589  rm */*/*.gnu
+ 1590  cd ../../simple_calibration_diam/results/
+ 1591  rm *.gnu
+ 1592  rm */*.gnu
+ 1593  cd ../..
+ 1594  l
+ 1595  cd final_calibration/simple_calibration_diam/
+ 1596  l
+ 1597  cd results/
+ 1598  ls
+ 1599  ls -lrt
+ 1600  cd ..
+ 1601  gedit log.txt
+ 1602  scp -r leoninc@cobalt.ccc.cea.fr:/ccc/scratch/cont002/den/leoninic/DEBORA/A6_phicl5 .
+ 1603  scp -r leoninic@cobalt.ccc.cea.fr:/ccc/scratch/cont002/den/leoninic/DEBORA/A6_phicl5 .
+ 1604  cd Documents/Neptune/ResultatsSimu/
+ 1605  l
+ 1606  scp -r leoninic@cobalt171:/ccc/sratch/cont002/den/leoninic/DEBORA/A6_phicl2 .
+ 1607  scp -r leoninic@cobalt.ccc.cea.fr:/ccc/sratch/cont002/den/leoninic/DEBORA/A6_phicl2 .
+ 1608  scp -r leoninic@cobalt.ccc.cea.fr:/ccc/scratch/cont002/den/leoninic/DEBORA/A6_phicl2 .
+ 1609  cd
+ 1610  cd Documents/Code/DEBORA/
+ 1611  l
+ 1612  cd final_calibration/double_calibration_withmean/
+ 1613  l
+ 1614  gedit log.txt
+ 1615  codna activate snowflakes_env
+ 1616  conda activate snowflakes_env
+ 1617  conda install seaborn
+ 1618  cd ..
+ 1619  l
+ 1620  cd simple_calibration_alpha/
+ 1621  l
+ 1622  cd results/save/
+ 1623  l
+ 1624  gedit ~/.bash_aliases 
+ 1625  gedit ~/.bashrc 
+ 1626  cobalt
+ 1627  l
+ 1628  cd ..
+ 1629  l
+ 1630  conda activate snowflakes_env
+ 1631  j
+ 1632  cd
+ 1633  cd Téléchargements/Zotero_linux-x86_64/
+ 1634  l
+ 1635  ./zotero
+ 1636  l
+ 1637  gedit hparsopt.gnu 
+ 1638  gnuplot
+ 1639  zotero
+ 1640  cd
+ 1641  cd Téléchargements/
+ 1642  l
+ 1643  cd Zotero_linux-x86_64/
+ 1644  ./zotero
+ 1645  clear
+ 1646  cd
+ 1647  cd Documents/Code/DEBORA/
+ 1648  l
+ 1649  cd final_calibration/
+ 1650  l
+ 1651  cd surrogate_precision/
+ 1652  l
+ 1653  gedit main.cpp 
+ 1654  cd ..
+ 1655  l
+ 1656  cd test_algo_opti/
+ 1657  l
+ 1658  gedit main.cpp 
+ 1659  l
+ 1660  ls -lrt
+ 1661  cd results/
+ 1662  l
+ 1663  gedit hparsopt.gnu 
+ 1664  l
+ 1665  gedit erroradapt.gnu 
+ 1666  l
+ 1667  ls -lrt
+ 1668  l
+ 1669  cd ..
+ 1670  l
+ 1671  gedit hparsoptimises5.gnu 
+ 1672  l
+ 1673  cd results/
+ 1674  l
+ 1675  gedit erroradapt.gnu 
+ 1676  l
+ 1677  cd ..
+ 1678  l
+ 1679  gedit hparsoptimises5.gnu &
+ 1680  gedit sampoptalpha.gnu 
+ 1681  cd results/
+ 1682  l
+ 1683  gedit erroradapt.gnu 
+ 1684  l
+ 1685  mv erroradapt1.gnu erroradapt3.gnu
+ 1686  mv erroradapt.gnu erroradapt1.gnu
+ 1687  gedit erroradapt1.gnu 
+ 1688  l
+ 1689  mkdir samples
+ 1690  cd ..
+ 1691  l
+ 1692  cp sampoptalpha.gnu results/
+ 1693  l
+ 1694  gedit sampoptalpha.gnu 
+ 1695  cd results/samples/
+ 1696  l
+ 1697  gedit training.gnu 
+ 1698  l
+ 1699  gedit training250.gnu 
+ 1700  gedit training*
+ 1701  gedit training* &
+ 1702  gedit training50cumule.gnu
+ 1703  gedit training250cumule.gnu
+ 1704  l
+ 1705  cd ..
+ 1706  l
+ 1707  gedit erroradapt3.gnu 
+ 1708  l
+ 1709  gedit errorqmc.gnu 
+ 1710  gedit errorlhs.gnu 
+ 1711  gedit errorlhs.gnu $
+ 1712  cd
+ 1713  cd Documents/Journal/
+ 1714  l
+ 1715  git add .
+ 1716  git commit -m "update chap4"
+ 1717  git push
+ 1718  cd ../Code/
+ 1719  l
+ 1720  git add .
+ 1721  git commit -m "update"
+ 1722  git push
+ 1723  python
+ 1724  l
+ 1725  cd ..*
+ 1726  l
+ 1727  cd Neptune/
+ 1728  l
+ 1729  cd data_flux/
+ 1730  l
+ 1731  cd ..
+ 1732  l
+ 1733  cd ResultatsSimu/
+ 1734  l
+ 1735  cd OATs/
+ 1736  l
+ 1737  cd ../..
+ 1738  l
+ 1739  cd final_calibration/test_algo_opti/
+ 1740  l
+ 1741  mkdir results
+ 1742  l
+ 1743  tar -cvf poster_template/
+ 1744  tar -cvf poster_template.tar poster_template/
+ 1745  l
+ 1746  tar -cvf poster_template.tgz poster_template/
+ 1747  l
+ 1748  la
+ 1749  ll
+ 1750  rm poster_template.*
+ 1751  tar -cvzf poster_template.tgz poster_template/
+ 1752  l
+ 1753  cd
+ 1754  cd Documents/Code/DEBORA/
+ 1755  cd final_calibration/test_algo_opti/results/
+ 1756  l
+ 1757  cd samples/
+ 1758  l
+ 1759  ls > o.txt
+ 1760  gedit o.txt 
+ 1761  history > o.txt

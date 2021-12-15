@@ -220,6 +220,7 @@ class DensityOpt : public Density{
     Eigen::VectorXd HparsOpt_quick(Eigen::VectorXd const & theta, Eigen::VectorXd const & hpars_guess,double max_time)const;
     static double optfuncOpt(const std::vector<double> &x, std::vector<double> &grad, void *data);
     static double optfuncOpt_withgrad(const std::vector<double> &x, std::vector<double> &grad, void *data);
+    static double optfuncOpt_nograd(const std::vector<double> &x, std::vector<double> &grad, void *data);
     
     Eigen::VectorXd EvaluateHparOpt(Eigen::VectorXd const & theta) const;
     Eigen::VectorXd EvaluateVarHparOpt(Eigen::VectorXd const & theta) const;

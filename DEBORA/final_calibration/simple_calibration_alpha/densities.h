@@ -174,6 +174,7 @@ class Density
     const std::vector<AUGDATA> *GetExpData() const {return &m_data_exp;}
     const std::vector<Eigen::VectorXd> *GetXconverted() const{return &m_Xprofile_converted;}
     const Eigen::VectorXd GetXprofile() const{return m_Xprofile;}
+    std::vector<Eigen::VectorXd> GetSample()const {return m_samples;}
     Eigen::LDLT<Eigen::MatrixXd> GetLDLT(Eigen::VectorXd const & hpars);
     std::pair<Eigen::VectorXd,Eigen::VectorXd> GetBoundsHpars()const{return std::make_pair(m_lb_hpars,m_ub_hpars);}
     Eigen::VectorXd EvaluateModel(Eigen::VectorXd const &X, Eigen::VectorXd const & theta) const {return m_model(X,theta);}
@@ -250,6 +251,7 @@ class DensityOpt : public Density{
     Eigen::VectorXd compute_grad_analytic(Eigen::VectorXd const & theta, Eigen::VectorXd const & hpars) const;
     Eigen::VectorXd compute_grad_finite_diff(Eigen::VectorXd const & theta, Eigen::VectorXd const & hpars, double pct_distance) const;
 
+    bool correlated_points(Eigen::VectorXd const & theta1, Eigen::VectorXd const & theta2,double threshold) const;
     //Fonctions de MCMC
 
     double Run_Burn_phase_MCMC_opti_expensive(int nburn, Eigen::MatrixXd & COV_init,Eigen::VectorXd &Xcurrent,std::default_random_engine & generator, double max_time);
@@ -261,6 +263,7 @@ class DensityOpt : public Density{
 
     //pour mon opti modif
     //double get_post_hpar(Eigen::VectorXd const & theta_prop, Eigen::VectorXd const & hpars_current, Eigen::VectorXd const & step);
+
 
     //sauvegarde des hpars des gps.
     void WritehGPs(std::string const & filename)const;

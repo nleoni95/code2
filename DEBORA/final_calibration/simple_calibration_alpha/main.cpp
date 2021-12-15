@@ -1,7 +1,6 @@
 // Dans ce fichier : on lit les données du calcul et on les post-traite à notre souhait.
 // Calibration avec le taux de vide et le diamètre en même temps.
-// On n'a pas encore déterminé l'algortihme de sampling adaptatif pour Opti : comment sélectionner les points ?
-// pour le moment je vais simplement faire KOH et Bayes.
+// Master file pour la calibration double.
 
 
 #include <iostream>
@@ -636,13 +635,13 @@ void Run_Burn_Phase_MCMC(int nburn, MatrixXd & COV_init, VectorXd & Xcurrento,fu
   COV_init=CovProp;
 }
 
-
-tuple<vector<VectorXd>,vector<pair<VectorXd,VectorXd>>,vector<VectorXd>> Run_MCMC(int nsteps,int nsamples, VectorXd const & Xinit,MatrixXd const & COV_init,function<double(pair<VectorXd,VectorXd>, VectorXd const &)> const & compute_score, function<pair<VectorXd,VectorXd>(VectorXd)> const & get_hpars,function<bool(VectorXd)> const & in_bounds,default_random_engine & generator){
+tuple<vector<VectorXd>,vector<pair<VectorXd,VectorXd>>,vector<VectorXd>,vector<double>> Run_MCMC(int nsteps,int nsamples, VectorXd const & Xinit,MatrixXd const & COV_init,function<double(pair<VectorXd,VectorXd>, VectorXd const &)> const & compute_score, function<pair<VectorXd,VectorXd>(VectorXd)> const & get_hpars,function<bool(VectorXd)> const & in_bounds,default_random_engine & generator){
   //MCMC générique. renvoie un tuple <samples,hparsofsamples,allsamples>
   int dim_mcmc=Xinit.size();
   vector<VectorXd> samples;
   vector<pair<VectorXd,VectorXd>> hparsofsamples;
   vector<VectorXd> allsamples;
+  vector<double> scores_of_samples;
   uniform_real_distribution<double> distU(0,1);
   normal_distribution<double> distN(0,1);
   MatrixXd COV=COV_init;
@@ -675,6 +674,7 @@ tuple<vector<VectorXd>,vector<pair<VectorXd,VectorXd>>,vector<VectorXd>> Run_MCM
     if(i%(nsteps/nsamples)==0 && i>0){
       samples.push_back(Xcurrent);
       hparsofsamples.push_back(hparscurrent);
+      scores_of_samples.push_back(fcurrent);
     }
     allsamples.push_back(Xcurrent);
   }
@@ -687,7 +687,7 @@ tuple<vector<VectorXd>,vector<pair<VectorXd,VectorXd>>,vector<VectorXd>> Run_MCM
   cout << samples[2].transpose() << endl;
   cout << samples[3].transpose() << endl;
   cout << samples[4].transpose() << endl;
-  auto tp=make_tuple(samples,hparsofsamples,allsamples);
+  auto tp=make_tuple(samples,hparsofsamples,allsamples,scores_of_samples);
   return tp;
 }
 
@@ -799,23 +799,32 @@ VectorXd optroutine(nlopt::vfunc optfunc,void *data_ptr, VectorXd &X, VectorXd c
 double optfuncKOH_Double(const std::vector<double> &x, std::vector<double> &grad, void *data){
   /* fonction à optimiser pour trouver les hpars koh avec deux fonctions.*/
   //alpha=1, diam=2.
-  auto ptp=(tuple<const MatrixXd *,Density*>*) data; //cast
+  auto ptp=(tuple<const MatrixXd *,const MatrixXd *,Density*,Density*>*) data; //cast
   auto tp=*ptp;
   const MatrixXd *Residus1=get<0>(tp);
-  const Density *d1=get<1>(tp);
+  const MatrixXd *Residus2=get<1>(tp);
+  const Density *d1=get<2>(tp);
+  const Density *d2=get<3>(tp);
   const vector<VectorXd> *xconv1=d1->GetXconverted();
+  const vector<VectorXd> *xconv2=d2->GetXconverted();
   VectorXd h=VtoVXD2(x);
   VectorXd hpars_alpha=h.head(3);
+  VectorXd hpars_diam=h.tail(3);
   double logvstyp=30; //à choisir.
   //calcul de la logvs sur le grid
   vector<double> prob1(Residus1->cols());
+  vector<double> prob2(Residus2->cols());
   MatrixXd G1=d1->Gamma(*xconv1,hpars_alpha);
+  MatrixXd G2=d2->Gamma(*xconv2,hpars_diam);
   LDLT<MatrixXd> ldlt1(G1);
+  LDLT<MatrixXd> ldlt2(G2);
   //VectorXd pmean=VectorXd::Zero(Residus1->rows());
   //au lieu du transform, j'essaye une boucle simple.
   for(int i=0;i<Residus1->cols();i++){
     double g1=d1->loglikelihood_fast(Residus1->col(i),ldlt1);
+    double g2=d2->loglikelihood_fast(Residus2->col(i),ldlt2);
     prob1[i]=g1;
+    prob2[i]=g2;
   }
   //normalisation et passage à l'exponentielle.
   //le max doit être le même sur toutes les itérations... d'où la nécessité de le définir à l'extérieur !!!
@@ -824,27 +833,33 @@ double optfuncKOH_Double(const std::vector<double> &x, std::vector<double> &grad
     if(isinf(f)){cerr << "erreur myoptfunc_koh : infini prob1" << endl;}
     return f;
   });
-
+  transform(prob2.begin(),prob2.end(),prob2.begin(),[logvstyp](const double &d)->double {
+    double f=exp(d-logvstyp);
+    if(isinf(f)){cerr << "erreur myoptfunc_koh : infini prob2" << endl;}
+    return f;
+  });
   //calcul de l'intégrale. suppose un grid régulier. modifier si on veut un prior pour les paramètres.
   double res(0);
   for(int i=0;i<prob1.size();i++){
-    res+=prob1[i];
+    res+=prob1[i]*prob2[i];
   }
-  res*=exp(d1->EvaluateLogPHpars(hpars_alpha));
+  res*=exp(d1->EvaluateLogPHpars(hpars_alpha))*exp(d2->EvaluateLogPHpars(hpars_diam));
   return res;
 };
 
-VectorXd HparsKOH_double(VectorXd const & hpars_guess,VectorXd const & lb_hpars,VectorXd const & ub_hpars,Density const & D1,vector<AUGDATA> const & data_exp_1){
+VectorXd HparsKOH_double(VectorXd const & hpars_guess,VectorXd const & lb_hpars,VectorXd const & ub_hpars,Density const & D1, Density const & D2,vector<AUGDATA> const & data_exp_1,vector<AUGDATA> const & data_exp_2){
   //calcul de hpars koh avec les deux fonctions de vraisemblance.
   //les deux densités sont construites sur le même grid.
   VectorXd guess=hpars_guess;
   vector<VectorXd> Grid=*(D1.GetGrid());
   MatrixXd Residustheta1(data_exp_1[0].Value().size(),Grid.size());
+  MatrixXd Residustheta2(data_exp_2[0].Value().size(),Grid.size());
   for(int i=0;i<Grid.size();i++){
     VectorXd theta=Grid[i];
     Residustheta1.col(i)=data_exp_1[0].Value()-D1.EvaluateModel(data_exp_1[0].GetX(),theta);
+    Residustheta2.col(i)=data_exp_2[0].Value()-D2.EvaluateModel(data_exp_2[0].GetX(),theta);
   }
-  auto tp=make_tuple(&Residustheta1,&D1);
+  auto tp=make_tuple(&Residustheta1,&Residustheta2,&D1,&D2);
   guess=optroutine(optfuncKOH_Double,&tp,guess,lb_hpars,ub_hpars,600); //max_time en secondes
   return guess;
 }
@@ -922,6 +937,24 @@ int find_max_ll_double_densities(function<double(pair<VectorXd,VectorXd>, Vector
   }
   auto itmax=max_element(vlik.begin(),vlik.end());
   return distance(vlik.begin(),itmax);
+}
+
+double estimate_evidence(function<double(pair<VectorXd,VectorXd>, VectorXd const &)> const & compute_score, function<pair<VectorXd,VectorXd>(VectorXd)> const & get_hpars,int npoints, default_random_engine & generator){
+  uniform_real_distribution<double> distU(0,1);
+  vector<VectorXd> thetas(npoints);
+  for(int i=0;i<npoints;i++){
+    VectorXd theta(5);
+    for(int j=0;j<theta.size();j++){
+      theta(j)=distU(generator);
+    }
+    thetas[i]=theta;
+  }
+  double integral=0;
+  for(int i=0;i<npoints;i++){
+    auto hpars=get_hpars(thetas[i]);
+    integral+=exp(compute_score(hpars,thetas[i]));
+  }
+  return integral/npoints;
 }
 
 const double Big = -1.e16;
@@ -1178,14 +1211,9 @@ int main(int argc, char **argv){
     auto lambda_priormean_alpha=[size_xexpe](VectorXd const & X, VectorXd const & hpars){
       return VectorXd::Zero(size_xexpe);
     };
-    auto lambda_priormean_diam=[size_xexpe](VectorXd const & X, VectorXd const & hpars){
-      return VectorXd::Zero(size_xexpe);
-    };
 
-    //définition du modèle ! //coefs dans 0-1
-    auto lambda_model_diam=[&vgp_d,&VP_d,&featureMeans_d,&Acoefs_d](VectorXd const & X,VectorXd const & theta)->VectorXd{
-      return EvaluateMeanGPPCA(vgp_d,theta,VP_d,Acoefs_d,featureMeans_d);
-    };
+
+ 
 
     auto lambda_model_alpha=[&vgp_a,&VP_a,&featureMeans_a,&Acoefs_a](VectorXd const & X,VectorXd const & theta)->VectorXd{
       return EvaluateMeanGPPCA(vgp_a,theta,VP_a,Acoefs_a,featureMeans_a);
@@ -1224,6 +1252,15 @@ int main(int argc, char **argv){
     //afichage du grid qmc
     doe_init.WriteGrid("results/save/grid.gnu");
 
+        //définition du modèle ! //coefs dans 0-1
+    auto lambda_model_diam=[&vgp_d,&VP_d,&featureMeans_d,&Acoefs_d](VectorXd const & X,VectorXd const & theta)->VectorXd{
+      return EvaluateMeanGPPCA(vgp_d,theta,VP_d,Acoefs_d,featureMeans_d);
+    };
+
+    auto lambda_priormean_diam=[size_xexpe](VectorXd const & X, VectorXd const & hpars){
+      return VectorXd::Zero(size_xexpe);
+    };
+
     //instance de base de densité pour alpha
     Density MainDensity_alpha(doe_init);
     MainDensity_alpha.SetLogPriorPars(logprior_pars);
@@ -1235,7 +1272,7 @@ int main(int argc, char **argv){
     MainDensity_alpha.SetDataExp(data_exp_alpha);
     MainDensity_alpha.SetXprofile(Xgrid_num);
 
-    //instance de base de densité pour diam
+    //pour prédictions croisées
     Density MainDensity_diam(doe_init);
     MainDensity_diam.SetLogPriorPars(logprior_pars);
     MainDensity_diam.SetLogPriorHpars(logprior_hpars);
@@ -1246,24 +1283,236 @@ int main(int argc, char **argv){
     MainDensity_diam.SetDataExp(data_exp_diam);
     MainDensity_diam.SetXprofile(Xgrid_num);
 
-    auto in_bounds=[&MainDensity_alpha,&MainDensity_diam](VectorXd const & X){
+
+
+    auto in_bounds=[&MainDensity_alpha](VectorXd const & X){
       if(X.size()==5){
         return MainDensity_alpha.in_bounds_pars(X);
       }
       if(X.size()==8){
-        VectorXd Xmid(3);
-        Xmid << X(5),X(6),X(7);
-        return MainDensity_alpha.in_bounds_pars(X.head(5)) && MainDensity_alpha.in_bounds_hpars(Xmid);
+        return MainDensity_alpha.in_bounds_pars(X.head(5)) && MainDensity_alpha.in_bounds_hpars(X.tail(3));
       }
       cerr << "nonconform X size" << endl;
       return false;
     };
 
+    // Calcul des hpars KOH avec les deux fonctions de vraisemblance.
+    VectorXd hpars_double_guess(6);
+    hpars_double_guess << hpars_z_guess_alpha(0),hpars_z_guess_alpha(1),hpars_z_guess_alpha(2),hpars_z_guess_diam(0),hpars_z_guess_diam(1),hpars_z_guess_diam(2);
+    VectorXd lb_hpars_double(6);
+    lb_hpars_double << lb_hpars_alpha(0),lb_hpars_alpha(1),lb_hpars_alpha(2),lb_hpars_diam(0),lb_hpars_diam(1),lb_hpars_diam(2);
+    VectorXd ub_hpars_double(6);
+    ub_hpars_double << ub_hpars_alpha(0),ub_hpars_alpha(1),ub_hpars_alpha(2),ub_hpars_diam(0),ub_hpars_diam(1),ub_hpars_diam(2);
+
+    //phase KOH
+  
+    {
+    cout << "hpars koh double (guess): " << hpars_double_guess.transpose() << endl;
+    auto begin=chrono::steady_clock::now();
+    
+
+    VectorXd hparskoh(3);
+    //hparskohdouble << 0.098,0.0020,0.0018,0.000364,7.4e-7,0.0045;
+
+    hparskoh=MainDensity_alpha.HparsKOH(hpars_z_guess_alpha,200);
+    cout << "hpars koh after optimisation : " << hparskoh.transpose() << endl;
+      cout << endl << "Début KOH" << endl;
+      VectorXd hparskoh_alpha=hparskoh;
+      cout << "hpars koh alpha : " << hparskoh_alpha.transpose() << endl;
+
+      auto get_hpars_koh=[&hparskoh_alpha](VectorXd const & X){
+        auto p=make_pair(hparskoh_alpha,hparskoh_alpha);
+        return p;
+      };
+
+      //calcul des LDLT pour KOH.
+      //à mon avis ces 2 vecteurs sont les mêmes, mais bon
+      const vector<VectorXd> *xconv_alpha=MainDensity_alpha.GetXconverted();
+      MatrixXd G1=MainDensity_alpha.Gamma(*xconv_alpha,hparskoh_alpha);
+      LDLT<MatrixXd> LDLT1(G1);
+
+      auto compute_score_koh=[&MainDensity_alpha,&data_exp_alpha,&data_exp_diam,&LDLT1,&hparskoh_alpha](pair<VectorXd,VectorXd> p, VectorXd const &X){
+        //on ne se sert pas de p car on connaît déjà les hpars.
+        double ll1=MainDensity_alpha.loglikelihood_theta_fast(X,hparskoh_alpha,LDLT1);
+        double lp=logprior_pars(X);
+        return ll1+lp;
+      };
+
+
+      //run de la MCMC
+
+      auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,Xinit,COV_init,compute_score_koh,get_hpars_koh,in_bounds,generator);
+
+      auto end=chrono::steady_clock::now();
+      cout << "Temps pour KOH : " << chrono::duration_cast<chrono::seconds>(end-begin).count() << endl;
+
+      vector<VectorXd> samples_koh=get<0>(res);
+      vector<VectorXd> allsamples_koh=get<2>(res);
+      vector<pair<VectorXd,VectorXd>> vhpars_koh=get<1>(res);
+      vector<VectorXd> vhpars_koh_alpha(vhpars_koh.size());
+      vector<VectorXd> vhpars_koh_diam(vhpars_koh.size());
+      for(int i=0;i<vhpars_koh.size();i++){
+        auto p=vhpars_koh[i];
+        vhpars_koh_alpha[i]=p.first;
+        vhpars_koh_diam[i]=p.second;
+      }
+
+      //Set des samples
+      MainDensity_alpha.SetNewSamples(samples_koh);  
+      MainDensity_alpha.SetNewAllSamples(allsamples_koh);
+      MainDensity_alpha.SetNewHparsOfSamples(vhpars_koh_alpha);
+      MainDensity_diam.SetNewSamples(samples_koh); 
+
+      //diagnostic
+      MainDensity_alpha.Autocor_diagnosis(nautocor,"results/diag/autocorkoh.gnu");
+
+      //écriture des samples
+      MainDensity_alpha.WriteSamples("results/save/sampkohalpha.gnu");
+
+      //prédictions
+      MainDensity_alpha.WritePredictionsF(Xgrid_num,"results/preds/predskohalphaF.gnu");
+      MainDensity_alpha.WritePredictions(Xgrid_num,"results/preds/predskohalpha.gnu");
+
+      //prédictions croisées
+
+      MainDensity_diam.WritePredictionsF(Xgrid_num,"results/preds/predskohdiamF.gnu");
+    }
+
+
+        
+
+
+    ///phase opti avec choix de points de training
+      
+    {
+      cout << "début double calibration opti avec nsteps =" << nombre_steps_mcmc <<endl;
+      auto begin=chrono::steady_clock::now();
+      DensityOpt DensOpt_alpha(MainDensity_alpha); 
+      DensityOpt DensOpt_diam(MainDensity_diam);   
+
+      DoE doe_light(lb_t,ub_t,50,1); // DoE light de 50 points.
+
+      DensOpt_alpha.SetNewDoE(doe_light);
+
+      DensOpt_alpha.Compute_optimal_hpars(2);
+
+      DensOpt_alpha.BuildHGPs_noPCA(Kernel_GP_Matern32,Bounds_hpars_gp,hpars_gp_guess);
+      DensOpt_alpha.opti_allgps(hpars_gp_guess);
+      //DensOpt_alpha.Test_hGPs();
+
+
    
-             /// phase full bayes
+      
+
+      auto get_hpars_opti=[&DensOpt_alpha](VectorXd const & X){
+        VectorXd hparsopt_alpha=DensOpt_alpha.EvaluateHparOpt(X);
+        auto p=make_pair(hparsopt_alpha,hparsopt_alpha);
+        return p;
+      };
+        
+            
+      auto compute_score_opti=[&data_exp_alpha,&data_exp_diam,&DensOpt_alpha](pair<VectorXd,VectorXd> p, VectorXd const &X){
+        double ll1=DensOpt_alpha.loglikelihood_theta(X,p.first);
+        double lp=logprior_pars(X);
+        return ll1+lp;
+      };
+
+      //phase de rajout d'hyperparamètres par MCMC, avec sélection par la variance de prédiction.
+      
+      //test de la performance du grid initial.
+
+      auto add_npoints=[&DensOpt_alpha,&nombre_steps_mcmc,&Xinit,&COV_init,&compute_score_opti,&get_hpars_opti,&in_bounds,&Bounds_hpars_gp,&hpars_gp_guess](int npoints,default_random_engine &generator, int & npts_total, int nsamples_mcmc){
+          //ajout de n points obtenus à partir d'une MCMC.
+          npts_total+=npoints;
+          auto begin=chrono::steady_clock::now();
+          //récupération de nsamples_mcmc points de la MCMC.
+          auto res=Run_MCMC(nombre_steps_mcmc,nsamples_mcmc,Xinit,COV_init,compute_score_opti,get_hpars_opti,in_bounds,generator);
+          auto begin_hgps=chrono::steady_clock::now();
+          vector<VectorXd> samples_opti=get<0>(res);
+          vector<double> scores_of_samples=get<3>(res);
+          //calcul du critère en chaque point.
+          vector<VectorXd> selected_thetas;
+          vector<double> weights(samples_opti.size());
+          for(int j=0;j<weights.size();j++){
+            double a=DensOpt_alpha.EstimatePredError(samples_opti[j]);
+            weights[j]=a;
+          }
+          for(int i=0;i<npoints;i++){
+            std::discrete_distribution<int> distribution(weights.begin(), weights.end());
+            int drawn = distribution(generator);
+            weights[drawn]=0;
+            selected_thetas.push_back(samples_opti[drawn]);
+          }
+          //simple check
+          cout << "rajout de " << selected_thetas.size() << " points :" << endl;
+          //rajout des points 
+          DensOpt_alpha.update_hGPs_noPCA(selected_thetas,Kernel_GP_Matern32,Bounds_hpars_gp,hpars_gp_guess,1);
+          DensOpt_alpha.opti_allgps(hpars_gp_guess);
+          auto end_hgps=chrono::steady_clock::now();
+        };
+
+      int npts_total=npts_init;
+      //rajout de 200 points
+      add_npoints(200,generator,npts_total,4000);
+      //rerajout de 200 points
+      add_npoints(200,generator,npts_total,4000);
+      
+        
+
+      //calibration
+      
+      auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,Xinit,COV_init,compute_score_opti,get_hpars_opti,in_bounds,generator);
+      
+      auto end=chrono::steady_clock::now();
+      cout << "Temps pour OPT : " << chrono::duration_cast<chrono::seconds>(end-begin).count() << endl;
+      
+      
+      
+      auto samples_opti=get<0>(res);
+      vector<VectorXd> allsamples_opti=get<2>(res);
+      vector<pair<VectorXd,VectorXd>> vhpars_opti=get<1>(res);
+      vector<VectorXd> vhpars_opti_alpha(vhpars_opti.size());
+      for(int i=0;i<vhpars_opti.size();i++){
+        auto p=vhpars_opti[i];
+        vhpars_opti_alpha[i]=p.first;
+      }
+        //Set des samples
+        DensOpt_alpha.SetNewSamples(samples_opti);
+        DensOpt_alpha.SetNewAllSamples(allsamples_opti);
+        DensOpt_alpha.SetNewHparsOfSamples(vhpars_opti_alpha);
+
+        DensOpt_diam.SetNewSamples(samples_opti);
+        //diagnostic
+        DensOpt_alpha.Autocor_diagnosis(nautocor,"results/diag/autocoropt+.gnu");
+
+        //écriture des samples
+        DensOpt_alpha.WriteSamples("results/save/sampopt+alpha.gnu");
+
+        DensOpt_alpha.WriteMCMCSamples("results/save/allsampopt+alpha.gnu"); 
+
+        //prédictions
+        DensOpt_alpha.WritePredictionsF(Xgrid_num,"results/preds/predsopt+alphaF.gnu");
+        DensOpt_diam.WritePredictionsF(Xgrid_num,"results/preds/predsopt+diamF.gnu");
+
+        DensOpt_alpha.WritePredictions(Xgrid_num,"results/preds/predsopt+alpha.gnu");
+
+
+
+
+      //le calcul de l'évidence doit se faire quand les hpars sont les plus précis possibles.
+     
+    }
+
+    
+  
+
+
+     /// phase full bayes
     
     {
         cout << "début double calibration full bayes" << endl;
+
+      auto begin=chrono::steady_clock::now();
 
         auto get_hpars_fb=[](VectorXd const & X){
           //non utilisée
@@ -1271,7 +1520,7 @@ int main(int argc, char **argv){
           return p;
         };
 
-        auto compute_score_fb=[&MainDensity_diam,&MainDensity_alpha](pair<VectorXd,VectorXd> p, VectorXd const &X){
+        auto compute_score_fb=[&MainDensity_alpha](pair<VectorXd,VectorXd> p, VectorXd const &X){
           //on ne se sert pas de p ici
           VectorXd theta=X.head(5);
           VectorXd hpars_alpha=X.tail(3);
@@ -1289,16 +1538,16 @@ int main(int argc, char **argv){
         COV_init_fb(5,5)*=pow(8e-2,2); //sedm bougé
         COV_init_fb(6,6)*=pow(1e-4,2); //sobs
         COV_init_fb(7,7)*=pow(5e-4,2); //lcor 
-
         COV_init_fb*=0.5;
 
         cout << "COV init fb : " << endl << COV_init_fb << endl;
 
         //run de la MCMC
-        cout << "nombre steps mcmc full bayes :" << 3*nombre_steps_mcmc << endl;
+        cout << "nombre steps mcmc full bayes :" << 6*nombre_steps_mcmc << endl;
 
-        auto res=Run_MCMC(3*nombre_steps_mcmc,nombre_samples_collected,Xinit_fb,COV_init_fb,compute_score_fb,get_hpars_fb,in_bounds,generator);
-
+      auto res=Run_MCMC(6*nombre_steps_mcmc,nombre_samples_collected,Xinit_fb,COV_init_fb,compute_score_fb,get_hpars_fb,in_bounds,generator);
+      auto end=chrono::steady_clock::now();
+      cout << "Temps pour BAYES : " << chrono::duration_cast<chrono::seconds>(end-begin).count() << endl;
         //diviser les samples en theta et hpars
         vector<VectorXd> rough_samples_fb=get<0>(res);
         int nsamples_fb=rough_samples_fb.size();
@@ -1316,341 +1565,28 @@ int main(int argc, char **argv){
 
         //Set des samples
         MainDensity_alpha.SetNewSamples(clean_samples_fb);
-        MainDensity_diam.SetNewSamples(clean_samples_fb);
         MainDensity_alpha.SetNewAllSamples(allsamples_fb);
-        MainDensity_diam.SetNewAllSamples(allsamples_fb);
         MainDensity_alpha.SetNewHparsOfSamples(vhpars_fb_alpha);
-        MainDensity_diam.SetNewHparsOfSamples(vhpars_fb_alpha); //nécessaire
+        MainDensity_diam.SetNewSamples(clean_samples_fb);
 
         //diagnostic
         MainDensity_alpha.Autocor_diagnosis(nautocor,"results/diag/autocorfb.gnu");
 
         //écriture des samples
         MainDensity_alpha.WriteSamples("results/save/sampfbalpha.gnu");
-        MainDensity_diam.WriteSamples("results/save/sampfbdiam.gnu"); 
         MainDensity_alpha.WriteMCMCSamples("results/save/allsampfbalpha.gnu");
-        MainDensity_diam.WriteMCMCSamples("results/save/allsampfbdiam.gnu");
 
 
 
         //prédictions
         MainDensity_alpha.WritePredictionsF(Xgrid_num,"results/preds/predsfbalphaF.gnu");
-        MainDensity_diam.WritePredictionsF(Xgrid_num,"results/preds/predsfbdiamF.gnu");
         MainDensity_alpha.WritePredictions(Xgrid_num,"results/preds/predsfbalpha.gnu");
-        MainDensity_diam.WritePredictions(Xgrid_num,"results/preds/predsfbdiam.gnu");
-        MainDensity_alpha.WriteFinePredictions(Xgrid_num,"results/preds/predsfbalphafine.gnu");
-        MainDensity_diam.WriteFinePredictions(Xgrid_num,"results/preds/predsfbdiamfine.gnu");
+
+
+        MainDensity_diam.WritePredictionsF(Xgrid_num,"results/preds/predsfbdiamF.gnu");
+
     }
 
   exit(0);
-
-
-
-    //phase KOH
-  
-    {
-      cout << "hpars koh (guess): " << hpars_z_guess_alpha.transpose() << endl;
-    auto b=chrono::steady_clock::now();
-    VectorXd hparskohdouble=HparsKOH_double(hpars_z_guess_alpha,lb_hpars_alpha,ub_hpars_alpha,MainDensity_alpha,data_exp_alpha);
-    auto end=chrono::steady_clock::now();
-    cout << "hpars koh after optimisation : " << hparskohdouble.transpose() << endl;
-    cout <<"time : " << chrono::duration_cast<chrono::seconds>(end-b).count() << endl;
-      cout << endl << "Début KOH" << endl;
-      VectorXd hparskoh_alpha=hparskohdouble.head(3);
-      cout << "hpars koh alpha : " << hparskoh_alpha.transpose() << endl;
-
-      auto get_hpars_koh=[&hparskoh_alpha](VectorXd const & X){
-        auto p=make_pair(hparskoh_alpha,hparskoh_alpha);
-        return p;
-      };
-
-      //calcul des LDLT pour KOH.
-      //à mon avis ces 2 vecteurs sont les mêmes, mais bon
-      const vector<VectorXd> *xconv_alpha=MainDensity_alpha.GetXconverted();
-      const vector<VectorXd> *xconv_diam=MainDensity_diam.GetXconverted();
-      MatrixXd G1=MainDensity_alpha.Gamma(*xconv_alpha,hparskoh_alpha);
-      LDLT<MatrixXd> LDLT1(G1);
-
-      auto compute_score_koh=[&MainDensity_diam,&MainDensity_alpha,&data_exp_alpha,&LDLT1,&hparskoh_alpha](pair<VectorXd,VectorXd> p, VectorXd const &X){
-        //on ne se sert pas de p car on connaît déjà les hpars.
-        double ll1=MainDensity_alpha.loglikelihood_theta_fast(X,hparskoh_alpha,LDLT1);
-        double lp=logprior_pars(X);
-        return ll1+lp;
-      };
-
-
-      //run de la MCMC
-
-      auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,Xinit,COV_init,compute_score_koh,get_hpars_koh,in_bounds,generator);
-
-      vector<VectorXd> samples_koh=get<0>(res);
-      vector<VectorXd> allsamples_koh=get<2>(res);
-      vector<pair<VectorXd,VectorXd>> vhpars_koh=get<1>(res);
-      vector<VectorXd> vhpars_koh_alpha(vhpars_koh.size());
-      for(int i=0;i<vhpars_koh.size();i++){
-        auto p=vhpars_koh[i];
-        vhpars_koh_alpha[i]=p.first;
-      }
-
-      //Set des samples
-      MainDensity_alpha.SetNewSamples(samples_koh);
-      MainDensity_diam.SetNewSamples(samples_koh);    
-      MainDensity_alpha.SetNewAllSamples(allsamples_koh);
-      MainDensity_diam.SetNewAllSamples(allsamples_koh);
-      MainDensity_alpha.SetNewHparsOfSamples(vhpars_koh_alpha);
-      MainDensity_diam.SetNewHparsOfSamples(vhpars_koh_alpha); //nécessaire pour bien fonctionner
-
-      //diagnostic
-      MainDensity_alpha.Autocor_diagnosis(nautocor,"results/diag/autocorkoh.gnu");
-
-      //écriture des samples
-      MainDensity_alpha.WriteSamples("results/save/sampkohalpha.gnu");
-      MainDensity_diam.WriteSamples("results/save/sampkohdiam.gnu"); 
-
-      //prédictions
-      MainDensity_alpha.WritePredictionsF(Xgrid_num,"results/preds/predskohalphaF.gnu");
-      MainDensity_diam.WritePredictionsF(Xgrid_num,"results/preds/predskohdiamF.gnu");
-      MainDensity_alpha.WritePredictions(Xgrid_num,"results/preds/predskohalpha.gnu");
-      MainDensity_diam.WritePredictions(Xgrid_num,"results/preds/predskohdiam.gnu");
-    }
-
-
-    
-
-  ///phase opti avec gros grid QMC
-      
-    {
-      cout << "début double calibration opti avec nsteps =" << nombre_steps_mcmc <<endl;
-      DensityOpt DensOpt_alpha(MainDensity_alpha);     
-      DensityOpt DensOpt_diam(MainDensity_diam);
-
-      //construction d'un grid de vérification pour les hGPs, en alpha et diam.
-      DoE doe_verif_hpars(lb_t,ub_t,500,1);
-      vector<VectorXd> thetas_verif=doe_verif_hpars.GetGrid();
-      vector<VectorXd> halpha_verif(thetas_verif.size());
-      vector<VectorXd> hdiam_verif(thetas_verif.size());
-      for(int i=0;i<thetas_verif.size();i++){
-        halpha_verif[i]=DensOpt_alpha.HparsOpt(thetas_verif[i],hpars_z_guess_alpha,0.5);
-        hdiam_verif[i]=DensOpt_diam.HparsOpt(thetas_verif[i],hpars_z_guess_diam,0.5);
-      }
-
-
-      DoE doe_new_opti(lb_t,ub_t,500,1000);
-      DensOpt_alpha.SetNewDoE(doe_new_opti);
-      DensOpt_diam.SetNewDoE(doe_new_opti);
-      
-      DensOpt_alpha.Compute_optimal_hpars(4);
-      //DensOpt_diam.Compute_optimal_hpars(4);
-
-      DensOpt_alpha.BuildHGPs_noPCA(Kernel_GP_Matern32,Bounds_hpars_gp,hpars_gp_guess);
-      DensOpt_alpha.opti_allgps(hpars_gp_guess);
-      cout << DensOpt_alpha.Test_hGPs_on_sample(thetas_verif,halpha_verif).transpose() << endl;
-
-      //DensOpt_diam.BuildHGPs_noPCA(Kernel_GP_Matern32,Bounds_hpars_gp,hpars_gp_guess);
-      //DensOpt_diam.opti_allgps(hpars_gp_guess);
-      //cout << DensOpt_diam.Test_hGPs_on_sample(thetas_verif,halpha_verif).transpose() << endl;
-      
-
-      auto get_hpars_opti=[&DensOpt_alpha,&DensOpt_diam](VectorXd const & X){
-        VectorXd hparsopt_alpha=DensOpt_alpha.EvaluateHparOpt(X);
-        //VectorXd hparsopt_diam=DensOpt_diam.EvaluateHparOpt(X);
-        auto p=make_pair(hparsopt_alpha,hparsopt_alpha);
-        return p;
-      };
-        
-            
-      auto compute_score_opti=[&data_exp_alpha,&data_exp_diam,&DensOpt_alpha,&DensOpt_diam](pair<VectorXd,VectorXd> p, VectorXd const &X){
-        double ll1=DensOpt_alpha.loglikelihood_theta(X,p.first);
-        //double ll2=DensOpt_diam.loglikelihood_theta(X,p.second);
-        double lp=logprior_pars(X);
-        return ll1+lp;
-      };
-     
-      //calibration
-      {
-        auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,Xinit,COV_init,compute_score_opti,get_hpars_opti,in_bounds,generator);
-        auto samples_opti=get<0>(res);
-        vector<VectorXd> allsamples_opti=get<2>(res);
-        vector<pair<VectorXd,VectorXd>> vhpars_opti=get<1>(res);
-        vector<VectorXd> vhpars_opti_alpha(vhpars_opti.size());
-        vector<VectorXd> vhpars_opti_diam(vhpars_opti.size());
-        for(int i=0;i<vhpars_opti.size();i++){
-          auto p=vhpars_opti[i];
-          vhpars_opti_alpha[i]=p.first;
-          vhpars_opti_diam[i]=p.second;
-        }
-        //Set des samples
-        MainDensity_alpha.SetNewSamples(samples_opti);
-        MainDensity_diam.SetNewSamples(samples_opti);
-        MainDensity_alpha.SetNewAllSamples(allsamples_opti);
-        MainDensity_diam.SetNewAllSamples(allsamples_opti);
-        MainDensity_alpha.SetNewHparsOfSamples(vhpars_opti_alpha);
-        MainDensity_diam.SetNewHparsOfSamples(vhpars_opti_diam);
-
-        //diagnostic
-        MainDensity_alpha.Autocor_diagnosis(nautocor,"results/diag/autocoropt.gnu");
-
-        //écriture des samples
-        MainDensity_alpha.WriteSamples("results/save/sampoptalpha.gnu");
-        MainDensity_diam.WriteSamples("results/save/sampoptdiam.gnu"); 
-
-        //prédictions
-        MainDensity_alpha.WritePredictionsF(Xgrid_num,"results/preds/predsoptalphaF.gnu");
-        MainDensity_diam.WritePredictionsF(Xgrid_num,"results/preds/predsoptdiamF.gnu");
-
-        MainDensity_alpha.WritePredictions(Xgrid_num,"results/preds/predsoptalpha.gnu");
-        MainDensity_diam.WritePredictions(Xgrid_num,"results/preds/predsoptdiam.gnu");
-
-        MainDensity_alpha.WriteFinePredictions(Xgrid_num,"results/preds/predsoptalphafine.gnu");
-        MainDensity_diam.WriteFinePredictions(Xgrid_num,"results/preds/predsoptdiamfine.gnu");
-
-      }         
-    }
-    
- exit(0);
-
-
-
-
-    
-   
-
-        
-
-
-
-
-
- ///phase opti avec choix de points de training
-      
-    {
-      cout << "début double calibration opti avec nsteps =" << nombre_steps_mcmc <<endl;
-      DensityOpt DensOpt_alpha(MainDensity_alpha);     
-      DensityOpt DensOpt_diam(MainDensity_diam);
-
-      DoE doe_light(lb_t,ub_t,50,1); // DoE light de 50 points.
-
-      DensOpt_alpha.SetNewDoE(doe_light);
-      DensOpt_diam.SetNewDoE(doe_light);
-
-      DensOpt_alpha.Compute_optimal_hpars(2);
-      DensOpt_diam.Compute_optimal_hpars(2);
-
-      DensOpt_alpha.BuildHGPs_noPCA(Kernel_GP_Matern32,Bounds_hpars_gp,hpars_gp_guess);
-      DensOpt_alpha.opti_allgps(hpars_gp_guess);
-      //DensOpt_alpha.Test_hGPs();
-
-      DensOpt_diam.BuildHGPs_noPCA(Kernel_GP_Matern32,Bounds_hpars_gp,hpars_gp_guess);
-      DensOpt_diam.opti_allgps(hpars_gp_guess);
-      //DensOpt_diam.Test_hGPs();
-      
-
-      auto get_hpars_opti=[&DensOpt_alpha,&DensOpt_diam](VectorXd const & X){
-        VectorXd hparsopt_alpha=DensOpt_alpha.EvaluateHparOpt(X);
-        VectorXd hparsopt_diam=DensOpt_diam.EvaluateHparOpt(X);
-        auto p=make_pair(hparsopt_alpha,hparsopt_diam);
-        return p;
-      };
-        
-            
-      auto compute_score_opti=[&data_exp_alpha,&data_exp_diam,&DensOpt_alpha,&DensOpt_diam](pair<VectorXd,VectorXd> p, VectorXd const &X){
-        double ll1=DensOpt_alpha.loglikelihood_theta(X,p.first);
-        double ll2=DensOpt_diam.loglikelihood_theta(X,p.second);
-        double lp=logprior_pars(X);
-        return ll1+ll2+lp;
-      };
-
-      //phase de rajout d'hyperparamètres par MCMC, avec sélection par la variance de prédiction.
-      
-      {
-  
-
-        //test de la performance du grid initial.
-
-        auto add_npoints=[&DensOpt_diam,&DensOpt_alpha,&nombre_steps_mcmc,&Xinit,&COV_init,&compute_score_opti,&get_hpars_opti,&in_bounds,&Bounds_hpars_gp,&hpars_gp_guess](int npoints,default_random_engine &generator, int & npts_total, int nsamples_mcmc){
-          //ajout de n points obtenus à partir d'une MCMC.
-          npts_total+=npoints;
-          auto begin=chrono::steady_clock::now();
-          //récupération de nsamples_mcmc points de la MCMC.
-          auto res=Run_MCMC(nombre_steps_mcmc,nsamples_mcmc,Xinit,COV_init,compute_score_opti,get_hpars_opti,in_bounds,generator);
-          auto begin_hgps=chrono::steady_clock::now();
-          vector<VectorXd> samples_opti=get<0>(res);
-          for(int i=0;i<npoints;i++){
-            //calcul de la variance de prédiction en chaque point. pas besoin de retirer les points déjà sélectionnés puisque la variance de prédiction sera déjà très faible dessus.
-            vector<double> varpreds(samples_opti.size());
-            for(int j=0;j<varpreds.size();j++){
-              double a= DensOpt_alpha.EstimatePredError(samples_opti[j]);
-              double b= DensOpt_diam.EstimatePredError(samples_opti[j]);
-              cout << "a : " << a << endl;
-              cout << "b : " << b << endl;
-              varpreds[j]=a+b;//estimateur de l'erreur de prédiction en theta[j]
-            }
-            auto itmax=max_element(varpreds.begin(),varpreds.end());
-            int indmax=distance(varpreds.begin(),itmax);
-            vector<VectorXd> added_theta(1); added_theta[0]=samples_opti[indmax];
-            DensOpt_alpha.update_hGPs(added_theta,Kernel_GP_Matern32,Bounds_hpars_gp,hpars_gp_guess,3,5);
-            DensOpt_diam.update_hGPs(added_theta,Kernel_GP_Matern32,Bounds_hpars_gp,hpars_gp_guess,4,5);
-          }
-
-          DensOpt_alpha.opti_allgps(hpars_gp_guess);
-          DensOpt_diam.opti_allgps(hpars_gp_guess);
-          auto end_hgps=chrono::steady_clock::now();
-        };
-
-        int npts_total=npts_init;
-        for(int i=0;i<39;i++){
-          add_npoints(50,generator,npts_total,200); //200 samples de mcmc et on met 50 points.
-        }
-      }
-      
-      
-          //calibration
-      {
-        auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,Xinit,COV_init,compute_score_opti,get_hpars_opti,in_bounds,generator);
-        auto samples_opti=get<0>(res);
-        vector<VectorXd> allsamples_opti=get<2>(res);
-        vector<pair<VectorXd,VectorXd>> vhpars_opti=get<1>(res);
-        vector<VectorXd> vhpars_opti_alpha(vhpars_opti.size());
-        vector<VectorXd> vhpars_opti_diam(vhpars_opti.size());
-        for(int i=0;i<vhpars_opti.size();i++){
-          auto p=vhpars_opti[i];
-          vhpars_opti_alpha[i]=p.first;
-          vhpars_opti_diam[i]=p.second;
-        }
-        //Set des samples
-        MainDensity_alpha.SetNewSamples(samples_opti);
-        MainDensity_diam.SetNewSamples(samples_opti);
-        MainDensity_alpha.SetNewAllSamples(allsamples_opti);
-        MainDensity_diam.SetNewAllSamples(allsamples_opti);
-        MainDensity_alpha.SetNewHparsOfSamples(vhpars_opti_alpha);
-        MainDensity_diam.SetNewHparsOfSamples(vhpars_opti_diam);
-
-        //diagnostic
-        MainDensity_alpha.Autocor_diagnosis(nautocor,"results/diag/autocoropt+.gnu");
-
-        //écriture des samples
-        MainDensity_alpha.WriteSamples("results/save/sampopt+alpha.gnu");
-        MainDensity_diam.WriteSamples("results/save/sampopt+diam.gnu"); 
-
-        //prédictions
-        MainDensity_alpha.WritePredictionsF(Xgrid_num,"results/preds/predsopt+alphaF.gnu");
-        MainDensity_diam.WritePredictionsF(Xgrid_num,"results/preds/predsopt+diamF.gnu");
-
-        MainDensity_alpha.WritePredictions(Xgrid_num,"results/preds/predsopt+alpha.gnu");
-        MainDensity_diam.WritePredictions(Xgrid_num,"results/preds/predsopt+diam.gnu");
-
-        MainDensity_alpha.WriteFinePredictions(Xgrid_num,"results/preds/predsopt+alphafine.gnu");
-        MainDensity_diam.WriteFinePredictions(Xgrid_num,"results/preds/predsopt+diamfine.gnu");
-
-      }         
-    }
-    
-    
-    exit(0);
-    
-    
-    
-
-  
   }
-};
+}

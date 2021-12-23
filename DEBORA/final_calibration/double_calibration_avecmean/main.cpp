@@ -183,7 +183,7 @@ double gaussprob(double x,double mu, double sigma){
 }
 
 
-double Kernel_Z(VectorXd const &x, VectorXd const &y, VectorXd const &hpar){
+double Kernel_Z_SE(VectorXd const &x, VectorXd const &y, VectorXd const &hpar){
   //squared exponential
   double d=abs(x(0)-y(0));
   return pow(hpar(0),2)*exp(-0.5*pow(d/hpar(2),2));
@@ -301,9 +301,21 @@ double Kernel_GP_Matern32(VectorXd const &x, VectorXd const &y, VectorXd const &
   return pow(hpar(0),2)*cor;
 }
 
-double logprior_hpars(VectorXd const &hpars){
+double logprior_hpars_alpha(VectorXd const &hpars){
   //edm, exp, lcor
   return -2*log(hpars(0));
+
+  //return -2*log(hpars(0))-2*log(abs(hpars(3))+1e-8);
+}
+
+double logprior_hpars_diam(VectorXd const &hpars){
+  //edm, exp, lcor
+  return -2*log(hpars(0))-2*log(abs(hpars(3))+1e-8);
+}
+
+double nologprior_hpars(VectorXd const &hpars){
+  //edm, exp, lcor
+  return 0;
 }
 
 double logprior_pars(VectorXd const &pars){
@@ -1189,12 +1201,12 @@ int main(int argc, char **argv){
     }
 
     //hpars z : sedm, sobs, lcor.
-    VectorXd lb_hpars_alpha(dim_hpars);
-    VectorXd ub_hpars_alpha(dim_hpars);
-    lb_hpars_alpha << 1e-4,1e-4,1e-4,-.5;
-    ub_hpars_alpha << 1,1e-1,1e-1,.5;
+    VectorXd lb_hpars_alpha(4);
+    VectorXd ub_hpars_alpha(4);
+    lb_hpars_alpha << 1e-4,1e-4,1e-4,-0.5;
+    ub_hpars_alpha << 1,1e-1,1e-1,0.5;
 
-    VectorXd hpars_z_guess_alpha(dim_hpars);
+    VectorXd hpars_z_guess_alpha(4);
     hpars_z_guess_alpha << 4.7e-2,2.1e-3,1.4e-3,0;
 
     //diam
@@ -1209,7 +1221,7 @@ int main(int argc, char **argv){
     int size_xexpe=data_exp_alpha[0].Value().size();
     //lambda priormean
     auto lambda_priormean_alpha=[size_xexpe](VectorXd const & X, VectorXd const & hpars){
-      VectorXd v=VectorXd::Ones(size_xexpe)*hpars(3);
+      auto v= VectorXd::Zero(size_xexpe);
       return v;
     };
     auto lambda_priormean_diam=[size_xexpe](VectorXd const & X, VectorXd const & hpars){
@@ -1262,10 +1274,10 @@ int main(int argc, char **argv){
     //instance de base de densité pour alpha
     Density MainDensity_alpha(doe_init);
     MainDensity_alpha.SetLogPriorPars(logprior_pars);
-    MainDensity_alpha.SetLogPriorHpars(logprior_hpars);
-    MainDensity_alpha.SetKernel(Kernel_Z_Matern52);
+    MainDensity_alpha.SetLogPriorHpars(logprior_hpars_alpha);
+    MainDensity_alpha.SetKernel(Kernel_Z_Matern32);
     MainDensity_alpha.SetModel(lambda_model_alpha);
-    MainDensity_alpha.SetPriorMean(lambda_priormean_alpha);
+    MainDensity_alpha.SetPriorMean(lambda_priormean_diam);
     MainDensity_alpha.SetHparsBounds(lb_hpars_alpha,ub_hpars_alpha);
     MainDensity_alpha.SetDataExp(data_exp_alpha);
     MainDensity_alpha.SetXprofile(Xgrid_num);
@@ -1273,8 +1285,8 @@ int main(int argc, char **argv){
     //instance de base de densité pour diam
     Density MainDensity_diam(doe_init);
     MainDensity_diam.SetLogPriorPars(logprior_pars);
-    MainDensity_diam.SetLogPriorHpars(logprior_hpars);
-    MainDensity_diam.SetKernel(Kernel_Z_Matern52);
+    MainDensity_diam.SetLogPriorHpars(logprior_hpars_diam);
+    MainDensity_diam.SetKernel(Kernel_Z_Matern32);
     MainDensity_diam.SetModel(lambda_model_diam);
     MainDensity_diam.SetPriorMean(lambda_priormean_diam);
     MainDensity_diam.SetHparsBounds(lb_hpars_diam,ub_hpars_diam);
@@ -1552,8 +1564,8 @@ exit(0);
           hpars_alpha << X(5),X(6),X(7);
           double ll1=MainDensity_alpha.loglikelihood_theta(theta,hpars_alpha);
           double ll2=MainDensity_diam.loglikelihood_theta(theta,hpars_diam);
-          double lp1=logprior_hpars(hpars_alpha);
-          double lp2=logprior_hpars(hpars_diam);
+          double lp1=logprior_hpars_alpha(hpars_alpha);
+          double lp2=logprior_hpars_diam(hpars_diam);
           return ll1+ll2+lp1+lp2;
         };
 

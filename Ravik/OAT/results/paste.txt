@@ -1,0 +1,31 @@
+fin de l'opt koh : message 4
+  10000 0.27026 5.22719 8.70846
+time : 151 s.
+fin de l'opt koh : message 4
+  10000      25     0.1 13.8647
+  
+  dans l'ordre 14 - 16.
+  
+  
+
+"Couplage partitionné fluide-structure à l’échelle locale avec grille mobile pour des transitoires non-linéaires".
+
+
+à 0.5s (ctrl+f5)
+ fin de calcul des hpars opti sur le grid. Moyenne :  153246  0.1845 4.22755 10.7054
+stds  : 238872 0.192947 2.34493 
+moyenne des logposts:-127.745
+temps de calcul : 102 s
+
+0.1 ça marche pas par contre, hein.
+
+ fin de calcul des hpars opti sur le grid. Moyenne :  111130 19.0801 3.58034  7.8788
+stds  : 254672 9.86571 2.17666 
+moyenne des logposts:-5.65679e+07
+temps de calcul : 22 s
+
+en 0.5
+ fin de calcul des hpars opti sur le grid. Moyenne :  111130 19.0801 3.58034 7.87886
+stds  : 254672 9.86571 2.17666 
+moyenne des logposts:-5.65679e+07
+temps de calcul : 102 s

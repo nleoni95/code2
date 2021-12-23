@@ -1113,10 +1113,13 @@ VectorXd Density::DrawZCondTheta(VectorXd const & X, VectorXd const & theta, Vec
   normal_distribution<double> distN(0,1);
   VectorXd mean=meanZCondTheta(X,theta,hpars_z);
   MatrixXd Cov=varZCondTheta(X,theta,hpars_z);
-  VectorXd N(mean.size());
-  for(int i=0;i<N.size();i++){N(i)=distN(generator);}
-  MatrixXd sqrtCOV=Cov.llt().matrixL();
-  return mean+sqrtCOV*N;
+  Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> DEC(Cov);
+  Eigen::VectorXd D = DEC.eigenvalues();
+	for(unsigned i=0; i<D.rows(); i++) D(i) = sqrt(fabs(D(i)));
+	std::cout << "Dmax : " << D.maxCoeff() << " Dmin " << D.minCoeff() << std::endl;
+  VectorXd sample(mean.size());
+  for(int i=0;i<sample.size();i++){sample(i)=distN(generator)*D(i);}
+  return mean+DEC.eigenvectors()*sample;
 }
 
 

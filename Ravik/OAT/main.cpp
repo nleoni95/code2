@@ -666,7 +666,11 @@ int main(int argc, char **argv){
     ofile.close();
   };
 
-  int chosen_case=15;
+  int chosen_case=20;
+  VectorXd X=0.5*VectorXd::Ones(dim_theta);
+  string fnamen="results/cnom"+to_string(chosen_case)+".gnu";
+  plot_model(X,chosen_case,fnamen);
+
   for(int i=0;i<dim_theta;i++){
     VectorXd X=0.5*VectorXd::Ones(dim_theta);
     string fnamep="results/c"+to_string(i)+"+"+to_string(chosen_case)+".gnu";

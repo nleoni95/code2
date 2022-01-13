@@ -1362,8 +1362,8 @@ void Density::WritePredictionsF(VectorXd const & X, string const & filename) con
     fvalues.col(i)=m_model(X,m_samples[i]);
   }
   //vecteurs des quantiles
-  int ind_max=max_ll();
-  VectorXd predf_map=m_model(X,m_samples[ind_max]);
+  //int ind_max=max_ll();
+  //VectorXd predf_map=m_model(X,m_samples[ind_max]);
   VectorXd quant2p5(meanf.rows()); //95pct de la masse
   VectorXd quant97p5(meanf.rows());
   VectorXd quant25(meanf.rows()); //50 pct de la masse
@@ -1376,7 +1376,7 @@ void Density::WritePredictionsF(VectorXd const & X, string const & filename) con
   }
   ofstream ofile(filename);
   for(int i=0;i<meanf.rows();i++){
-    ofile << X(i) <<" "<< meanf(i) << " " << quant25(i) << " " << quant75(i) << " " << quant2p5(i) << " " << quant97p5(i) << " " << predf_map(i) << endl;
+    ofile << X(i) <<" "<< meanf(i) << " " << quant25(i) << " " << quant75(i) << " " << quant2p5(i) << " " << quant97p5(i)  << endl;
   }
   ofile.close();
 }

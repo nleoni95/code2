@@ -713,7 +713,7 @@ int main(int argc, char **argv){
   default_random_engine generator(123456);
   /*Paramètres de la simulation*/
   //pour la MCMC
-  int nombre_steps_mcmc=1e6;
+  int nombre_steps_mcmc=5e5;
   int nombre_samples_collected=500;
   int nautocor=2000;
 
@@ -902,7 +902,121 @@ int main(int argc, char **argv){
     vDens.push_back(MainDensity);
   }
 
-   //MCMC phase Opti
+    //lecture des samples python et prédictions en les utilisant.
+  {
+    string fname="results/samplespython/samplesopt.gnu";
+    auto samples=read_samples(fname);
+    //évaluation des hpars optimaux pour chacun.
+    for(int i=0;i<vsize;i++){
+      vDens[i].SetNewSamples(samples);
+      //vDopt[i].SetNewHparsOfSamples(hparsopt);
+      //prédictions. on rajoute un w pour "wish"
+      //string fname="results/save/sampoptw"+to_string(cases[i])+".gnu";
+      //string fnamepred="results/preds/predsoptw"+to_string(cases[i])+".gnu";
+      string fnamepredF="results/predsfinal/opt/predsF"+to_string(cases[i])+".gnu";
+      //vDopt[i].WriteSamples(fname);
+      vDens[i].WritePredictionsF(XPREDS,fnamepredF);
+      //vDopt[i].WritePredictions(XPREDS,fnamepred);
+    }
+  }
+
+    //lecture des samples python et prédictions en les utilisant. version KOH
+  {
+    string fname="results/samplespython/sampleskoh.gnu";
+    auto samples=read_samples(fname);
+    //évaluation des hpars optimaux pour chacun.
+    for(int i=0;i<vsize;i++){
+      vDens[i].SetNewSamples(samples);
+      //vDopt[i].SetNewHparsOfSamples(hparsopt);
+      //prédictions. on rajoute un w pour "wish"
+      //string fname="results/save/sampoptw"+to_string(cases[i])+".gnu";
+      //string fnamepred="results/preds/predsoptw"+to_string(cases[i])+".gnu";
+      string fnamepredF="results/predsfinal/koh/predsF"+to_string(cases[i])+".gnu";
+      //vDopt[i].WriteSamples(fname);
+      vDens[i].WritePredictionsF(XPREDS,fnamepredF);
+      //vDopt[i].WritePredictions(XPREDS,fnamepred);
+    }
+  }
+
+
+exit(0);
+
+  //MCMC phase Bayes sur les densités séparées. Pour chaque densités : que 2 hpars. La variance et la correlation length.
+
+
+  {
+    //initial MCMC. remplissage des états initiaux.
+    int mcmc_fb_size=5;
+    
+    VectorXd X_init_mcmc_fb(mcmc_fb_size);
+    MatrixXd COV_init_fb=MatrixXd::Zero(mcmc_fb_size,mcmc_fb_size);
+    X_init_mcmc_fb.head(3)=X_init_mcmc;
+    X_init_mcmc_fb(3)=1e6; X_init_mcmc_fb(4)=5;
+    COV_init_fb.topLeftCorner(3,3)=COV_init;
+    int m=lb_hpars.size();
+    COV_init_fb(3,3)=pow(1e5,2);
+    COV_init_fb(4,4)=pow(0.5,2);
+    cout << "covinitfb" << endl << COV_init_fb << endl;
+    cout << "Xinitfb" << endl << X_init_mcmc_fb.transpose() << endl;
+
+for(int i=0;i<vsize;i++){
+    auto in_bounds_fb=[vDens,vsize,lb_hpars](VectorXd const & X){
+      VectorXd theta=X.head(3);
+      VectorXd hp=X.tail(2);
+      bool in=true;
+      in = in && vDens[0].in_bounds_pars(theta);
+      in=in && vDens[0].in_bounds_hpars(hp);
+      return in;
+    };
+
+    auto get_hpars_fb=[](VectorXd const & X){
+      //renvoyer un vecteur sans intérêt.
+      vector<VectorXd> v(1);
+      return v;
+    };
+    auto compute_score_fb=[vsize,lb_hpars,vDens,i](vector<VectorXd> p, VectorXd const &X){
+      //il faut décomposer X en thetas/ hpars. 3 est la dimension des paramètres
+      //logpriorhpars=0 I think
+      VectorXd theta=X.head(3);
+      VectorXd hp=X.tail(2);
+      double d=vDens[i].loglikelihood_theta_incx(theta,hp);
+      return d;
+    }; 
+    
+    cout << "début mcmc densité bayes expérience" << cases[i] << endl;
+      
+    auto res=Run_MCMC(2*nombre_steps_mcmc,nombre_samples_collected,X_init_mcmc_fb,COV_init_fb,compute_score_fb,get_hpars_fb,in_bounds_fb,generator);
+
+      auto samples_fb_gros=get<0>(res);
+      vector<VectorXd> allsamples_fb_gros=get<2>(res);
+      vector<VectorXd> samples_fb_theta;
+      vector<VectorXd> samples_fb_hpars;
+      //décomposer le tout en paramètres et hpars.
+      for(int j=0;j<samples_fb_gros.size();j++){
+        VectorXd X=samples_fb_gros[j];
+        samples_fb_theta.push_back(X.head(3));
+        samples_fb_hpars.push_back(X.tail(2));
+      }
+      //set des samples dans la première densité pour calculer la corrélation.
+      vDens[0].SetNewAllSamples(allsamples_fb_gros);
+      //diagnostic
+      vDens[0].Autocor_diagnosis(nautocor,"results/diag/autocorfb.gnu");
+
+      vDens[i].SetNewSamples(samples_fb_theta);
+      vDens[i].SetNewHparsOfSamples(samples_fb_hpars);
+
+      //écriture des samples. Il faut une fonction dédiée.
+      string fname="results/separatedensities/fb/samp"+to_string(cases[i])+".gnu";
+      string fnamepred="results/separatedensities/fb/preds"+to_string(cases[i])+".gnu";
+      string fnamepredF="results/separatedensities/fb/predsF"+to_string(cases[i])+".gnu";
+      vDens[i].WriteSamples(fname);
+      vDens[i].WritePredictionsF(XPREDS,fnamepredF);
+      vDens[i].WritePredictions(XPREDS,fnamepred);  
+
+    }
+  }
+exit(0);
+   //Phase Opti
 
 
 
@@ -918,6 +1032,259 @@ int main(int argc, char **argv){
     Dopt.opti_allgps(hpars_gp_guess);
     vDopt.push_back(Dopt);
   }
+
+   //MCMC opt sur les densités séparées.
+
+  {
+    for(int i=0;i<vsize;i++){
+      auto in_bounds=[vDens](VectorXd const & X){
+          return vDens[0].in_bounds_pars(X);
+      };
+      auto get_hpars_opti=[vDopt,i](VectorXd const & X){
+        vector<VectorXd> p(1);
+        p[0]=vDopt[i].EvaluateHparOpt(X);
+        return p;
+      };
+      auto compute_score_opti=[vDopt,i](vector<VectorXd> p, VectorXd const &X){
+        double d=vDopt[i].loglikelihood_theta_incx(X,p[0]);
+        if (isnan(-d)){ cerr << "nan ll. cas numéro " << i << endl;
+            cerr << "theta: " << X.transpose() << endl;
+            cerr << "hpars: " << p[i].transpose() << endl;
+        }
+        return d;
+      };
+      cout << "début mcmc densité fmp expérience" << cases[i] << endl;
+      auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,X_init_mcmc,COV_init,compute_score_opti,get_hpars_opti,in_bounds,generator);
+      auto samples_opti=get<0>(res);
+      vector<VectorXd> allsamples_opti=get<2>(res);
+      vector<vector<VectorXd>> vhpars_opti_noninverted=get<1>(res); //là le premier vecteur c'est les steps, et le second vecteur les densités. Il faut inverser ça...
+      auto vhpars_opti=revert_vector(vhpars_opti_noninverted);
+
+      //Set des samples dans chaque densité  
+      vDopt[i].SetNewSamples(samples_opti);
+      vDopt[i].SetNewHparsOfSamples(vhpars_opti[0]);
+      vDopt[0].SetNewAllSamples(allsamples_opti);
+      //diagnostic
+      vDopt[0].Autocor_diagnosis(nautocor,"results/separatedensities/opt/autocor"+to_string(cases[i])+".gnu");
+      //écriture des samples. Il faut une fonction dédiée.
+      string fname="results/separatedensities/opt/samp"+to_string(cases[i])+".gnu";
+      string fnamepred="results/separatedensities/opt/preds"+to_string(cases[i])+".gnu";
+      string fnamepredF="results/separatedensities/opt/predsF"+to_string(cases[i])+".gnu";
+      vDopt[i].WriteSamples(fname);
+      vDopt[i].WritePredictionsF(XPREDS,fnamepredF);
+      vDopt[i].WritePredictions(XPREDS,fnamepred);  
+      //prédictions
+    }
+  }
+
+
+
+
+
+
+
+    // phase KOH separate
+    auto hparskoh_separate=HparsKOH_separate(vDens,hpars_z_guess,2400);
+    cout << "hparskoh sep:" << hparskoh_separate[0].transpose() << endl;
+  //cout << hparskoh_separate[1].transpose() << endl;
+
+//MCMC kohs toutes les expériencess
+/*
+  {
+    auto in_bounds=[vDens](VectorXd const & X){
+        return vDens[0].in_bounds_pars(X);
+    };
+    auto get_hpars_kohs=[hparskoh_separate](VectorXd const & X){
+      return hparskoh_separate;
+    };
+    auto compute_score_kohs=[vDens,vsize](vector<VectorXd> p, VectorXd const &X){
+      double res=0;
+      for(int i=0;i<vsize;i++){
+        double d=vDens[i].loglikelihood_theta_incx(X,p[i]);
+        res+=d;
+        if (isnan(d)){ cerr << "nan ll. cas numéro " << i << endl;}
+      }
+      res+=logprior_pars(X);
+      return res;
+    };
+    auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,X_init_mcmc,COV_init,compute_score_kohs,get_hpars_kohs,in_bounds,generator);
+      auto samples_koh=get<0>(res);
+      vector<VectorXd> allsamples_koh=get<2>(res);
+      vector<vector<VectorXd>> vhpars_koh_noninverted=get<1>(res); //là le premier vecteur c'est les steps, et le second vecteur les densités. Il faut inverser ça...
+      auto vhpars_koh=revert_vector(vhpars_koh_noninverted);
+
+      //Set des samples dans chaque densité
+      for(int i=0;i<vsize;i++){
+        vDens[i].SetNewSamples(samples_koh);
+        vDens[i].SetNewHparsOfSamples(vhpars_koh[i]);
+      }
+      vDens[0].SetNewAllSamples(allsamples_koh);
+      //diagnostic
+      vDens[0].Autocor_diagnosis(nautocor,"results/diag/autocorkohs.gnu");
+      //écriture des samples. Il faut une fonction dédiée. 
+      for(int i=0;i<vsize;i++){
+        string fname="results/save/sampkohs"+to_string(cases[i])+".gnu";
+        string fnamepred="results/preds/predskohs"+to_string(cases[i])+".gnu";
+        string fnamepredF="results/preds/predskohsF"+to_string(cases[i])+".gnu";
+        vDens[i].WriteSamples(fname);
+        vDens[i].WritePredictionsF(XPREDS,fnamepredF);
+        vDens[i].WritePredictions(XPREDS,fnamepred);
+      }
+      //prédictions
+  }
+*/
+ //MCMC koh separate sur les densités séparées
+
+  {
+    for(int i=0;i<vsize;i++){
+
+    auto in_bounds=[vDens](VectorXd const & X){
+        return vDens[0].in_bounds_pars(X);
+    };
+
+    auto get_hpars_kohs=[hparskoh_separate,i](VectorXd const & X){
+      vector<VectorXd> h(1);
+      h[0]=hparskoh_separate[i];
+      return h;
+    };
+    auto compute_score_kohs=[vDens,i](vector<VectorXd> p, VectorXd const &X){
+      double res=vDens[i].loglikelihood_theta_incx(X,p[0]);
+      return res;
+    };
+
+    cout << "début mcmc densité koh separate expérience" << cases[i] << endl;
+    auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,X_init_mcmc,COV_init,compute_score_kohs,get_hpars_kohs,in_bounds,generator);
+      auto samples_opti=get<0>(res);
+      vector<VectorXd> allsamples_opti=get<2>(res);
+      vector<vector<VectorXd>> vhpars_opti_noninverted=get<1>(res); //là le premier vecteur c'est les steps, et le second vecteur les densités. Il faut inverser ça...
+      auto vhpars_opti=revert_vector(vhpars_opti_noninverted);
+
+      //Set des samples dans chaque densité
+      
+        vDens[i].SetNewSamples(samples_opti);
+        vDens[i].SetNewHparsOfSamples(vhpars_opti[0]);
+      
+      vDens[0].SetNewAllSamples(allsamples_opti);
+      //diagnostic
+      vDens[0].Autocor_diagnosis(nautocor,"results/separatedensities/kohs/autocor"+to_string(cases[i])+".gnu");
+      //écriture des samples. Il faut une fonction dédiée.
+        string fname="results/separatedensities/kohs/samp"+to_string(cases[i])+".gnu";
+        string fnamepred="results/separatedensities/kohs/preds"+to_string(cases[i])+".gnu";
+        string fnamepredF="results/separatedensities/kohs/predsF"+to_string(cases[i])+".gnu";
+        vDens[i].WriteSamples(fname);
+        vDens[i].WritePredictionsF(XPREDS,fnamepredF);
+        vDens[i].WritePredictions(XPREDS,fnamepred);
+      //prédictions
+  }
+  }
+
+
+
+
+    //phase KOH pooled
+      auto hparskoh_pooled=HparsKOH_pooled(vDens,hpars_z_guess,1200); //20 minutes
+  cout << "hparskoh pooled:" << hparskoh_pooled[0].transpose() << endl;
+  //cout << hparskoh_pooled[1].transpose() << endl;
+  //mcmc koh pooled toutes les expériences à la fois
+/*
+  {
+    auto in_bounds=[vDens](VectorXd const & X){
+        return vDens[0].in_bounds_pars(X);
+    };
+    auto get_hpars_kohp=[hparskoh_pooled](VectorXd const & X){
+      return hparskoh_pooled;
+    };
+    auto compute_score_kohp=[vDens,vsize](vector<VectorXd> p, VectorXd const &X){
+      double res=0;
+      for(int i=0;i<vsize;i++){
+        double d=vDens[i].loglikelihood_theta_incx(X,p[i]);
+        res+=d;
+        if (isnan(d)){ cerr << "nan ll. cas numéro " << i << endl;}
+      }
+      res+=logprior_pars(X);
+      return res;
+    };
+    auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,X_init_mcmc,COV_init,compute_score_kohp,get_hpars_kohp,in_bounds,generator);
+      auto samples_koh=get<0>(res);
+      vector<VectorXd> allsamples_koh=get<2>(res);
+      vector<vector<VectorXd>> vhpars_koh_noninverted=get<1>(res); //là le premier vecteur c'est les steps, et le second vecteur les densités. Il faut inverser ça...
+      auto vhpars_koh=revert_vector(vhpars_koh_noninverted);
+
+      //Set des samples dans chaque densité
+      for(int i=0;i<vsize;i++){
+        vDens[i].SetNewSamples(samples_koh);
+        vDens[i].SetNewHparsOfSamples(vhpars_koh[i]);
+      }
+      vDens[0].SetNewAllSamples(allsamples_koh);
+      //diagnostic
+      vDens[0].Autocor_diagnosis(nautocor,"results/diag/autocorkohp.gnu");
+      //écriture des samples. Il faut une fonction dédiée. 
+      for(int i=0;i<vsize;i++){
+        string fname="results/save/sampkohp"+to_string(cases[i])+".gnu";
+        string fnamepred="results/preds/predskohp"+to_string(cases[i])+".gnu";
+        string fnamepredF="results/preds/predskohpF"+to_string(cases[i])+".gnu";
+        vDens[i].WriteSamples(fname);
+        vDens[i].WritePredictionsF(XPREDS,fnamepredF);
+        vDens[i].WritePredictions(XPREDS,fnamepred);
+      }
+      //prédictions
+  }
+ */
+ //MCMC koh pooled sur les densités séparées
+
+  {
+    for(int i=0;i<vsize;i++){
+
+    auto in_bounds=[vDens](VectorXd const & X){
+        return vDens[0].in_bounds_pars(X);
+    };
+
+    auto get_hpars_kohs=[hparskoh_pooled,i](VectorXd const & X){
+      vector<VectorXd> h(1);
+      h[0]=hparskoh_pooled[i];
+      return h;
+    };
+    auto compute_score_kohs=[vDens,i](vector<VectorXd> p, VectorXd const &X){
+      double res=vDens[i].loglikelihood_theta_incx(X,p[0]);
+      return res;
+    };
+
+    cout << "début mcmc densité koh pooled expérience" << cases[i] << endl;
+    auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,X_init_mcmc,COV_init,compute_score_kohs,get_hpars_kohs,in_bounds,generator);
+      auto samples_opti=get<0>(res);
+      vector<VectorXd> allsamples_opti=get<2>(res);
+      vector<vector<VectorXd>> vhpars_opti_noninverted=get<1>(res); //là le premier vecteur c'est les steps, et le second vecteur les densités. Il faut inverser ça...
+      auto vhpars_opti=revert_vector(vhpars_opti_noninverted);
+
+      //Set des samples dans chaque densité
+      
+        vDens[i].SetNewSamples(samples_opti);
+        vDens[i].SetNewHparsOfSamples(vhpars_opti[0]);
+      
+      vDens[0].SetNewAllSamples(allsamples_opti);
+      //diagnostic
+      vDens[0].Autocor_diagnosis(nautocor,"results/separatedensities/kohp/autocor"+to_string(cases[i])+".gnu");
+      //écriture des samples. Il faut une fonction dédiée.
+        string fname="results/separatedensities/kohp/samp"+to_string(cases[i])+".gnu";
+        string fnamepred="results/separatedensities/kohp/preds"+to_string(cases[i])+".gnu";
+        string fnamepredF="results/separatedensities/kohp/predsF"+to_string(cases[i])+".gnu";
+        vDens[i].WriteSamples(fname);
+        vDens[i].WritePredictionsF(XPREDS,fnamepredF);
+        vDens[i].WritePredictions(XPREDS,fnamepred);
+      
+      //prédictions
+  }
+  }
+
+  
+
+exit(0);
+
+
+
+
+
+
     //MCMC opt avec toutes les densités en même temps
 
   {
@@ -1037,259 +1404,11 @@ int main(int argc, char **argv){
 exit(0);
 
 
- //MCMC opt avec une densité à chaque fois
-
-  {
-    for(int i=0;i<vsize;i++){
-
-    auto in_bounds=[vDens](VectorXd const & X){
-        return vDens[0].in_bounds_pars(X);
-    };
-    auto get_hpars_opti=[vDopt,i](VectorXd const & X){
-      vector<VectorXd> p(1);
-      p[0]=vDopt[i].EvaluateHparOpt(X);
-      return p;
-    };
-    auto compute_score_opti=[vDopt,i](vector<VectorXd> p, VectorXd const &X){
-      double d=vDopt[i].loglikelihood_theta_incx(X,p[0]);
-      if (isnan(-d)){ cerr << "nan ll. cas numéro " << i << endl;
-          cerr << "theta: " << X.transpose() << endl;
-          cerr << "hpars: " << p[i].transpose() << endl;
-      }
-      return d;
-    };
-    cout << "début mcmc densité fmp expérience" << cases[i] << endl;
-    auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,X_init_mcmc,COV_init,compute_score_opti,get_hpars_opti,in_bounds,generator);
-      auto samples_opti=get<0>(res);
-      vector<VectorXd> allsamples_opti=get<2>(res);
-      vector<vector<VectorXd>> vhpars_opti_noninverted=get<1>(res); //là le premier vecteur c'est les steps, et le second vecteur les densités. Il faut inverser ça...
-      auto vhpars_opti=revert_vector(vhpars_opti_noninverted);
-
-      //Set des samples dans chaque densité
-      
-        vDopt[i].SetNewSamples(samples_opti);
-        vDopt[i].SetNewHparsOfSamples(vhpars_opti[0]);
-      
-      vDopt[0].SetNewAllSamples(allsamples_opti);
-      //diagnostic
-      vDopt[0].Autocor_diagnosis(nautocor,"results/diag/autocoropt.gnu");
-      //écriture des samples. Il faut une fonction dédiée.
-        string fname="results/save/sampopt"+to_string(cases[i])+".gnu";
-        string fnamepred="results/preds/predsopt"+to_string(cases[i])+".gnu";
-        string fnamepredF="results/preds/predsoptF"+to_string(cases[i])+".gnu";
-        vDopt[i].WriteSamples(fname);
-        vDopt[i].WritePredictionsF(XPREDS,fnamepredF);
-        vDopt[i].WritePredictions(XPREDS,fnamepred);
-      
-      //prédictions
-  }
-  }
-
-
-  exit(0);
-
 
 
   
 
 
-    // phase KOH separate
-    auto hparskoh_separate=HparsKOH_separate(vDens,hpars_z_guess,1200);
-    cout << "hparskoh sep:" << hparskoh_separate[0].transpose() << endl;
-  //cout << hparskoh_separate[1].transpose() << endl;
-
-//MCMC kohs toutes les expériencess
-/*
-  {
-    auto in_bounds=[vDens](VectorXd const & X){
-        return vDens[0].in_bounds_pars(X);
-    };
-    auto get_hpars_kohs=[hparskoh_separate](VectorXd const & X){
-      return hparskoh_separate;
-    };
-    auto compute_score_kohs=[vDens,vsize](vector<VectorXd> p, VectorXd const &X){
-      double res=0;
-      for(int i=0;i<vsize;i++){
-        double d=vDens[i].loglikelihood_theta_incx(X,p[i]);
-        res+=d;
-        if (isnan(d)){ cerr << "nan ll. cas numéro " << i << endl;}
-      }
-      res+=logprior_pars(X);
-      return res;
-    };
-    auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,X_init_mcmc,COV_init,compute_score_kohs,get_hpars_kohs,in_bounds,generator);
-      auto samples_koh=get<0>(res);
-      vector<VectorXd> allsamples_koh=get<2>(res);
-      vector<vector<VectorXd>> vhpars_koh_noninverted=get<1>(res); //là le premier vecteur c'est les steps, et le second vecteur les densités. Il faut inverser ça...
-      auto vhpars_koh=revert_vector(vhpars_koh_noninverted);
-
-      //Set des samples dans chaque densité
-      for(int i=0;i<vsize;i++){
-        vDens[i].SetNewSamples(samples_koh);
-        vDens[i].SetNewHparsOfSamples(vhpars_koh[i]);
-      }
-      vDens[0].SetNewAllSamples(allsamples_koh);
-      //diagnostic
-      vDens[0].Autocor_diagnosis(nautocor,"results/diag/autocorkohs.gnu");
-      //écriture des samples. Il faut une fonction dédiée. 
-      for(int i=0;i<vsize;i++){
-        string fname="results/save/sampkohs"+to_string(cases[i])+".gnu";
-        string fnamepred="results/preds/predskohs"+to_string(cases[i])+".gnu";
-        string fnamepredF="results/preds/predskohsF"+to_string(cases[i])+".gnu";
-        vDens[i].WriteSamples(fname);
-        vDens[i].WritePredictionsF(XPREDS,fnamepredF);
-        vDens[i].WritePredictions(XPREDS,fnamepred);
-      }
-      //prédictions
-  }
-*/
- //MCMC koh separate une densité à chaque fois
-
-  {
-    for(int i=0;i<vsize;i++){
-
-    auto in_bounds=[vDens](VectorXd const & X){
-        return vDens[0].in_bounds_pars(X);
-    };
-
-    auto get_hpars_kohs=[hparskoh_separate,i](VectorXd const & X){
-      vector<VectorXd> h(1);
-      h[0]=hparskoh_separate[i];
-      return h;
-    };
-    auto compute_score_kohs=[vDens,i](vector<VectorXd> p, VectorXd const &X){
-      double res=vDens[i].loglikelihood_theta_incx(X,p[0]);
-      return res;
-    };
-
-    cout << "début mcmc densité koh separate expérience" << cases[i] << endl;
-    auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,X_init_mcmc,COV_init,compute_score_kohs,get_hpars_kohs,in_bounds,generator);
-      auto samples_opti=get<0>(res);
-      vector<VectorXd> allsamples_opti=get<2>(res);
-      vector<vector<VectorXd>> vhpars_opti_noninverted=get<1>(res); //là le premier vecteur c'est les steps, et le second vecteur les densités. Il faut inverser ça...
-      auto vhpars_opti=revert_vector(vhpars_opti_noninverted);
-
-      //Set des samples dans chaque densité
-      
-        vDens[i].SetNewSamples(samples_opti);
-        vDens[i].SetNewHparsOfSamples(vhpars_opti[0]);
-      
-      vDens[0].SetNewAllSamples(allsamples_opti);
-      //diagnostic
-      vDens[0].Autocor_diagnosis(nautocor,"results/diag/autocorkohs.gnu");
-      //écriture des samples. Il faut une fonction dédiée.
-        string fname="results/save/sampkohs"+to_string(cases[i])+".gnu";
-        string fnamepred="results/preds/predskohs"+to_string(cases[i])+".gnu";
-        string fnamepredF="results/preds/predskohsF"+to_string(cases[i])+".gnu";
-        vDens[i].WriteSamples(fname);
-        vDens[i].WritePredictionsF(XPREDS,fnamepredF);
-        vDens[i].WritePredictions(XPREDS,fnamepred);
-      
-      //prédictions
-  }
-  }
-
-
-
-
-    //phase KOH pooled
-      auto hparskoh_pooled=HparsKOH_pooled(vDens,hpars_z_guess,1200);
-  cout << "hparskoh pooled:" << hparskoh_pooled[0].transpose() << endl;
-  //cout << hparskoh_pooled[1].transpose() << endl;
-  //mcmc koh pooled toutes les expériences à la fois
-/*
-  {
-    auto in_bounds=[vDens](VectorXd const & X){
-        return vDens[0].in_bounds_pars(X);
-    };
-    auto get_hpars_kohp=[hparskoh_pooled](VectorXd const & X){
-      return hparskoh_pooled;
-    };
-    auto compute_score_kohp=[vDens,vsize](vector<VectorXd> p, VectorXd const &X){
-      double res=0;
-      for(int i=0;i<vsize;i++){
-        double d=vDens[i].loglikelihood_theta_incx(X,p[i]);
-        res+=d;
-        if (isnan(d)){ cerr << "nan ll. cas numéro " << i << endl;}
-      }
-      res+=logprior_pars(X);
-      return res;
-    };
-    auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,X_init_mcmc,COV_init,compute_score_kohp,get_hpars_kohp,in_bounds,generator);
-      auto samples_koh=get<0>(res);
-      vector<VectorXd> allsamples_koh=get<2>(res);
-      vector<vector<VectorXd>> vhpars_koh_noninverted=get<1>(res); //là le premier vecteur c'est les steps, et le second vecteur les densités. Il faut inverser ça...
-      auto vhpars_koh=revert_vector(vhpars_koh_noninverted);
-
-      //Set des samples dans chaque densité
-      for(int i=0;i<vsize;i++){
-        vDens[i].SetNewSamples(samples_koh);
-        vDens[i].SetNewHparsOfSamples(vhpars_koh[i]);
-      }
-      vDens[0].SetNewAllSamples(allsamples_koh);
-      //diagnostic
-      vDens[0].Autocor_diagnosis(nautocor,"results/diag/autocorkohp.gnu");
-      //écriture des samples. Il faut une fonction dédiée. 
-      for(int i=0;i<vsize;i++){
-        string fname="results/save/sampkohp"+to_string(cases[i])+".gnu";
-        string fnamepred="results/preds/predskohp"+to_string(cases[i])+".gnu";
-        string fnamepredF="results/preds/predskohpF"+to_string(cases[i])+".gnu";
-        vDens[i].WriteSamples(fname);
-        vDens[i].WritePredictionsF(XPREDS,fnamepredF);
-        vDens[i].WritePredictions(XPREDS,fnamepred);
-      }
-      //prédictions
-  }
- */
- //MCMC koh pooledune densité à chaque fois
-
-  {
-    for(int i=0;i<vsize;i++){
-
-    auto in_bounds=[vDens](VectorXd const & X){
-        return vDens[0].in_bounds_pars(X);
-    };
-
-    auto get_hpars_kohs=[hparskoh_pooled,i](VectorXd const & X){
-      vector<VectorXd> h(1);
-      h[0]=hparskoh_pooled[i];
-      return h;
-    };
-    auto compute_score_kohs=[vDens,i](vector<VectorXd> p, VectorXd const &X){
-      double res=vDens[i].loglikelihood_theta_incx(X,p[0]);
-      return res;
-    };
-
-    cout << "début mcmc densité koh pooled expérience" << cases[i] << endl;
-    auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,X_init_mcmc,COV_init,compute_score_kohs,get_hpars_kohs,in_bounds,generator);
-      auto samples_opti=get<0>(res);
-      vector<VectorXd> allsamples_opti=get<2>(res);
-      vector<vector<VectorXd>> vhpars_opti_noninverted=get<1>(res); //là le premier vecteur c'est les steps, et le second vecteur les densités. Il faut inverser ça...
-      auto vhpars_opti=revert_vector(vhpars_opti_noninverted);
-
-      //Set des samples dans chaque densité
-      
-        vDens[i].SetNewSamples(samples_opti);
-        vDens[i].SetNewHparsOfSamples(vhpars_opti[0]);
-      
-      vDens[0].SetNewAllSamples(allsamples_opti);
-      //diagnostic
-      vDens[0].Autocor_diagnosis(nautocor,"results/diag/autocorkohp.gnu");
-      //écriture des samples. Il faut une fonction dédiée.
-        string fname="results/save/sampkohp"+to_string(cases[i])+".gnu";
-        string fnamepred="results/preds/predskohp"+to_string(cases[i])+".gnu";
-        string fnamepredF="results/preds/predskohpF"+to_string(cases[i])+".gnu";
-        vDens[i].WriteSamples(fname);
-        vDens[i].WritePredictionsF(XPREDS,fnamepredF);
-        vDens[i].WritePredictions(XPREDS,fnamepred);
-      
-      //prédictions
-  }
-  }
-
-  
-
-exit(0);
 
 
  

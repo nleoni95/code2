@@ -637,7 +637,7 @@ int main(int argc, char **argv){
   VectorXd XPREDS(samp_size);
    for (int i=0;i<samp_size;i++){
     VectorXd x(1);
-    x << 0.01+30*double(i)/double(samp_size);
+    x << 0.01+35*double(i)/double(samp_size);
     X_predictions[i]=x;
     XPREDS(i)=x(0);
     }
@@ -656,7 +656,7 @@ int main(int argc, char **argv){
       return pred;
     };
 
-  auto plot_model=[lambda_model,XPREDS](VectorXd const & theta, int caset, string const & filename){
+  auto plot_model=[&lambda_model,XPREDS](VectorXd const & theta, int caset, string const & filename){
 
     VectorXd res=lambda_model(XPREDS,theta,caset);
     ofstream ofile(filename);
@@ -666,10 +666,15 @@ int main(int argc, char **argv){
     ofile.close();
   };
 
-  int chosen_case=20;
-  VectorXd X=0.5*VectorXd::Ones(dim_theta);
-  string fnamen="results/cnom"+to_string(chosen_case)+".gnu";
-  plot_model(X,chosen_case,fnamen);
+    int chosen_case=20;
+  vector<int> vic={3,4,5,6,8,14,15,16,18,20,21,22,23};
+  for (int i:vic){
+    VectorXd X=0.5*VectorXd::Ones(dim_theta);
+    string fnamen="results/cnom"+to_string(i)+".gnu";
+    plot_model(X,i,fnamen);
+  }
+  exit(0);
+
 
   for(int i=0;i<dim_theta;i++){
     VectorXd X=0.5*VectorXd::Ones(dim_theta);
@@ -682,7 +687,7 @@ int main(int argc, char **argv){
   }
 
 
-  exit(0);
+
 
 
 

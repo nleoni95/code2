@@ -1,0 +1,20 @@
+{
+    "configurations": [
+        {
+            "name": "Linux",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/home/catB/nl255551/lib/eigen-3.3.7",
+                "/home/catB/nl255551/lib/StochTk++/includes",
+                "/home/catB/nl255551/include",
+                "/home/catB/nl255551/miniconda3/envs/ravik_env/include/python3.8"
+            ],
+            "defines": [],
+            "compilerPath": "/usr/bin/g++",
+            "cStandard": "gnu11",
+            "cppStandard": "c++11",
+            "intelliSenseMode": "gcc-x64"
+        }
+    ],
+    "version": 4
+}

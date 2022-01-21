@@ -1,0 +1,863 @@
+##########jeudi 13 janvier. calcul sur toutes les densités.
+
+Prepare Halton sequence of size 200
+case: 3number of obs loaded : 8
+best fit polynomial : 55677.9      15 5.20827
+derivatives at obs pts : 55677.9  112425  180014  308643  381656  463761  475801  526663
+derivatives at pred pts :     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55677.9     55679.5       55689     55719.1     55789.7     55928.3     56170.2     56559.4       57148     57997.5       59178     60769.3     62860.3     65549.9     68946.6       73169     78345.9     84616.1       92129      101045      111533      123777      137967      154307      173012      194306      218426      245622      276151      310286      348310      390516      437211      488714      545354      607475      675430      749585      830321      918027 1.01311e+06 1.11598e+06 1.22707e+06 1.34682e+06 1.47568e+06
+case: 4number of obs loaded : 8
+best fit polynomial : 8309.32 12.6903 5.65383
+derivatives at obs pts : 8309.32 19505.8 57070.3  122099  241295  351300  424080  478969
+derivatives at pred pts :     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.32     8309.45     8312.47     8329.88     8387.24     8528.61     8820.31     9354.49     10252.3     11667.3     13787.7     16840.1     21091.3     26851.6     34476.8     44371.2     56989.4       72839       92483      116541      145694      180683      222314      271458      329054      396112      473713      563013      665242      781709      913803 1.06299e+06 1.23083e+06 1.41896e+06  1.6291e+06 1.86306e+06 2.12276e+06 2.41018e+06 2.72741e+06 3.07665e+06 3.46016e+06 3.88034e+06 4.33967e+06 4.84072e+06 5.38619e+06 5.97887e+06 6.62166e+06 7.31756e+06  8.0697e+06 8.88131e+06 9.75572e+06
+case: 5number of obs loaded : 6
+best fit polynomial : 30947.1      15 5.58203
+derivatives at obs pts : 30947.1 30947.3 55924.3  148897  391099  535980
+derivatives at pred pts :     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.1     30947.2     30948.7     30959.9     31000.2     31104.5     31325.7     31737.5     32437.3       33548     35220.4     37635.2       41005     45576.1     51630.2     59486.5       69503     82078.2     97652.7      116711      139783      167444      200319      239082      284456      337220      398203      468291      548425      639603      742883      859381      990277 1.13681e+06 1.30028e+06 1.48207e+06  1.6836e+06 1.90637e+06 2.15195e+06 2.42199e+06 2.71818e+06 3.04232e+06 3.39624e+06 3.78187e+06 4.20122e+06 4.65636e+06
+case: 6number of obs loaded : 7
+best fit polynomial : 48027.4 13.5119 5.04092
+derivatives at obs pts :  49244 154478 252915 471787 624752 658366 768129
+derivatives at pred pts :     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.4     48027.7     48031.2     48045.5     48082.9     48160.5     48300.4     48529.8     48880.8     49390.5     50101.2     51060.3     52320.2     53938.6     55978.2       58507     61598.1       65330     69786.1     75055.4     81231.8     88414.8     96708.9      106224      117075      129383      143273      158877      176331      195776      217361      241236      267561      296498      328215      362887      400694      441819      486453      534791      587034      643389      704067      769286      839268      914241      994439  1.0801e+06 1.17147e+06
+case: 8number of obs loaded : 9
+best fit polynomial : 41619.5       5 4.51282
+derivatives at obs pts : 101965 155160 202057 258452 252563 365812 527549 605980 629987
+derivatives at pred pts : 41619.5 41619.5 41619.5 41619.5 41619.5 41619.5 41619.5 41619.5 41619.5 41619.5 41619.5 41619.5 41619.6 41620.8 41626.6 41641.7   41672 41724.3 41806.1 41925.9 42092.7   42316 42606.2   42974 43430.8 43988.4 44659.2 45456.1 46392.2 47481.4 48737.7 50175.8 51810.7 53657.6 55732.5 58051.5   60631   63488 66639.7 70103.7   73898 78040.7 82550.5 87446.4 92747.5 98473.5  104644  111280  118401  126028  134182  142885  152158  162023  172502  183619  195395  207853  221017  234911  249558  264982  281208  298260  316163  334943  354623  375231  396792  419331  442876  467452  493086  519806  547639  576612  606752  638088  670648  704459
+case: 14number of obs loaded : 7
+best fit polynomial : 17169.1       5 4.83337
+derivatives at obs pts : 152207 159514 181114 239126 244343 257782 358181
+derivatives at pred pts :     17169.1     17169.1     17169.1     17169.1     17169.1     17169.1     17169.1     17169.1     17169.1     17169.1     17169.1     17169.1     17169.1     17170.3     17176.9     17196.5     17239.3     17318.5     17449.7     17651.3     17943.8     18350.5     18896.8     19610.4     20521.5     21662.4     23067.5     24773.5     26819.4     29246.1     32096.7     35416.4     39252.6     43654.4     48673.2     54362.6     60777.7     67976.1       76017     84961.8     94873.8      105818      117862      131075      145527      161291      178443      197058      217216      238997      262482      287756      314906      344017      375181      408488      444032      481908      522211      565042      610499      658686      709706      763664      820669      880828      944254 1.01106e+06 1.08135e+06 1.15526e+06 1.23289e+06 1.31437e+06 1.39982e+06 1.48935e+06  1.5831e+06  1.6812e+06 1.78376e+06 1.89092e+06 2.00281e+06 2.11956e+06
+case: 15number of obs loaded : 6
+best fit polynomial : 24145.9       5  4.7374
+derivatives at obs pts : 36788.4 53562.1 72093.1  103332  173355  267894
+derivatives at pred pts :     24145.9     24145.9     24145.9     24145.9     24145.9     24145.9     24145.9     24145.9     24145.9     24145.9     24145.9     24145.9       24146     24147.2     24153.6     24171.7     24210.3     24280.3     24394.4     24567.1     24814.7       25155     25607.6     26193.5     26935.4     27857.3     28984.8     30344.9     31965.9     33877.5     36110.8     38698.3     41673.7     45071.9     48929.4     53283.7     58173.6     63639.1     69721.5     76463.2       83908     92100.7      101087      110915      121632      133288      145933      159620      174401      190329      207461      225852      245559      266641      289157      313168      338735      365920      394787      425401      457827      492132      528384      566651      607004      649512      694247      741283      790693      842551      896934      953918 1.01358e+06   1.076e+06 1.14125e+06 1.20943e+06  1.2806e+06 1.35485e+06 1.43227e+06 1.51293e+06
+case: 16number of obs loaded : 10
+best fit polynomial : 15008.7 10.3327 5.70529
+derivatives at obs pts : 15008.7 15008.7 17170.9 62191.4  122232  171399  224629  283869  364383  391907
+derivatives at pred pts :     15008.7     15008.7     15008.7     15008.7     15008.7     15008.7     15008.7     15008.7     15008.7     15008.7     15008.7     15008.7     15008.7     15008.7     15008.7     15008.7     15008.7     15008.7     15008.7     15008.7     15008.7     15008.7     15008.7     15008.7     15008.7     15009.3       15016     15045.9     15133.8     15336.1     15736.5     16448.9     17622.5     19444.6     22144.8     25998.1     31328.7     38512.7       47982     60226.7     75798.5       95314      119457      148981      184715      227561      278501      338600      409004      490949      585757      694845      819722      961995 1.12337e+06 1.30566e+06 1.51077e+06 1.74072e+06 1.99764e+06 2.28378e+06 2.60148e+06 2.95321e+06 3.34156e+06 3.76925e+06  4.2391e+06 4.75406e+06 5.31723e+06 5.93182e+06 6.60118e+06 7.32878e+06 8.11824e+06 8.97331e+06  9.8979e+06  1.0896e+07 1.19719e+07 1.31298e+07 1.43743e+07 1.57099e+07 1.71415e+07  1.8674e+07
+case: 18number of obs loaded : 7
+best fit polynomial : 23317.7 9.75226 4.42529
+derivatives at obs pts : 23317.7 23317.7 24380.1 26981.5   32900   34150 54114.3
+derivatives at pred pts : 23317.7 23317.7 23317.7 23317.7 23317.7 23317.7 23317.7 23317.7 23317.7 23317.7 23317.7 23317.7 23317.7 23317.7 23317.7 23317.7 23317.7 23317.7 23317.7 23317.7 23317.7 23317.7 23317.7 23317.8 23319.4 23325.9 23341.5 23371.2 23420.9 23496.7 23605.4   23754 23950.2   24202 24517.5 24905.5 25374.8 25934.8   26595 27365.3 28255.6 29276.5 30438.4 31752.3 33229.2 34880.5 36717.7 38752.6 40997.1 43463.4   46164 49111.3 52318.3 55797.7 59562.9 63627.1 68003.9   72707 77750.2 83147.6 88913.3 95061.9  101608  108566  115950  123777  132060  140816  150060  159807  170074  180875  192228  204148  216652  229756  243477  257831  272835  288507
+case: 20number of obs loaded : 8
+best fit polynomial : 17946.2       5 4.72297
+derivatives at obs pts : 17980.9 27692.8 39558.4 75650.9 96924.6  115644  146428  215514
+derivatives at pred pts :     17946.2     17946.2     17946.2     17946.2     17946.2     17946.2     17946.2     17946.2     17946.2     17946.2     17946.2     17946.2     17946.2     17947.4     17953.7     17971.6     18009.7     18078.4     18190.1     18358.8     18600.2     18931.5     19371.4     19940.2     20659.5     21552.3       22643     23957.4     25522.5     27366.6     29519.3     32011.4     34875.1     38143.5       41851     46033.4     50727.3     55970.7     61802.7     68263.4       75394     83237.1       91836      101235      111480      122618      134696      147763      161869      177065      193402      210933      229713      249795      271235      294091      318421      344282      371734      400839      431657      464251      498685      535023      573330      613673      656118      700734      747589      796754      848300      902297      958818 1.01794e+06 1.07973e+06 1.14427e+06 1.21163e+06 1.28189e+06 1.35513e+06 1.43143e+06
+case: 21number of obs loaded : 5
+best fit polynomial : 45865.7 6.45803 5.26605
+derivatives at obs pts : 51003.1  126565  232615  388295  466657
+derivatives at pred pts :     45865.7     45865.7     45865.7     45865.7     45865.7     45865.7     45865.7     45865.7     45865.7     45865.7     45865.7     45865.7     45865.7     45865.7     45865.7     45865.7     45866.1     45870.7     45889.7     45940.8     46050.3     46253.4     46595.3     47130.8     47925.4     49055.6     50608.8     52684.1     55392.2     58856.1       63211     68604.4     75197.1     83162.4     92687.1      103971      117229      132687      150587      171185      194750      221568      251936      286169      324595      367557      415416      468544      527332      592185      663524      741785      827422      920903 1.02271e+06 1.13336e+06 1.25335e+06 1.38322e+06 1.52353e+06 1.67484e+06 1.83773e+06 2.01282e+06 2.20071e+06 2.40205e+06 2.61748e+06 2.84767e+06 3.09333e+06 3.35514e+06 3.63383e+06 3.93015e+06 4.24485e+06 4.57872e+06 4.93253e+06 5.30711e+06 5.70329e+06 6.12192e+06 6.56386e+06 7.02999e+06 7.52124e+06 8.03851e+06
+case: 22number of obs loaded : 6
+best fit polynomial : 100000      5  4.756
+derivatives at obs pts : 104156 153726 180668 237245 411588 547763
+derivatives at pred pts :      100000      100000      100000      100000      100000      100000      100000      100000      100000      100000      100000      100000      100000      100001      100008      100026      100065      100137      100254      100432      100688      101040      101510      102119      102891      103852      105028      106450      108146      110148      112490      115205      118331      121905      125964      130551      135705      141471      147892      155014      162884      171551      181063      191472      202829      215189      228605      243134      258832      275758      293972      313533      334505      356950      380932      406518      433773      462765      493564      526240      560863      597507      636245      677151      720302      765775      813646      863997      916906      972456 1.03073e+06 1.09181e+06 1.15578e+06 1.22272e+06 1.29273e+06 1.36589e+06 1.44229e+06 1.52202e+06 1.60518e+06 1.69184e+06
+case: 23number of obs loaded : 10
+best fit polynomial : 60320.2       5 4.44348
+derivatives at obs pts : 60320.2 86737.2  129011  140520  154238  212866  224678  290230  291944  333935
+derivatives at pred pts : 60320.2 60320.2 60320.2 60320.2 60320.2 60320.2 60320.2 60320.2 60320.2 60320.2 60320.2 60320.2 60320.3 60321.5 60327.1 60341.4 60369.4 60417.1 60490.9 60597.8 60745.2 60941.1 61193.7 61511.9 61904.6 62381.5 62952.2 63626.9 64416.1 65330.4 66380.9   67579 68936.1 70464.2 72175.4   74082 76196.6   78532 81101.4 83918.1 86995.5 90347.5 93987.9 97931.1  102191  106783  111721  117021  122697  128765  135241  142140  149478  157271  165536  174288  183546  193325  203642  214514  225960  237995  250638  263907  277820  292394  307648  323600  340269  357673  375832  394764  414488  435024  456391  478608  501696  525674  550562  576380
+case: 24number of obs loaded : 5
+best fit polynomial :  100000       5 5.76686
+derivatives at obs pts :      100000      109924      805916      713168 2.20982e+06
+derivatives at pred pts :      100000      100000      100000      100000      100000      100000      100000      100000      100000      100000      100000      100000      100000      100001      100011      100050      100161      100411      100900      101765      103183      105378      108628      113263      119674      128319      139721      154479      173265      196837      226032      261781      305104      357119      419043      492198      578012      678026      793894      927389 1.08041e+06 1.25496e+06 1.45321e+06 1.67743e+06 1.93004e+06 2.21359e+06 2.53077e+06 2.88445e+06 3.27759e+06 3.71336e+06 4.19505e+06 4.72612e+06 5.31018e+06 5.95103e+06 6.65263e+06 7.41909e+06 8.25471e+06 9.16399e+06 1.01516e+07 1.12223e+07 1.23812e+07 1.36335e+07 1.49846e+07 1.64402e+07  1.8006e+07  1.9688e+07 2.14926e+07  2.3426e+07 2.54949e+07 2.77062e+07  3.0067e+07 3.25846e+07 3.52663e+07 3.81201e+07 4.11539e+07 4.43758e+07 4.77943e+07 5.14181e+07 5.52561e+07 5.93174e+07
+COV_init : 
+0.0016      0      0
+     0 0.0289      0
+     0      0 0.0049
+     603953      613462      622995      632559      642161      651806      661502      671254      681068      690953      700916      710965      721108      731355      741723      752242      762899      773707      784681      795833      807179      818741      830538      842591      854923      867559      880526      893853      907573      921719      936331      951450      967122      983397 1.00033e+06 1.01798e+06 1.03641e+06 1.05569e+06 1.07591e+06 1.09715e+06 1.11951e+06 1.14309e+06 1.16801e+06 1.19439e+06 1.22239e+06 1.25215e+06 1.28385e+06 1.31769e+06 1.35388e+06 1.39266e+06 1.43429e+06 1.47907e+06 1.52732e+06 1.57943e+06 1.63581e+06  1.6969e+06 1.76324e+06 1.83541e+06 1.91406e+06 1.99994e+06 2.09387e+06 2.19681e+06 2.30981e+06  2.4341e+06 2.57103e+06 2.72219e+06 2.84729e+06 2.92905e+06 3.02114e+06 3.12528e+06 3.24351e+06 3.37821e+06  3.5322e+06 3.70875e+06 3.91176e+06 4.14576e+06 4.41615e+06 4.72923e+06 5.09248e+06 5.51472e+06
+number of samples in the file : 200
+updating hGPs with 200new points...
+new number of points for hGPs : 200
+construction des hGPs individuels sans PCA : 
+The GP will use 200 observations
+The GP will use 200 observations
+optimisation du gp pour hpars numero 0
+par after opt : 0.735891 0.261857 0.131357  0.30405 0.127264
+temps pour optimisation : 0 s
+optimisation du gp pour hpars numero 1
+par after opt :   1.10324 0.0117829    0.0001  0.740153  0.116347
+temps pour optimisation : 1 s
+number of samples in the file : 200
+updating hGPs with 200new points...
+new number of points for hGPs : 200
+construction des hGPs individuels sans PCA : 
+The GP will use 200 observations
+The GP will use 200 observations
+optimisation du gp pour hpars numero 0
+par after opt :  1.23534 0.419898 0.166918 0.197807 0.220089
+temps pour optimisation : 1 s
+optimisation du gp pour hpars numero 1
+par after opt :   1.02794   0.14424    0.0001 0.0376963  0.121089
+temps pour optimisation : 0 s
+number of samples in the file : 200
+updating hGPs with 200new points...
+new number of points for hGPs : 200
+construction des hGPs individuels sans PCA : 
+The GP will use 200 observations
+The GP will use 200 observations
+optimisation du gp pour hpars numero 0
+par after opt : 0.790885 0.280164 0.280359 0.382402 0.126967
+temps pour optimisation : 1 s
+optimisation du gp pour hpars numero 1
+par after opt :  0.826417  0.115982  0.359884  0.146571 0.0626482
+temps pour optimisation : 0 s
+number of samples in the file : 200
+updating hGPs with 200new points...
+new number of points for hGPs : 200
+construction des hGPs individuels sans PCA : 
+The GP will use 200 observations
+The GP will use 200 observations
+optimisation du gp pour hpars numero 0
+par after opt :  0.882086  0.117075    0.0001  0.200365 0.0741169
+temps pour optimisation : 0 s
+optimisation du gp pour hpars numero 1
+par after opt :   1.00609 0.0207333    0.0001  0.154298  0.105995
+temps pour optimisation : 0 s
+number of samples in the file : 200
+updating hGPs with 200new points...
+new number of points for hGPs : 200
+construction des hGPs individuels sans PCA : 
+The GP will use 200 observations
+The GP will use 200 observations
+optimisation du gp pour hpars numero 0
+par after opt :  0.736348 0.0609743  0.592055  0.381235  0.118068
+temps pour optimisation : 1 s
+optimisation du gp pour hpars numero 1
+par after opt :  0.926686 0.0524141  0.414392  0.201909 0.0933627
+temps pour optimisation : 1 s
+number of samples in the file : 200
+updating hGPs with 200new points...
+new number of points for hGPs : 200
+construction des hGPs individuels sans PCA : 
+The GP will use 200 observations
+The GP will use 200 observations
+optimisation du gp pour hpars numero 0
+par after opt :  1.07212 0.319464 0.125292 0.327744 0.145924
+temps pour optimisation : 1 s
+optimisation du gp pour hpars numero 1
+par after opt :    1.00833  0.0222659 0.00450849          5  0.0114537
+temps pour optimisation : 0 s
+number of samples in the file : 200
+updating hGPs with 200new points...
+new number of points for hGPs : 200
+construction des hGPs individuels sans PCA : 
+The GP will use 200 observations
+The GP will use 200 observations
+optimisation du gp pour hpars numero 0
+par after opt : 0.825726 0.141712 0.127554  0.24482 0.130263
+temps pour optimisation : 1 s
+optimisation du gp pour hpars numero 1
+par after opt :  0.881303 0.0428442  0.236859  0.298995 0.0911987
+temps pour optimisation : 1 s
+number of samples in the file : 200
+updating hGPs with 200new points...
+new number of points for hGPs : 200
+construction des hGPs individuels sans PCA : 
+The GP will use 200 observations
+The GP will use 200 observations
+optimisation du gp pour hpars numero 0
+par after opt : 0.771137 0.220076 0.222762 0.360567 0.175336
+temps pour optimisation : 1 s
+optimisation du gp pour hpars numero 1
+par after opt :  0.943758 0.0621895    0.0001 0.0777087  0.052406
+temps pour optimisation : 0 s
+number of samples in the file : 200
+updating hGPs with 200new points...
+new number of points for hGPs : 200
+construction des hGPs individuels sans PCA : 
+The GP will use 200 observations
+The GP will use 200 observations
+optimisation du gp pour hpars numero 0
+par after opt : 0.655682 0.272796 0.165123 0.325461 0.162099
+temps pour optimisation : 1 s
+optimisation du gp pour hpars numero 1
+par after opt : 0.894511 0.169728 0.495566 0.258274 0.129485
+temps pour optimisation : 1 s
+number of samples in the file : 200
+updating hGPs with 200new points...
+new number of points for hGPs : 200
+construction des hGPs individuels sans PCA : 
+The GP will use 200 observations
+The GP will use 200 observations
+optimisation du gp pour hpars numero 0
+par after opt : 0.737031 0.223849 0.178987 0.271025 0.133185
+temps pour optimisation : 1 s
+optimisation du gp pour hpars numero 1
+par after opt :  0.934183  0.101425  0.345198 0.0718058 0.0479572
+temps pour optimisation : 0 s
+number of samples in the file : 200
+updating hGPs with 200new points...
+new number of points for hGPs : 200
+construction des hGPs individuels sans PCA : 
+The GP will use 200 observations
+The GP will use 200 observations
+optimisation du gp pour hpars numero 0
+par after opt :  0.818958  0.139859 0.0237885  0.204105  0.113183
+temps pour optimisation : 1 s
+optimisation du gp pour hpars numero 1
+par after opt :    1.00457  0.0256157 0.00417686   0.326411       0.01
+temps pour optimisation : 0 s
+number of samples in the file : 200
+updating hGPs with 200new points...
+new number of points for hGPs : 200
+construction des hGPs individuels sans PCA : 
+The GP will use 200 observations
+The GP will use 200 observations
+optimisation du gp pour hpars numero 0
+par after opt :  0.95229 0.265978 0.103582 0.352203 0.246144
+temps pour optimisation : 0 s
+optimisation du gp pour hpars numero 1
+par after opt :  0.786373  0.125012 0.0647627  0.172977 0.0815185
+temps pour optimisation : 0 s
+number of samples in the file : 200
+updating hGPs with 200new points...
+new number of points for hGPs : 200
+construction des hGPs individuels sans PCA : 
+The GP will use 200 observations
+The GP will use 200 observations
+optimisation du gp pour hpars numero 0
+par after opt : 0.681113 0.218701 0.081437 0.347819 0.122985
+temps pour optimisation : 0 s
+optimisation du gp pour hpars numero 1
+par after opt :  0.936829 0.0791157  0.272243  0.169493 0.0422882
+temps pour optimisation : 0 s
+number of samples in the file : 200
+updating hGPs with 200new points...
+new number of points for hGPs : 200
+construction des hGPs individuels sans PCA : 
+The GP will use 200 observations
+The GP will use 200 observations
+optimisation du gp pour hpars numero 0
+par after opt :  1.77282 0.564957   0.0001 0.767076 0.422023
+temps pour optimisation : 0 s
+optimisation du gp pour hpars numero 1
+par after opt :     2.56602    0.526132 0.000100055    0.560127    0.256825
+temps pour optimisation : 0 s
+fcurrent : -1341.54
+burn phase over.  time : 933 s, accept rate : 3.94 pct. 
+new cov matrix : 
+ 0.00393769 -0.00356196 -0.00301165
+-0.00356196    0.016955    -0.00101
+-0.00301165    -0.00101  0.00378315
+no scaling
+MCMC phase over.  time : 41714 s, accept rate : 9.878 pct. 
+number of samples : 499
+0.127987 0.732255  0.75406
+ 0.10717 0.846276  0.73748
+0.135937  0.73604 0.745209
+0.135079 0.685844 0.752651
+0.139602 0.765307 0.746609
+intégrales avec nautocor = 2000
+77.7167 89.5868 115.603
+maximum : 115.603
+computing predictions with 499 samples...
+Dmax : 2.20858e+06 Dmin 1710.88
+Dmax : 2.54885e+06 Dmin 2624.19
+Dmax : 1.89678e+06 Dmin 1201.5
+Dmax : 1.86235e+06 Dmin 1252.63
+Dmax : 2.1418e+06 Dmin 1662.26
+Dmax : 2.05954e+06 Dmin 1615.52
+Dmax : 2.00465e+06 Dmin 1349.68
+Dmax : 2.46852e+06 Dmin 1711.65
+Dmax : 1.62171e+06 Dmin 1522.69
+Dmax : 2.02223e+06 Dmin 2031.75
+computing predictions with 499 samples...
+computing predictions with 499 samples...
+Dmax : 484761 Dmin 335.405
+Dmax : 642372 Dmin 172.617
+Dmax : 709977 Dmin 181.818
+Dmax : 608949 Dmin 187.957
+Dmax : 515567 Dmin 253.542
+Dmax : 618584 Dmin 759.381
+Dmax : 509761 Dmin 144.705
+Dmax : 519848 Dmin 199.678
+Dmax : 637389 Dmin 184.866
+Dmax : 488616 Dmin 333.088
+computing predictions with 499 samples...
+computing predictions with 499 samples...
+Dmax : 534606 Dmin 42.9601
+Dmax : 533762 Dmin 37.6008
+Dmax : 564561 Dmin 48.396
+Dmax : 426222 Dmin 47.0489
+Dmax : 567336 Dmin 47.7884
+Dmax : 537152 Dmin 42.259
+Dmax : 523872 Dmin 41.5857
+Dmax : 533058 Dmin 39.739
+Dmax : 520434 Dmin 64.4793
+Dmax : 546734 Dmin 47.7573
+computing predictions with 499 samples...
+computing predictions with 499 samples...
+Dmax : 5.28573e+06 Dmin 804.642
+Dmax : 3.49948e+06 Dmin 234.038
+Dmax : 5.40476e+06 Dmin 625.149
+Dmax : 5.54566e+06 Dmin 353.319
+Dmax : 4.52286e+06 Dmin 645.006
+Dmax : 4.75516e+06 Dmin 774.18
+Dmax : 5.13249e+06 Dmin 705.008
+Dmax : 4.81708e+06 Dmin 1072.33
+Dmax : 4.97788e+06 Dmin 1000.85
+Dmax : 3.85031e+06 Dmin 188.633
+computing predictions with 499 samples...
+computing predictions with 499 samples...
+Dmax : 1.55382e+06 Dmin 1717.77
+Dmax : 1.78583e+06 Dmin 2347.5
+Dmax : 1.28893e+06 Dmin 1991.7
+Dmax : 2.01423e+06 Dmin 2562.87
+Dmax : 1.29944e+06 Dmin 2664.29
+Dmax : 2.01581e+06 Dmin 2282.42
+Dmax : 1.91453e+06 Dmin 2599.2
+Dmax : 1.57296e+06 Dmin 3451.65
+Dmax : 1.93738e+06 Dmin 2410.32
+Dmax : 1.89942e+06 Dmin 2309.91
+computing predictions with 499 samples...
+computing predictions with 499 samples...
+Dmax : 1.53452e+06 Dmin 1471.17
+Dmax : 1.31488e+06 Dmin 2272.22
+Dmax : 1.31435e+06 Dmin 2217.66
+Dmax : 1.38828e+06 Dmin 2436.2
+Dmax : 1.29444e+06 Dmin 1963.89
+Dmax : 1.62697e+06 Dmin 766.136
+Dmax : 1.39026e+06 Dmin 2847.51
+Dmax : 1.44052e+06 Dmin 1583.63
+Dmax : 1.384e+06 Dmin 2855.39
+Dmax : 1.45434e+06 Dmin 881.099
+computing predictions with 499 samples...
+computing predictions with 499 samples...
+Dmax : 1.14131e+06 Dmin 229.893
+Dmax : 1.1815e+06 Dmin 227.134
+Dmax : 1.16119e+06 Dmin 230.888
+Dmax : 1.14969e+06 Dmin 208.492
+Dmax : 1.18986e+06 Dmin 220.101
+Dmax : 1.21235e+06 Dmin 223.759
+Dmax : 1.20482e+06 Dmin 213.436
+Dmax : 1.20355e+06 Dmin 215.406
+Dmax : 1.12875e+06 Dmin 220.804
+Dmax : 1.13947e+06 Dmin 208.499
+computing predictions with 499 samples...
+computing predictions with 499 samples...
+Dmax : 92755.2 Dmin 3.61839
+Dmax : 87340.8 Dmin 0.756535
+Dmax : 82334.9 Dmin 0.319483
+Dmax : 887023 Dmin 240.616
+Dmax : 67986.4 Dmin 0.215998
+Dmax : 60624.1 Dmin 0.146427
+Dmax : 101788 Dmin 2.42225
+Dmax : 67204.2 Dmin 0.143158
+Dmax : 76650.7 Dmin 0.306403
+Dmax : 68150.5 Dmin 0.322461
+computing predictions with 499 samples...
+computing predictions with 499 samples...
+Dmax : 3.13234e+06 Dmin 713.855
+Dmax : 3.07136e+06 Dmin 671.101
+Dmax : 3.25339e+06 Dmin 756.445
+Dmax : 3.17995e+06 Dmin 839.805
+Dmax : 2.88878e+06 Dmin 1277.92
+Dmax : 3.07467e+06 Dmin 1158.32
+Dmax : 3.17879e+06 Dmin 634.012
+Dmax : 3.12128e+06 Dmin 744.741
+Dmax : 3.2425e+06 Dmin 758.715
+Dmax : 3.15635e+06 Dmin 771.061
+computing predictions with 499 samples...
+computing predictions with 499 samples...
+Dmax : 2.10717e+06 Dmin 206.067
+Dmax : 1.62462e+06 Dmin 398.27
+Dmax : 2.55926e+06 Dmin 357.571
+Dmax : 2.1617e+06 Dmin 180.807
+Dmax : 2.01736e+06 Dmin 354.195
+Dmax : 1.89937e+06 Dmin 340.504
+Dmax : 1.80363e+06 Dmin 391.046
+Dmax : 1.67491e+06 Dmin 390.658
+Dmax : 2.55926e+06 Dmin 357.571
+Dmax : 2.03991e+06 Dmin 282.443
+computing predictions with 499 samples...
+computing predictions with 499 samples...
+Dmax : 1.75595e+06 Dmin 169.129
+Dmax : 1.73461e+06 Dmin 136.141
+Dmax : 1.79197e+06 Dmin 153.556
+Dmax : 1.66627e+06 Dmin 135.311
+Dmax : 1.64568e+06 Dmin 101.38
+Dmax : 1.46787e+06 Dmin 78.172
+Dmax : 1.88376e+06 Dmin 174.228
+Dmax : 1.57402e+06 Dmin 92.1814
+Dmax : 1.69996e+06 Dmin 161.43
+Dmax : 1.62825e+06 Dmin 91.2862
+computing predictions with 499 samples...
+computing predictions with 499 samples...
+Dmax : 1.2342e+06 Dmin 78.7085
+Dmax : 1.32701e+06 Dmin 90.4798
+Dmax : 1.20905e+06 Dmin 66.4622
+Dmax : 1.21788e+06 Dmin 65.0808
+Dmax : 1.1848e+06 Dmin 64.1942
+Dmax : 1.0804e+06 Dmin 46.7185
+Dmax : 1.23993e+06 Dmin 71.5861
+Dmax : 1.30177e+06 Dmin 73.224
+Dmax : 1.2899e+06 Dmin 78.6149
+Dmax : 1.00184e+06 Dmin 31.7736
+computing predictions with 499 samples...
+computing predictions with 499 samples...
+Dmax : 1.64652e+06 Dmin 6426.78
+Dmax : 1.98532e+06 Dmin 3427.53
+Dmax : 1.7535e+06 Dmin 4125.11
+Dmax : 1.3899e+06 Dmin 7417.04
+Dmax : 1.77429e+06 Dmin 4640.91
+Dmax : 1.53825e+06 Dmin 7231.1
+Dmax : 1.46027e+06 Dmin 5824.68
+Dmax : 1.617e+06 Dmin 5335.05
+Dmax : 1.51503e+06 Dmin 7894.94
+Dmax : 1.90123e+06 Dmin 4998.31
+computing predictions with 499 samples...
+computing predictions with 499 samples...
+Dmax : 2.0657e+06 Dmin 14.6112
+Dmax : 2.06762e+06 Dmin 14.5989
+Dmax : 2.06715e+06 Dmin 14.622
+Dmax : 2.06751e+06 Dmin 14.6199
+Dmax : 2.06815e+06 Dmin 14.636
+Dmax : 2.07375e+06 Dmin 14.7455
+Dmax : 2.06939e+06 Dmin 14.6086
+Dmax : 2.07077e+06 Dmin 14.636
+Dmax : 2.06652e+06 Dmin 14.5991
+Dmax : 2.07027e+06 Dmin 14.6589
+computing predictions with 499 samples...
+fin de l'opt koh : message 4
+55469.4  1.3813
+time : 18 s.
+fin de l'opt koh : message 4
+ 81547 1.3281
+time : 18 s.
+fin de l'opt koh : message 4
+82193.7 3.27798
+time : 18 s.
+fin de l'opt koh : message 4
+10000    25
+time : 18 s.
+fin de l'opt koh : message 4
+2e+06     1
+time : 18 s.
+fin de l'opt koh : message 4
+ 507174 1.60428
+time : 18 s.
+fin de l'opt koh : message 4
+116798 1.9884
+time : 18 s.
+fin de l'opt koh : message 4
+10000    25
+time : 19 s.
+fin de l'opt koh : message 4
+53887.7 2.79728
+time : 18 s.
+fin de l'opt koh : message 4
+ 143770 1.57367
+time : 18 s.
+fin de l'opt koh : message 4
+  73995 7.86314
+time : 18 s.
+fin de l'opt koh : message 4
+ 667941 10.2529
+time : 18 s.
+fin de l'opt koh : message 4
+ 420190 1.02964
+time : 19 s.
+fin de l'opt koh : message 4
+ 830504 14.0584
+time : 18 s.
+hparskoh sep:55469.4  1.3813
+fcurrent : -2250.54
+burn phase over.  time : 408 s, accept rate : 1.32 pct. 
+new cov matrix : 
+   0.010414 -0.00205504 -0.00138299
+-0.00205504  0.00292441 -0.00133073
+-0.00138299 -0.00133073  0.00139587
+no scaling
+MCMC phase over.  time : 4314 s, accept rate : 6.58 pct. 
+number of samples : 499
+ 0.969429 0.0328995  0.433377
+  0.982658 0.00299678    0.45425
+  0.982749 0.00361521   0.450044
+ 0.998312 0.0320726  0.429501
+ 0.990329 0.0224533  0.433949
+intégrales avec nautocor = 2000
+15.4979 48.3606  40.961
+maximum : 48.3606
+computing predictions with 499 samples...
+Dmax : 205825 Dmin 325.687
+Dmax : 205825 Dmin 325.687
+Dmax : 205825 Dmin 325.687
+Dmax : 205825 Dmin 325.687
+Dmax : 205825 Dmin 325.687
+Dmax : 205825 Dmin 325.687
+Dmax : 205825 Dmin 325.687
+Dmax : 205825 Dmin 325.687
+Dmax : 205825 Dmin 325.687
+Dmax : 205825 Dmin 325.687
+computing predictions with 499 samples...
+Dmax : 291164 Dmin 527.537
+Dmax : 291164 Dmin 527.537
+Dmax : 291164 Dmin 527.537
+Dmax : 291164 Dmin 527.537
+Dmax : 291164 Dmin 527.537
+Dmax : 291164 Dmin 527.537
+Dmax : 291164 Dmin 527.537
+Dmax : 291164 Dmin 527.537
+Dmax : 291164 Dmin 527.537
+Dmax : 291164 Dmin 527.537
+computing predictions with 499 samples...
+Dmax : 281082 Dmin 56.3265
+Dmax : 281082 Dmin 56.3265
+Dmax : 281082 Dmin 56.3265
+Dmax : 281082 Dmin 56.3265
+Dmax : 281082 Dmin 56.3265
+Dmax : 281082 Dmin 56.3265
+Dmax : 281082 Dmin 56.3265
+Dmax : 281082 Dmin 56.3265
+Dmax : 281082 Dmin 56.3265
+Dmax : 281082 Dmin 56.3265
+computing predictions with 499 samples...
+Dmax : 75186.3 Dmin 0.0427778
+Dmax : 75186.3 Dmin 0.0427778
+Dmax : 75186.3 Dmin 0.0427778
+Dmax : 75186.3 Dmin 0.0427778
+Dmax : 75186.3 Dmin 0.0427778
+Dmax : 75186.3 Dmin 0.0427778
+Dmax : 75186.3 Dmin 0.0427778
+Dmax : 75186.3 Dmin 0.0427778
+Dmax : 75186.3 Dmin 0.0427778
+Dmax : 75186.3 Dmin 0.0427778
+computing predictions with 499 samples...
+Dmax : 6.7551e+06 Dmin 25911.8
+Dmax : 6.7551e+06 Dmin 25911.8
+Dmax : 6.7551e+06 Dmin 25911.8
+Dmax : 6.7551e+06 Dmin 25911.8
+Dmax : 6.7551e+06 Dmin 25911.8
+Dmax : 6.7551e+06 Dmin 25911.8
+Dmax : 6.7551e+06 Dmin 25911.8
+Dmax : 6.7551e+06 Dmin 25911.8
+Dmax : 6.7551e+06 Dmin 25911.8
+Dmax : 6.7551e+06 Dmin 25911.8
+computing predictions with 499 samples...
+Dmax : 2.05608e+06 Dmin 2056.41
+Dmax : 2.05608e+06 Dmin 2056.41
+Dmax : 2.05608e+06 Dmin 2056.41
+Dmax : 2.05608e+06 Dmin 2056.41
+Dmax : 2.05608e+06 Dmin 2056.41
+Dmax : 2.05608e+06 Dmin 2056.41
+Dmax : 2.05608e+06 Dmin 2056.41
+Dmax : 2.05608e+06 Dmin 2056.41
+Dmax : 2.05608e+06 Dmin 2056.41
+Dmax : 2.05608e+06 Dmin 2056.41
+computing predictions with 499 samples...
+Dmax : 450175 Dmin 278.001
+Dmax : 450175 Dmin 278.001
+Dmax : 450175 Dmin 278.001
+Dmax : 450175 Dmin 278.001
+Dmax : 450175 Dmin 278.001
+Dmax : 450175 Dmin 278.001
+Dmax : 450175 Dmin 278.001
+Dmax : 450175 Dmin 278.001
+Dmax : 450175 Dmin 278.001
+Dmax : 450175 Dmin 278.001
+computing predictions with 499 samples...
+Dmax : 33534.7 Dmin 0.0427777
+Dmax : 33534.7 Dmin 0.0427777
+Dmax : 33534.7 Dmin 0.0427777
+Dmax : 33534.7 Dmin 0.0427777
+Dmax : 33534.7 Dmin 0.0427777
+Dmax : 33534.7 Dmin 0.0427777
+Dmax : 33534.7 Dmin 0.0427777
+Dmax : 33534.7 Dmin 0.0427777
+Dmax : 33534.7 Dmin 0.0427777
+Dmax : 33534.7 Dmin 0.0427777
+computing predictions with 499 samples...
+Dmax : 197669 Dmin 54.8406
+Dmax : 197669 Dmin 54.8406
+Dmax : 197669 Dmin 54.8406
+Dmax : 197669 Dmin 54.8406
+Dmax : 197669 Dmin 54.8406
+Dmax : 197669 Dmin 54.8406
+Dmax : 197669 Dmin 54.8406
+Dmax : 197669 Dmin 54.8406
+Dmax : 197669 Dmin 54.8406
+Dmax : 197669 Dmin 54.8406
+computing predictions with 499 samples...
+Dmax : 529831 Dmin 611.418
+Dmax : 529831 Dmin 611.418
+Dmax : 529831 Dmin 611.418
+Dmax : 529831 Dmin 611.418
+Dmax : 529831 Dmin 611.418
+Dmax : 529831 Dmin 611.418
+Dmax : 529831 Dmin 611.418
+Dmax : 529831 Dmin 611.418
+Dmax : 529831 Dmin 611.418
+Dmax : 529831 Dmin 611.418
+computing predictions with 499 samples...
+Dmax : 303620 Dmin 5.70264
+Dmax : 303620 Dmin 5.70264
+Dmax : 303620 Dmin 5.70264
+Dmax : 303620 Dmin 5.70264
+Dmax : 303620 Dmin 5.70264
+Dmax : 303620 Dmin 5.70264
+Dmax : 303620 Dmin 5.70264
+Dmax : 303620 Dmin 5.70264
+Dmax : 303620 Dmin 5.70264
+Dmax : 303620 Dmin 5.70264
+computing predictions with 499 samples...
+Dmax : 968386 Dmin 26.5198
+Dmax : 968386 Dmin 26.5198
+Dmax : 968386 Dmin 26.5198
+Dmax : 968386 Dmin 26.5198
+Dmax : 968386 Dmin 26.5198
+Dmax : 968386 Dmin 26.5198
+Dmax : 968386 Dmin 26.5198
+Dmax : 968386 Dmin 26.5198
+Dmax : 968386 Dmin 26.5198
+Dmax : 968386 Dmin 26.5198
+computing predictions with 499 samples...
+Dmax : 1.3923e+06 Dmin 5078.39
+Dmax : 1.3923e+06 Dmin 5078.39
+Dmax : 1.3923e+06 Dmin 5078.39
+Dmax : 1.3923e+06 Dmin 5078.39
+Dmax : 1.3923e+06 Dmin 5078.39
+Dmax : 1.3923e+06 Dmin 5078.39
+Dmax : 1.3923e+06 Dmin 5078.39
+Dmax : 1.3923e+06 Dmin 5078.39
+Dmax : 1.3923e+06 Dmin 5078.39
+Dmax : 1.3923e+06 Dmin 5078.39
+computing predictions with 499 samples...
+Dmax : 2.04341e+06 Dmin 14.9798
+Dmax : 2.04341e+06 Dmin 14.9798
+Dmax : 2.04341e+06 Dmin 14.9798
+Dmax : 2.04341e+06 Dmin 14.9798
+Dmax : 2.04341e+06 Dmin 14.9798
+Dmax : 2.04341e+06 Dmin 14.9798
+Dmax : 2.04341e+06 Dmin 14.9798
+Dmax : 2.04341e+06 Dmin 14.9798
+Dmax : 2.04341e+06 Dmin 14.9798
+Dmax : 2.04341e+06 Dmin 14.9798
+XinitMCMC :       0.5       0.5       0.5 1.005e+06        13 1.005e+06        13 1.005e+06        13 1.005e+06        13 1.005e+06        13 1.005e+06        13 1.005e+06        13 1.005e+06        13 1.005e+06        13 1.005e+06        13 1.005e+06        13 1.005e+06        13 1.005e+06        13 1.005e+06        13
+COV init : 
+ 0.0016       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0
+      0  0.0289       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0
+      0       0  0.0049       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0
+      0       0       0 2.5e+09       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0
+      0       0       0       0    0.25       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0
+      0       0       0       0       0 2.5e+09       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0
+      0       0       0       0       0       0    0.25       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0
+      0       0       0       0       0       0       0 2.5e+09       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0
+      0       0       0       0       0       0       0       0    0.25       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0
+      0       0       0       0       0       0       0       0       0 2.5e+09       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0
+      0       0       0       0       0       0       0       0       0       0    0.25       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0
+      0       0       0       0       0       0       0       0       0       0       0 2.5e+09       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0
+      0       0       0       0       0       0       0       0       0       0       0       0    0.25       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0
+      0       0       0       0       0       0       0       0       0       0       0       0       0 2.5e+09       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0
+      0       0       0       0       0       0       0       0       0       0       0       0       0       0    0.25       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0
+      0       0       0       0       0       0       0       0       0       0       0       0       0       0       0 2.5e+09       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0
+      0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0    0.25       0       0       0       0       0       0       0       0       0       0       0       0       0       0
+      0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0 2.5e+09       0       0       0       0       0       0       0       0       0       0       0       0       0
+      0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0    0.25       0       0       0       0       0       0       0       0       0       0       0       0
+      0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0 2.5e+09       0       0       0       0       0       0       0       0       0       0       0
+      0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0    0.25       0       0       0       0       0       0       0       0       0       0
+      0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0 2.5e+09       0       0       0       0       0       0       0       0       0
+      0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0    0.25       0       0       0       0       0       0       0       0
+      0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0 2.5e+09       0       0       0       0       0       0       0
+      0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0    0.25       0       0       0       0       0       0
+      0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0 2.5e+09       0       0       0       0       0
+      0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0    0.25       0       0       0       0
+      0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0 2.5e+09       0       0       0
+      0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0    0.25       0       0
+      0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0 2.5e+09       0
+      0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0       0    0.25
+fcurrent : -1660.28
+burn phase over.  time : 207 s, accept rate : 1.48 pct. 
+new cov matrix : 
+  0.00222612  -0.00419649   -0.0023527     -1456.38   0.00426234     -2433.48    0.0201286       3250.2    0.0332827     -732.495    -0.021165     -2042.96    0.0334901      42.6946    0.0217255     -2532.35  -0.00776835      1403.59   -0.0226017     -1665.14    0.0213609     -3850.63    -0.021275     -1538.24   0.00687199     -1408.74    0.0400075     -2807.06    0.0470687     -3252.97   -0.0155633
+ -0.00419649   0.00943556   0.00485888      2926.04   -0.0123688      4561.15   -0.0335096     -6918.78   -0.0630252      1363.08    0.0431996      4057.59   -0.0685576      -673.33    -0.040709      5717.13    0.0154586     -2922.16    0.0493171      2878.58    -0.043346      8163.55    0.0421015      3201.89   -0.0155042      3202.75   -0.0792402      5925.96   -0.0920792      6607.95    0.0370416
+  -0.0023527   0.00485888   0.00294687      1470.14  -0.00354192      2532.21    -0.017281     -3892.69    -0.035832      774.096    0.0211219      2470.67    -0.040112       -744.6    -0.024718      3345.03   0.00669398     -1732.87    0.0278083      1657.79   -0.0207478      4576.43    0.0229868      1460.63  -0.00528272      1858.18   -0.0443377       3401.3    -0.052483      4107.45    0.0219456
+    -1456.38      2926.04      1470.14  7.60225e+09     -6078.43 -6.73088e+07      18029.5 -1.09511e+08     -14916.6  3.28131e+09      63184.5 -1.32528e+09     -1602.86  2.27184e+09      45267.9  4.48345e+09      30484.6 -2.26095e+09      26378.2 -4.80755e+08     -33241.4   3.0202e+09     -9384.73  6.21243e+09       -10584  4.66948e+09     -26212.2  2.57478e+09     -37849.6 -1.28353e+09      3421.88
+  0.00426234   -0.0123688  -0.00354192     -6078.43     0.859982     -6001.77    -0.011491      30289.2    -0.196796      35619.7    -0.334225      9180.31    -0.208362     -69143.4    -0.460443     -13589.8     -0.17251      -5540.8    0.0784219      25304.8     0.356373     -20468.1    -0.217468     -28488.5     0.554523     -3131.38   -0.0117069       9.6202     -0.25803      22852.5     0.304164
+    -2433.48      4561.15      2532.21 -6.73088e+07     -6001.77  4.97885e+09     -51274.7 -2.98445e+09     -36471.2  -1.5547e+09      12524.9  3.65842e+09     -45991.4 -5.81246e+08     -45219.9  1.03295e+09      5335.63 -1.30828e+09        14269  3.55609e+09     -22785.6  3.39596e+09      33923.9  6.85156e+08     -10714.9 -1.37966e+09     -38589.3  3.05252e+09     -40137.8  3.97626e+09      25283.8
+   0.0201286   -0.0335096    -0.017281      18029.5    -0.011491     -51274.7     0.732445      19183.6     0.341731      23443.7    0.0392642     -42886.4     0.423383      14691.7     0.607669      13793.3   0.00988872       8022.2   -0.0457232     -46751.2     0.162974     -17183.1    -0.349805      6561.85    0.0678211      35332.2     0.295194       -23600     0.266889     -34915.6    -0.303393
+      3250.2     -6918.78     -3892.69 -1.09511e+08      30289.2 -2.98445e+09      19183.6  8.16376e+09      46641.1 -9.52045e+06     -20552.5 -3.64772e+09        48212 -4.34247e+08      36268.5 -5.07097e+09     -7413.19  1.42785e+09     -36881.2 -7.41208e+08      34616.6 -7.57018e+09     -43213.4 -1.15454e+09      19903.1 -2.52076e+09        61293 -3.96357e+09      70375.8 -6.33415e+09     -17866.8
+   0.0332827   -0.0630252    -0.035832     -14916.6    -0.196796     -36471.2     0.341731      46641.1     0.671798     -24067.2    -0.142965     -36921.4     0.619772      27431.6     0.592163     -30021.1   -0.0488082      21342.2    -0.395719       -36891     0.214285     -53722.1    -0.303187     -11258.7   -0.0700687     -22905.8     0.639769     -47597.3     0.843119     -62532.7    -0.383056
+    -732.495      1363.08      774.096  3.28131e+09      35619.7  -1.5547e+09      23443.7 -9.52045e+06     -24067.2  5.45904e+09      14525.1 -1.24172e+09     -10215.8 -1.82725e+09      3252.15  2.20146e+09      3365.21 -1.16295e+09      28174.3  2.63609e+08      2997.73  1.23976e+09     -12947.5  1.61522e+09      20958.8  4.34214e+09     -21824.9  1.67674e+09     -44815.1  7.63206e+08      10702.4
+   -0.021165    0.0431996    0.0211219      63184.5    -0.334225      12524.9    0.0392642     -20552.5    -0.142965      14525.1     0.744222     -5943.46   -0.0809305      43218.2     0.442994      46401.9     0.309275     -19205.8     0.258742     -7130.24    -0.451175      44802.7    0.0731687        61414    -0.301937      40199.3    -0.371353      29047.9    -0.376306     -7629.24   -0.0712345
+    -2042.96      4057.59      2470.67 -1.32528e+09      9180.31  3.65842e+09     -42886.4 -3.64772e+09     -36921.4 -1.24172e+09     -5943.46  5.36667e+09     -45572.2 -2.81402e+09     -59050.4  1.28306e+09     -305.123 -1.11858e+09      16340.7  3.25256e+09     -13265.7  3.84351e+09      28982.7 -9.94423e+08      6330.35 -1.58854e+09     -36293.8   2.6609e+09     -42846.8  5.66008e+09      36168.6
+   0.0334901   -0.0685576    -0.040112     -1602.86    -0.208362     -45991.4     0.423383        48212     0.619772     -10215.8   -0.0809305     -45572.2     0.829603      37632.7     0.686408     -26238.8    0.0346382      24214.4    -0.384476     -41428.5     0.127946     -51160.3    -0.317395      2637.91    -0.101182     -11184.1     0.681204     -49437.5     0.827064       -73242    -0.405553
+     42.6946      -673.33       -744.6  2.27184e+09     -69143.4 -5.81246e+08      14691.7 -4.34247e+08      27431.6 -1.82725e+09      43218.2 -2.81402e+09      37632.7  8.28424e+09      65685.4  3.62975e+08      20232.3  9.45074e+08     -13254.3 -3.07707e+09     -30152.4  4.31653e+08       6046.4  3.79965e+09     -49318.2  9.60617e+08      10733.8 -1.05932e+09      29991.5 -4.57313e+09     -45695.9
+   0.0217255    -0.040709    -0.024718      45267.9    -0.460443     -45219.9     0.607669      36268.5     0.592163      3252.15     0.442994     -59050.4     0.686408      65685.4      1.19394      12379.5     0.205269      8120.31    -0.177205     -51977.8    -0.107288       -27113    -0.375265      42812.6    -0.262918      29836.1     0.416102     -27432.8     0.588211     -81752.1    -0.517901
+    -2532.35      5717.13      3345.03  4.48345e+09     -13589.8  1.03295e+09      13793.3 -5.07097e+09     -30021.1  2.20146e+09      46401.9  1.28306e+09     -26238.8  3.62975e+08      12379.5  8.48134e+09      19857.3 -2.48148e+09      39237.3  -8.0855e+08     -40127.2  7.05657e+09      15103.5  4.09239e+09     -10453.2  4.77159e+09     -48571.1  3.16936e+09     -64327.7  3.92065e+09      13983.9
+ -0.00776835    0.0154586   0.00669398      30484.6     -0.17251      5335.63   0.00988872     -7413.19   -0.0488082      3365.21     0.309275     -305.123    0.0346382      20232.3     0.205269      19857.3     0.214894     -8324.41    0.0962741     -2037.25    -0.232255      19886.4    0.0217767      31097.1    -0.142597        13455    -0.102499      10258.3    -0.123079      -6288.7   -0.0104307
+     1403.59     -2922.16     -1732.87 -2.26095e+09      -5540.8 -1.30828e+09       8022.2  1.42785e+09      21342.2 -1.16295e+09     -19205.8 -1.11858e+09      24214.4  9.45074e+08      8120.31 -2.48148e+09     -8324.41  2.17873e+09     -19909.5 -1.27978e+09      15570.4 -2.43405e+09     -7848.44 -1.88653e+09      112.632 -1.15603e+09        26546 -2.07922e+09      32992.9 -1.98275e+09     -20726.4
+  -0.0226017    0.0493171    0.0278083      26378.2    0.0784219        14269   -0.0457232     -36881.2    -0.395719      28174.3     0.258742      16340.7    -0.384476     -13254.3    -0.177205      39237.3    0.0962741     -19909.5     0.426182      15757.3    -0.197731      46715.8     0.143054      22962.2      0.01704      36210.8    -0.484865      36592.8     -0.64684      37164.8     0.235809
+    -1665.14      2878.58      1657.79 -4.80755e+08      25304.8  3.55609e+09     -46751.2 -7.41208e+08       -36891  2.63609e+08     -7130.24  3.25256e+09     -41428.5 -3.07707e+09     -51977.8  -8.0855e+08     -2037.25 -1.27978e+09      15757.3  5.37033e+09     -4029.87  1.13877e+09      19578.1 -2.98244e+08      12241.5 -1.19449e+09     -26742.7  2.83548e+09     -36341.6  3.32315e+09      38708.8
+   0.0213609    -0.043346   -0.0207478     -33241.4     0.356373     -22785.6     0.162974      34616.6     0.214285      2997.73    -0.451175     -13265.7     0.127946     -30152.4    -0.107288     -40127.2    -0.232255      15570.4    -0.197731     -4029.87     0.494601     -45945.1    -0.247589     -43869.7     0.311954     -16326.2     0.344049     -23355.1     0.327858       -10953     -0.06358
+    -3850.63      8163.55      4576.43   3.0202e+09     -20468.1  3.39596e+09     -17183.1 -7.57018e+09     -53722.1  1.23976e+09      44802.7  3.84351e+09     -51160.3  4.31653e+08       -27113  7.05657e+09      19886.4 -2.43405e+09      46715.8  1.13877e+09     -45945.1   9.4577e+09      37669.5  3.37287e+09     -18736.1  3.62159e+09     -69784.4  4.81916e+09     -89932.1  6.49049e+09      25625.5
+   -0.021275    0.0421015    0.0229868     -9384.73    -0.217468      33923.9    -0.349805     -43213.4    -0.303187     -12947.5    0.0731687      28982.7    -0.317395       6046.4    -0.375265      15103.5    0.0217767     -7848.44     0.143054      19578.1    -0.247589      37669.5     0.412353      4780.42    -0.195024     -5895.55    -0.345034      23730.4    -0.311558      38317.4     0.174702
+    -1538.24      3201.89      1460.63  6.21243e+09     -28488.5  6.85156e+08      6561.85 -1.15454e+09     -11258.7  1.61522e+09        61414 -9.94423e+08      2637.91  3.79965e+09      42812.6  4.09239e+09      31097.1 -1.88653e+09      22962.2 -2.98244e+08     -43869.7  3.37287e+09      4780.42  6.64952e+09     -27650.9  3.51734e+09     -23475.3  2.37347e+09     -28519.6 -1.65138e+09      1253.59
+  0.00687199   -0.0155042  -0.00528272       -10584     0.554523     -10714.9    0.0678211      19903.1   -0.0700687      20958.8    -0.301937      6330.35    -0.101182     -49318.2    -0.262918     -10453.2    -0.142597      112.632      0.01704      12241.5     0.311954     -18736.1    -0.195024     -27650.9     0.443738     -1028.11    0.0421337     -3858.15   -0.0966134      15132.8     0.171562
+    -1408.74      3202.75      1858.18  4.66948e+09     -3131.38 -1.37966e+09      35332.2 -2.52076e+09     -22905.8  4.34214e+09      40199.3 -1.58854e+09     -11184.1  9.60617e+08      29836.1  4.77159e+09        13455 -1.15603e+09      36210.8 -1.19449e+09     -16326.2  3.62159e+09     -5895.55  3.51734e+09     -1028.11   6.9645e+09     -35605.4  2.87715e+09     -50027.1  7.34964e+08     -3432.83
+   0.0400075   -0.0792402   -0.0443377     -26212.2   -0.0117069     -38589.3     0.295194        61293     0.639769     -21824.9    -0.371353     -36293.8     0.681204      10733.8     0.416102     -48571.1    -0.102499        26546    -0.484865     -26742.7     0.344049     -69784.4    -0.345034     -23475.3    0.0421337     -35605.4     0.825028       -54031     0.926412     -63394.2    -0.288641
+    -2807.06      5925.96       3401.3  2.57478e+09       9.6202  3.05252e+09       -23600 -3.96357e+09     -47597.3  1.67674e+09      29047.9   2.6609e+09     -49437.5 -1.05932e+09     -27432.8  3.16936e+09      10258.3 -2.07922e+09      36592.8  2.83548e+09     -23355.1  4.81916e+09      23730.4  2.37347e+09     -3858.15  2.87715e+09       -54031  5.00911e+09     -65107.4  4.18398e+09      30379.1
+   0.0470687   -0.0920792    -0.052483     -37849.6     -0.25803     -40137.8     0.266889      70375.8     0.843119     -44815.1    -0.376306     -42846.8     0.827064      29991.5     0.588211     -64327.7    -0.123079      32992.9     -0.64684     -36341.6     0.327858     -89932.1    -0.311558     -28519.6   -0.0966134     -50027.1     0.926412     -65107.4        1.341     -82109.7    -0.441455
+    -3252.97      6607.95      4107.45 -1.28353e+09      22852.5  3.97626e+09     -34915.6 -6.33415e+09     -62532.7  7.63206e+08     -7629.24  5.66008e+09       -73242 -4.57313e+09     -81752.1  3.92065e+09      -6288.7 -1.98275e+09      37164.8  3.32315e+09       -10953  6.49049e+09      38317.4 -1.65138e+09      15132.8  7.34964e+08     -63394.2  4.18398e+09     -82109.7  9.54991e+09      44577.6
+  -0.0155633    0.0370416    0.0219456      3421.88     0.304164      25283.8    -0.303393     -17866.8    -0.383056      10702.4   -0.0712345      36168.6    -0.405553     -45695.9    -0.517901      13983.9   -0.0104307     -20726.4     0.235809      38708.8     -0.06358      25625.5     0.174702      1253.59     0.171562     -3432.83    -0.288641      30379.1    -0.441455      44577.6      0.54942
+no scaling
+MCMC phase over.  time : 3600 s, accept rate : 2.767 pct. 
+number of samples : 499
+ 0.00385155    0.919375    0.977122 1.04174e+06     9.42349 1.87686e+06     5.53499     79525.9     3.67639 1.01376e+06     14.5695 1.51445e+06     3.42801 1.15718e+06     3.26934 1.55623e+06     12.3536      704074     13.9959  1.2903e+06     7.79585  1.8623e+06     21.3127      964678     12.0352      902484     3.02746 1.61802e+06     3.61567 1.96264e+06     16.2321
+ 0.00207801    0.902402    0.998599 1.20635e+06     10.0537 1.81445e+06     4.79021      137787     2.69344 1.17379e+06     14.8144 1.66788e+06     3.95016 1.13425e+06     2.33641 1.45435e+06     12.8388      531225     15.0475 1.37408e+06     5.87334  1.8046e+06     21.9624 1.22968e+06     12.1173      780472      2.4179 1.68092e+06     3.76323 1.91239e+06     19.9565
+ 0.00403447    0.939989    0.960426 1.33038e+06     7.08996 1.74009e+06      7.4797       60629     2.38918 1.21203e+06      16.824 1.52501e+06      6.9253 1.52829e+06     3.21724 1.55992e+06     13.7402      681027     15.6583  1.0193e+06      3.7129 1.91819e+06     23.4973 1.58374e+06     9.24791 1.00232e+06     1.80574 1.67212e+06     4.46068 1.69441e+06     17.8622
+ 0.00194789    0.946406    0.981824 1.43934e+06     5.22014 1.88407e+06     5.84992     82464.3     2.25854 1.18669e+06     17.7783 1.51319e+06     7.19665 1.72137e+06     4.01914 1.36498e+06     14.4806      715641     16.1494 1.22333e+06     2.81612 1.86964e+06     24.6093 1.74016e+06     7.33326 1.04049e+06     2.51812 1.80506e+06     5.62562 1.51698e+06     18.9797
+  0.0129657    0.977695    0.984176 1.30403e+06     6.77949 1.94109e+06     4.32495     90844.7     1.67265 1.23941e+06     16.5217 1.59956e+06     6.49919 1.44758e+06     2.43927 1.35378e+06     13.9496      632236     16.9234 1.43304e+06     4.18549 1.89567e+06     24.2606 1.65562e+06     8.58302      928020     3.09559  1.9069e+06     5.02811 1.59948e+06     21.0188
+intégrales avec nautocor = 2000
+521.096 314.284 303.988 1811.46  1692.4 1755.86 1192.38  1728.4 1838.25 1365.15  1592.6 1506.44 1316.88 1501.73 1803.18 1604.13 1635.02 1300.84 1862.47 1363.59 1052.31 1846.29 1817.14 1593.94 1412.84 1685.56 1430.37 1902.19 1360.23 1608.61 1722.37
+maximum : 1902.19
+computing predictions with 499 samples...
+Dmax : 2.68333e+06 Dmin 76.7901
+Dmax : 2.53979e+06 Dmin 1592.91
+Dmax : 1.88569e+06 Dmin 471.297
+Dmax : 1.78485e+06 Dmin 414.156
+Dmax : 2.84252e+06 Dmin 126.397
+Dmax : 822646 Dmin 85.3773
+Dmax : 1.40672e+06 Dmin 14.915
+Dmax : 1.66967e+06 Dmin 972.749
+Dmax : 1.31042e+06 Dmin 3215.55
+Dmax : 4.3163e+06 Dmin 313.374
+computing predictions with 499 samples...
+Dmax : 2.94912e+06 Dmin 203.114
+Dmax : 2.48593e+06 Dmin 142.303
+Dmax : 4.65683e+06 Dmin 887.804
+Dmax : 3.57271e+06 Dmin 283.811
+Dmax : 3.15872e+06 Dmin 245.531
+Dmax : 1.59293e+06 Dmin 192.791
+Dmax : 4.01688e+06 Dmin 383.442
+Dmax : 2.72468e+06 Dmin 255.56
+Dmax : 3.32277e+06 Dmin 265.779
+Dmax : 3.73428e+06 Dmin 397.777
+computing predictions with 499 samples...
+Dmax : 1.02048e+06 Dmin 45.3977
+Dmax : 2.63565e+06 Dmin 226.472
+Dmax : 714389 Dmin 18.2077
+Dmax : 430184 Dmin 135.985
+Dmax : 1.56815e+06 Dmin 103.411
+Dmax : 786967 Dmin 41.8868
+Dmax : 1.74281e+06 Dmin 126.056
+Dmax : 1.43681e+06 Dmin 191.433
+Dmax : 1.39561e+06 Dmin 83.6274
+Dmax : 603804 Dmin 14.4139
+computing predictions with 499 samples...
+Dmax : 1.30325e+06 Dmin 9.93941
+Dmax : 741185 Dmin 6.16071
+Dmax : 917475 Dmin 6.3466
+Dmax : 723733 Dmin 4.40375
+Dmax : 718509 Dmin 5.07717
+Dmax : 905283 Dmin 7.02096
+Dmax : 916028 Dmin 6.47635
+Dmax : 1.30796e+06 Dmin 12.2425
+Dmax : 1.04064e+06 Dmin 6.79083
+Dmax : 960293 Dmin 10.9217
+computing predictions with 499 samples...
+Dmax : 6.52109e+06 Dmin 330.038
+Dmax : 5.27552e+06 Dmin 1307.23
+Dmax : 3.70151e+06 Dmin 89.8636
+Dmax : 3.58689e+06 Dmin 13492.9
+Dmax : 4.66606e+06 Dmin 213.546
+Dmax : 6.38424e+06 Dmin 1631.66
+Dmax : 6.0956e+06 Dmin 198.437
+Dmax : 5.54815e+06 Dmin 595.686
+Dmax : 3.3921e+06 Dmin 135.696
+Dmax : 6.33305e+06 Dmin 696.261
+computing predictions with 499 samples...
+Dmax : 6.94244e+06 Dmin 2339.39
+Dmax : 5.0565e+06 Dmin 104.973
+Dmax : 6.34174e+06 Dmin 3017.31
+Dmax : 8.0852e+06 Dmin 817.285
+Dmax : 5.37809e+06 Dmin 201.192
+Dmax : 3.97782e+06 Dmin 48.1128
+Dmax : 3.20729e+06 Dmin 31.8573
+Dmax : 6.22049e+06 Dmin 256.886
+Dmax : 6.94244e+06 Dmin 2339.39
+Dmax : 4.461e+06 Dmin 84.2946
+computing predictions with 499 samples...
+Dmax : 1.80439e+06 Dmin 63.2227
+Dmax : 2.17233e+06 Dmin 104.031
+Dmax : 2.1142e+06 Dmin 158.359
+Dmax : 1.76713e+06 Dmin 140.049
+Dmax : 3.03194e+06 Dmin 140.451
+Dmax : 3.51564e+06 Dmin 316.183
+Dmax : 2.00202e+06 Dmin 64.7935
+Dmax : 1.82073e+06 Dmin 60.7958
+Dmax : 1.78553e+06 Dmin 69.9147
+Dmax : 2.72433e+06 Dmin 161.704
+computing predictions with 499 samples...
+Dmax : 367406 Dmin 2.24597
+Dmax : 76008.7 Dmin 0.223011
+Dmax : 85759.7 Dmin 0.264908
+Dmax : 42666.9 Dmin 0.0769726
+Dmax : 229356 Dmin 1.30637
+Dmax : 256680 Dmin 1.39945
+Dmax : 170273 Dmin 1.27913
+Dmax : 376237 Dmin 2.24167
+Dmax : 194466 Dmin 1.35815
+Dmax : 82460.7 Dmin 0.2583
+computing predictions with 499 samples...
+Dmax : 1.77307e+06 Dmin 71.6205
+Dmax : 2.29411e+06 Dmin 174.517
+Dmax : 2.91479e+06 Dmin 168.108
+Dmax : 2.31845e+06 Dmin 123.921
+Dmax : 1.93972e+06 Dmin 83.6384
+Dmax : 1.92123e+06 Dmin 101.6
+Dmax : 2.74808e+06 Dmin 161.386
+Dmax : 3.39293e+06 Dmin 293.027
+Dmax : 1.88446e+06 Dmin 79.0245
+Dmax : 1.38859e+06 Dmin 50.8979
+computing predictions with 499 samples...
+Dmax : 954473 Dmin 16.4372
+Dmax : 1.68523e+06 Dmin 101.062
+Dmax : 1.31532e+06 Dmin 40.0598
+Dmax : 1.86731e+06 Dmin 85.5226
+Dmax : 1.40889e+06 Dmin 45.2213
+Dmax : 1.06531e+06 Dmin 34.1836
+Dmax : 1.9629e+06 Dmin 53.1629
+Dmax : 2.70505e+06 Dmin 98.2422
+Dmax : 1.18688e+06 Dmin 49.3141
+Dmax : 853308 Dmin 51.3419
+computing predictions with 499 samples...
+Dmax : 3.25592e+06 Dmin 140.476
+Dmax : 3.89493e+06 Dmin 272.203
+Dmax : 3.11638e+06 Dmin 153.357
+Dmax : 3.46043e+06 Dmin 165.906
+Dmax : 2.84101e+06 Dmin 540.568
+Dmax : 1.98607e+06 Dmin 27.974
+Dmax : 4.13185e+06 Dmin 257.244
+Dmax : 1.54625e+06 Dmin 56.054
+Dmax : 2.97031e+06 Dmin 332.626
+Dmax : 2.95049e+06 Dmin 84.3415
+computing predictions with 499 samples...
+Dmax : 1.07506e+06 Dmin 53.4238
+Dmax : 718446 Dmin 19.2078
+Dmax : 2.3033e+06 Dmin 162.218
+Dmax : 1.19598e+06 Dmin 61.4016
+Dmax : 1.28796e+06 Dmin 71.1141
+Dmax : 1.37459e+06 Dmin 52.5157
+Dmax : 2.37309e+06 Dmin 123.608
+Dmax : 3.69581e+06 Dmin 457.918
+Dmax : 1.66256e+06 Dmin 359.607
+Dmax : 695866 Dmin 12.9686
+computing predictions with 499 samples...
+Dmax : 1.68251e+06 Dmin 1851.11
+Dmax : 931916 Dmin 1676.54
+Dmax : 1.05316e+06 Dmin 2179.56
+Dmax : 1.72436e+06 Dmin 1516.59
+Dmax : 1.03135e+06 Dmin 1794.04
+Dmax : 2.15729e+06 Dmin 1936.41
+Dmax : 1.7294e+06 Dmin 797.919
+Dmax : 1.27055e+06 Dmin 814.45
+Dmax : 1.61521e+06 Dmin 1238.99
+Dmax : 1.64485e+06 Dmin 1265.67
+computing predictions with 499 samples...
+Dmax : 2.68974e+06 Dmin 13.0424
+Dmax : 3.68893e+06 Dmin 53.0456
+Dmax : 2.11593e+06 Dmin 8.23712
+Dmax : 2.76443e+06 Dmin 14.1453
+Dmax : 2.51538e+06 Dmin 11.9909
+Dmax : 2.72011e+06 Dmin 13.6629
+Dmax : 2.47545e+06 Dmin 13.9522
+Dmax : 2.99256e+06 Dmin 24.9175
+Dmax : 2.21641e+06 Dmin 11.3212
+Dmax : 2.21835e+06 Dmin 8.24

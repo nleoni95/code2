@@ -1,0 +1,985 @@
+##calcl bayes et koh densités séparées,  notes : mal mélngées Bayes
+23, 20? 18? 16! 8? 6! lundi 17 janv au soir.
+
+derivatives at obs pts : 36788.4 53562.1 72093.1  103332  173355  267894
+derivatives at pred pts :     24145.9     24145.9     24145.9     24145.9     24145.9     24145.9     24145.9     24145.9     24145.9     24145.9     24145.9     24145.9       24146     24147.2     24153.6     24171.7     24210.3     24280.3     24394.4     24567.1     24814.7       25155     25607.6     26193.5     26935.4     27857.3     28984.8     30344.9     31965.9     33877.5     36110.8     38698.3     41673.7     45071.9     48929.4     53283.7     58173.6     63639.1     69721.5     76463.2       83908     92100.7      101087      110915      121632      133288      145933      159620      174401      190329      207461      225852      245559      266641      289157      313168      338735      365920      394787      425401      457827      492132      528384      566651      607004      649512      694247      741283      790693      842551      896934      953918 1.01358e+06   1.076e+06 1.14125e+06 1.20943e+06  1.2806e+06 1.35485e+06 1.43227e+06 1.51293e+06
+case: 16number of obs loaded : 10
+best fit polynomial :  8183.4 9.28379 5.52041 74915.4
+derivatives at obs pts :  8183.4  8183.4 13550.6 69436.4  130413  176926  225332  277560  346553  369723
+derivatives at pred pts :      8183.4      8183.4      8183.4      8183.4      8183.4      8183.4      8183.4      8183.4      8183.4      8183.4      8183.4      8183.4      8183.4      8183.4      8183.4      8183.4      8183.4      8183.4      8183.4      8183.4      8183.4      8183.4     8183.45     8185.29     8197.28     8238.52     8341.77     8555.78     8947.46     9603.68     10633.1     12167.7     14364.2       17406     21503.7     26897.1     33856.3     42682.8     53710.4     67307.1     83875.5      103854      127718      155981      189195      227952      272886      324671      384024      451706      528523      615325      713009      822519      944845 1.08103e+06 1.23216e+06 1.39937e+06 1.58386e+06 1.78687e+06 2.00969e+06 2.25367e+06  2.5202e+06 2.81076e+06 3.12684e+06 3.47001e+06 3.84191e+06  4.2442e+06 4.67863e+06 5.14699e+06 5.65114e+06 6.19301e+06 6.77456e+06 7.39784e+06 8.06494e+06 8.77804e+06 9.53935e+06 1.03512e+07 1.12159e+07 1.21358e+07
+case: 18number of obs loaded : 7
+best fit polynomial : 14217.3       5 4.21671  113370
+derivatives at obs pts : 14217.3   14896 20526.6 26248.5 35511.9 37215.8 60143.3
+derivatives at pred pts : 14217.3 14217.3 14217.3 14217.3 14217.3 14217.3 14217.3 14217.3 14217.3 14217.3 14217.3 14217.3 14217.4 14218.6 14223.6 14235.4 14257.1 14292.4 14344.7 14417.9   14516 14642.9 14802.7 14999.8 15238.4 15522.8 15857.7 16247.5 16696.8 17210.3 17792.7 18448.9 19183.8 20002.1 20908.8   21909 23007.8 24210.2 25521.3 26946.5 28490.8 30159.6 31958.3   33892 35966.3 38186.6 40558.4 43087.1 45778.2 48637.5 51670.3 54882.5 58279.7 61867.5 65651.7   69638 73832.3 78240.3   82868 87721.1 92805.6 98127.4  103692  109507  115576  121907  128505  135377  142528  149965  157694  165720  174051  182692  191650  200931  210541  220486  230773  241409
+case: 20number of obs loaded : 8
+best fit polynomial : 17946.2       5 4.72297       0
+derivatives at obs pts : 17980.9 27692.8 39558.4 75650.9 96924.6  115644  146428  215514
+derivatives at pred pts :     17946.2     17946.2     17946.2     17946.2     17946.2     17946.2     17946.2     17946.2     17946.2     17946.2     17946.2     17946.2     17946.2     17947.4     17953.7     17971.6     18009.7     18078.4     18190.1     18358.8     18600.2     18931.5     19371.4     19940.2     20659.5     21552.3       22643     23957.4     25522.5     27366.6     29519.3     32011.4     34875.1     38143.5       41851     46033.4     50727.3     55970.7     61802.7     68263.4       75394     83237.1       91836      101235      111480      122618      134696      147763      161869      177065      193402      210933      229713      249795      271235      294091      318421      344282      371734      400839      431657      464251      498685      535023      573330      613673      656118      700734      747589      796754      848300      902297      958818 1.01794e+06 1.07973e+06 1.14427e+06 1.21163e+06 1.28189e+06 1.35513e+06 1.43143e+06
+case: 21number of obs loaded : 5
+best fit polynomial : 40750.2 5.99732 5.21778 57890.1
+derivatives at obs pts : 47569.9  128170  234301  385796  460987
+derivatives at pred pts :     40750.2     40750.2     40750.2     40750.2     40750.2     40750.2     40750.2     40750.2     40750.2     40750.2     40750.2     40750.2     40750.2     40750.2     40750.2     40750.7     40755.7     40775.2     40826.3     40933.5     41129.5     41455.2     41960.6     42704.4     43754.6     45188.8     47094.5     49568.7     52718.9     56662.7     61528.2     67454.1     74589.7     83095.5     93142.7      104914      118603      134414      152566      173285      196812      223399      253309      286819      324215      365799      411883      462792      518862      580445      647901      721607      801951      889333      984167 1.08688e+06 1.19791e+06 1.31772e+06 1.44676e+06 1.58552e+06 1.73449e+06 1.89418e+06 2.06511e+06 2.24781e+06 2.44283e+06 2.65072e+06 2.87207e+06 3.10746e+06 3.35749e+06 3.62279e+06 3.90397e+06 4.20169e+06  4.5166e+06 4.84937e+06  5.2007e+06 5.57128e+06 5.96182e+06 6.37306e+06 6.80574e+06 7.26062e+06
+case: 22number of obs loaded : 6
+best fit polynomial :  100000       5 4.67993  300000
+derivatives at obs pts : 103565 143762 165169 209689 344926 449392
+derivatives at pred pts :      100000      100000      100000      100000      100000      100000      100000      100000      100000      100000      100000      100000      100000      100001      100007      100025      100061      100126      100231      100388      100612      100918      101322      101843      102498      103309      104297      105484      106893      108550      110478      112706      115260      118169      121463      125171      129325      133957      139101      144790      151059      157944      165482      173709      182665      192388      202919      214298      226567      239767      253943      269139      285398      302767      321292      341020      361999      384277      407904      432929      459404      487380      516910      548045      580841      615351      651630      689735      729722      771647      815569      861547      909640      959908 1.01241e+06 1.06721e+06 1.12437e+06 1.18395e+06 1.24601e+06 1.31062e+06
+case: 23number of obs loaded : 10
+best fit polynomial : 44950.3       5 4.47746  300000
+derivatives at obs pts : 44950.3 73952.3  121077  133968  149357  215346  228675  302805  304746  352349
+derivatives at pred pts : 44950.3 44950.3 44950.3 44950.3 44950.3 44950.3 44950.3 44950.3 44950.3 44950.3 44950.3 44950.3 44950.3 44951.6 44957.2 44971.9   45001 45050.9 45128.6 45241.6 45398.2 45607.1 45877.5 46219.1 46642.1   47157 47774.8 48506.9   49365 50361.2 51508.1 52818.4 54305.3 55982.3 57863.1 59961.8 62292.9   64871 67711.1 70828.5 74238.7 77957.6 82001.1 86385.7   91128 96244.7  101753  107670  114014  120802  128053  135784  144014  152762  162048  171889  182306  193317  204944  217205  230122  243715  258003  273009  288752  305255  322539  340626  359536  379293  399918  421433  443862  467227  491551  516857  543169  570509  598901  628370
+COV_init : 
+0.0016      0      0
+     0 0.0289      0
+     0      0 0.0049
+     603953      613462      622995      632559      642161      651806      661502      671254      681068      690953      700916      710965      721108      731355      741723      752242      762899      773707      784681      795833      807179      818741      830538      842591      854923      867559      880526      893853      907573      921719      936331      951450      967122      983397 1.00033e+06 1.01798e+06 1.03641e+06 1.05569e+06 1.07591e+06 1.09715e+06 1.11951e+06 1.14309e+06 1.16801e+06 1.19439e+06 1.22239e+06 1.25215e+06 1.28385e+06 1.31769e+06 1.35388e+06 1.39266e+06 1.43429e+06 1.47907e+06 1.52732e+06 1.57943e+06 1.63581e+06  1.6969e+06 1.76324e+06 1.83541e+06 1.91406e+06 1.99994e+06 2.09387e+06 2.19681e+06 2.30981e+06  2.4341e+06 2.57103e+06 2.72219e+06 2.84729e+06 2.92905e+06 3.02114e+06 3.12528e+06 3.24351e+06 3.37821e+06  3.5322e+06 3.70875e+06 3.91176e+06 4.14576e+06 4.41615e+06 4.72923e+06 5.09248e+06 5.51472e+06
+covinitfb
+0.0016      0      0      0      0
+     0 0.0289      0      0      0
+     0      0 0.0049      0      0
+     0      0      0  1e+10      0
+     0      0      0      0   0.25
+Xinitfb
+  0.5   0.5   0.5 1e+06     5
+début mcmc densité bayes expérience3
+fcurrent : -104.287
+burn phase over.  time : 10 s, accept rate : 35.124 pct. 
+new cov matrix : 
+  0.0994924  -0.0191447  -0.0164927       23569    0.100542
+ -0.0191447     0.10578  -0.0288627       50338   -0.117753
+ -0.0164927  -0.0288627    0.017226    -12151.5   0.0374436
+      23569       50338    -12151.5 7.16793e+11 4.25392e+06
+   0.100542   -0.117753   0.0374436 4.25392e+06     101.268
+no scaling
+MCMC phase over.  time : 67 s, accept rate : 16.346 pct. 
+number of samples : 1999
+ 0.96354 0.261597 0.516021   702275   30.888
+   0.642939    0.062516    0.650297 2.14032e+06     41.0818
+   0.355106    0.217575    0.640797 3.89826e+06     40.7235
+0.193107 0.530458  0.58974   961940  15.4112
+0.444578 0.277788 0.548035   950909  10.9149
+intégrales avec nautocor = 2000
+28.1458 29.6168 37.4299 32.6864 59.8482
+maximum : 59.8482
+computing predictions with 1999 samples...
+Dmax : 7.01046e+06 Dmin 157.332
+Dmax : 812364 Dmin 3.7637
+Dmax : 607164 Dmin 12.5391
+Dmax : 416216 Dmin 1.71537
+Dmax : 998665 Dmin 6.47256
+Dmax : 324552 Dmin 1.79478
+Dmax : 336491 Dmin 2.5199
+Dmax : 719643 Dmin 7.268
+Dmax : 619911 Dmin 16.7437
+Dmax : 1.08871e+06 Dmin 12.3878
+début mcmc densité bayes expérience4
+fcurrent : -102.065
+burn phase over.  time : 9 s, accept rate : 42.852 pct. 
+new cov matrix : 
+  0.0943556  0.00158154  -0.0260691    -4256.06   -0.195548
+ 0.00158154   0.0784571  -0.0241142    -2617.52    -0.10022
+ -0.0260691  -0.0241142   0.0292843     17801.1   0.0578389
+   -4256.06    -2617.52     17801.1 4.18801e+11      818272
+  -0.195548    -0.10022   0.0578389      818272     43.5284
+no scaling
+MCMC phase over.  time : 58 s, accept rate : 10.281 pct. 
+number of samples : 1999
+0.267223 0.533944 0.682003   249912  3.32272
+0.327235 0.477703 0.912721   518387  3.07103
+0.828626 0.746213 0.421961   349387  4.39102
+0.973053 0.558621 0.443706   222292  2.07405
+0.546972  0.39947 0.665951   706080  6.44896
+intégrales avec nautocor = 2000
+46.0955 46.0975 50.7379 75.4736 193.758
+maximum : 193.758
+computing predictions with 1999 samples...
+Dmax : 346144 Dmin 2.3027
+Dmax : 2.66896e+06 Dmin 159.789
+Dmax : 890765 Dmin 51.7451
+Dmax : 305149 Dmin 597.677
+Dmax : 916899 Dmin 299.827
+Dmax : 2.44719e+06 Dmin 618.306
+Dmax : 4.51141e+06 Dmin 231.616
+Dmax : 1.02917e+06 Dmin 231.705
+Dmax : 294309 Dmin 301.549
+Dmax : 1.51646e+06 Dmin 140.546
+début mcmc densité bayes expérience5
+fcurrent : -77.8303
+burn phase over.  time : 7 s, accept rate : 38.668 pct. 
+new cov matrix : 
+   0.117988  -0.0313886  -0.0125282    -13815.4     1.08195
+ -0.0313886   0.0869321  -0.0250624     46208.8   -0.443136
+ -0.0125282  -0.0250624   0.0207752     11418.8   0.0362281
+   -13815.4     46208.8     11418.8  1.1042e+12 5.52318e+06
+    1.08195   -0.443136   0.0362281 5.52318e+06     86.3861
+no scaling
+MCMC phase over.  time : 46 s, accept rate : 10.5626 pct. 
+number of samples : 1999
+    1.02007     0.40562    0.503099 2.44792e+06     23.2101
+   0.557519      0.6608    0.514833 3.81962e+06     38.8821
+   0.877297    0.283184    0.626078 2.04426e+06      21.448
+0.986328 0.343623 0.554497   702738  11.8732
+    1.06045    0.213924    0.655522 2.74753e+06     40.1714
+intégrales avec nautocor = 2000
+ 47.549 38.0721 49.8225 57.3017 138.314
+maximum : 138.314
+computing predictions with 1999 samples...
+Dmax : 890299 Dmin 53.4383
+Dmax : 560931 Dmin 7.07207
+Dmax : 774261 Dmin 23.5856
+Dmax : 352580 Dmin 26.6288
+Dmax : 547475 Dmin 7.329
+Dmax : 736669 Dmin 11.6629
+Dmax : 331156 Dmin 2.20518
+Dmax : 1.37577e+06 Dmin 51.3827
+Dmax : 254851 Dmin 2.03953
+Dmax : 175599 Dmin 0.608093
+début mcmc densité bayes expérience6
+fcurrent : -100.536
+burn phase over.  time : 8 s, accept rate : 18.504 pct. 
+new cov matrix : 
+   0.122751  -0.0215111   -0.045354    -19634.8  -0.0605058
+ -0.0215111    0.131025  -0.0403877    -12008.1    -0.67018
+  -0.045354  -0.0403877   0.0406886    -11450.1    0.289289
+   -19634.8    -12008.1    -11450.1 7.76919e+11 2.91472e+06
+ -0.0605058    -0.67018    0.289289 2.91472e+06     161.518
+no scaling
+MCMC phase over.  time : 45 s, accept rate : 6.0662 pct. 
+number of samples : 1999
+0.516464  1.11075 0.129176  35287.6  34.4757
+0.516464  1.11075 0.129176  35287.6  34.4757
+0.516464  1.11075 0.129176  35287.6  34.4757
+0.516464  1.11075 0.129176  35287.6  34.4757
+0.516464  1.11075 0.129176  35287.6  34.4757
+intégrales avec nautocor = 2000
+100.927 147.012 140.539 106.659 151.487
+maximum : 151.487
+computing predictions with 1999 samples...
+Dmax : 362703 Dmin 0.811994
+Dmax : 504744 Dmin 3.41818
+Dmax : 532009 Dmin 2.0464
+Dmax : 134880 Dmin 0.0675897
+Dmax : 301849 Dmin 0.671957
+Dmax : 348842 Dmin 0.655009
+Dmax : 321710 Dmin 0.481586
+Dmax : 676528 Dmin 3.41306
+Dmax : 1.14437e+06 Dmin 8.46897
+Dmax : 219120 Dmin 2.33709
+début mcmc densité bayes expérience8
+fcurrent : -140.009
+burn phase over.  time : 10 s, accept rate : 48.2 pct. 
+new cov matrix : 
+  0.0730751  -0.0116525  -0.0286908     33614.3  -0.0327338
+ -0.0116525   0.0889052  -0.0205091     3725.27  0.00718177
+ -0.0286908  -0.0205091   0.0564888    -10732.2  -0.0292009
+    33614.3     3725.27    -10732.2 8.98639e+11      705235
+ -0.0327338  0.00718177  -0.0292009      705235     3.58056
+no scaling
+MCMC phase over.  time : 63 s, accept rate : 11.4774 pct. 
+number of samples : 1999
+0.637847 0.380083   0.5571   724945  2.81134
+0.0705979  0.244926  0.722487    375286   1.70703
+0.222067 0.590187  0.52965   568021  2.09878
+   0.525192     1.14456    0.766213 1.44958e+06     3.14841
+    0.42909    0.433994    0.335701 2.52316e+06      6.4736
+intégrales avec nautocor = 2000
+82.6584  53.819 165.584 115.873 1389.68
+maximum : 1389.68
+computing predictions with 1999 samples...
+Dmax : 6.68468e+06 Dmin 6913.98
+Dmax : 1.28137e+07 Dmin 25849.4
+Dmax : 2.08945e+06 Dmin 1609.67
+Dmax : 1.38469e+07 Dmin 544.118
+Dmax : 2.24411e+06 Dmin 471.67
+Dmax : 7.44977e+06 Dmin 25087.2
+Dmax : 4.97293e+06 Dmin 17699.4
+Dmax : 1.38556e+07 Dmin 33040.9
+Dmax : 1.08819e+07 Dmin 1332.18
+Dmax : 1.94017e+06 Dmin 1072.85
+début mcmc densité bayes expérience14
+fcurrent : -92.8511
+burn phase over.  time : 8 s, accept rate : 71.2 pct. 
+new cov matrix : 
+  0.0897226 -0.00104686  -0.0171422    -25723.2    0.201585
+-0.00104686   0.0973788  0.00266785    -35212.7    0.479245
+ -0.0171422  0.00266785    0.110745    -4750.86     1.67913
+   -25723.2    -35212.7    -4750.86 1.24785e+12 1.63754e+06
+   0.201585    0.479245     1.67913 1.63754e+06       136.8
+no scaling
+MCMC phase over.  time : 47 s, accept rate : 14.7894 pct. 
+number of samples : 1999
+ 0.25196 0.501999 0.446998   575191  1.30447
+   0.449326    0.295907  -0.0793345 1.08711e+06     2.66652
+  0.188094 -0.0258637    1.02702     930958    4.27555
+   0.307583    0.828589    0.921381 2.16446e+06     20.9898
+  0.550182    1.03495   0.829701 3.8918e+06    19.8269
+intégrales avec nautocor = 2000
+17.4281 19.4407 25.0574 22.8558 32.5631
+maximum : 32.5631
+computing predictions with 1999 samples...
+Dmax : 1.57712e+07 Dmin 3574.89
+Dmax : 1.62366e+06 Dmin 2.39557
+Dmax : 4.06448e+06 Dmin 415.965
+Dmax : 1.13087e+06 Dmin 1.82734
+Dmax : 4.31745e+06 Dmin 197.654
+Dmax : 1.20313e+06 Dmin 4230.31
+Dmax : 1.38996e+06 Dmin 3.27061
+Dmax : 5.02902e+06 Dmin 1912.03
+Dmax : 6.27611e+06 Dmin 137.77
+Dmax : 2.54947e+06 Dmin 44.6785
+début mcmc densité bayes expérience15
+fcurrent : -73.9892
+burn phase over.  time : 7 s, accept rate : 53.224 pct. 
+new cov matrix : 
+  0.0860215 -0.00532699  -0.0443265     26374.3   -0.428923
+-0.00532699   0.0922614 -0.00448034    -77237.8    0.369818
+ -0.0443265 -0.00448034   0.0838682     -122101    0.566307
+    26374.3    -77237.8     -122101 1.12962e+12      925140
+  -0.428923    0.369818    0.566307      925140     64.7983
+no scaling
+MCMC phase over.  time : 46 s, accept rate : 12.863 pct. 
+number of samples : 1999
+    0.69797     0.34262    0.400502 3.99915e+06     15.4374
+   0.521373    0.681865  -0.0081739 2.98616e+06      30.443
+    0.33032    0.303436    0.258017 2.33454e+06     12.8098
+0.739054 0.575415 0.460501   226060  2.42237
+   0.292615    0.634598    0.454467 1.39545e+06     4.90979
+intégrales avec nautocor = 2000
+28.3694 57.4529 48.0779 90.4815 183.617
+maximum : 183.617
+computing predictions with 1999 samples...
+Dmax : 1.892e+06 Dmin 268.017
+Dmax : 389191 Dmin 1.49424
+Dmax : 93155.1 Dmin 0.159315
+Dmax : 4.43776e+06 Dmin 156.772
+Dmax : 3.60462e+06 Dmin 262.93
+Dmax : 458655 Dmin 1.67493
+Dmax : 651294 Dmin 79.7277
+Dmax : 1.46281e+06 Dmin 24.5942
+Dmax : 2.93834e+06 Dmin 97.9549
+Dmax : 220577 Dmin 0.188063
+début mcmc densité bayes expérience16
+fcurrent : -123.64
+burn phase over.  time : 10 s, accept rate : 5.872 pct. 
+new cov matrix : 
+  0.0516892  0.00850153  -0.0249809       39043    0.609666
+ 0.00850153   0.0469253  -0.0235384     10389.5    0.269007
+ -0.0249809  -0.0235384   0.0220305    -18026.6   -0.338362
+      39043     10389.5    -18026.6  4.4422e+11 3.19829e+06
+   0.609666    0.269007   -0.338362 3.19829e+06     181.937
+no scaling
+MCMC phase over.  time : 56 s, accept rate : 1.7936 pct. 
+number of samples : 1999
+0.439503 0.628021 0.541069    13218   48.066
+0.439503 0.628021 0.541069    13218   48.066
+0.439503 0.628021 0.541069    13218   48.066
+0.439503 0.628021 0.541069    13218   48.066
+0.439503 0.628021 0.541069    13218   48.066
+intégrales avec nautocor = 2000
+506.355 557.333 697.467 179.513 560.609
+maximum : 697.467
+computing predictions with 1999 samples...
+Dmax : 69124.6 Dmin 0.201922
+Dmax : 163385 Dmin 0.618413
+Dmax : 76501 Dmin 0.130476
+Dmax : 90804.7 Dmin 0.284976
+Dmax : 183547 Dmin 1.5331
+Dmax : 53625.5 Dmin 0.0466571
+Dmax : 23783.4 Dmin 0.0120715
+Dmax : 27189.7 Dmin 0.0182173
+Dmax : 52916 Dmin 0.045538
+Dmax : 83855.2 Dmin 21.9037
+début mcmc densité bayes expérience18
+fcurrent : -104.354
+burn phase over.  time : 7 s, accept rate : 4.562 pct. 
+new cov matrix : 
+  0.0294889  -0.0140985 -0.00397742     1068.94   -0.909077
+ -0.0140985   0.0479161   -0.012185     161.009    0.909856
+-0.00397742   -0.012185   0.0128333     -7235.8   -0.204798
+    1068.94     161.009     -7235.8 6.04419e+10      800052
+  -0.909077    0.909856   -0.204798      800052     129.227
+no scaling
+MCMC phase over.  time : 53 s, accept rate : 1.1906 pct. 
+number of samples : 1999
+-0.0665758   0.578473   0.224786     417998    43.9387
+0.0286104  0.638332  0.126965   60894.8   40.0881
+0.0204926  0.609878   0.21779    173081   31.8077
+0.312642  0.44434 0.193208    18249  2.19002
+-0.0396734   0.590896   0.229319    93019.6    17.5686
+intégrales avec nautocor = 2000
+1486.78 892.356  733.16 866.503 863.415
+maximum : 1486.78
+computing predictions with 1999 samples...
+Dmax : 57729 Dmin 0.08732
+Dmax : 51491.9 Dmin 0.239883
+Dmax : 60523.7 Dmin 0.135105
+Dmax : 92669.5 Dmin 0.362062
+Dmax : 93774.4 Dmin 0.326525
+Dmax : 56342.9 Dmin 0.100467
+Dmax : 80674.7 Dmin 0.291838
+Dmax : 106631 Dmin 55.8156
+Dmax : 44782.5 Dmin 0.0374486
+Dmax : 51520.1 Dmin 0.0609684
+début mcmc densité bayes expérience20
+fcurrent : -110.363
+burn phase over.  time : 10 s, accept rate : 37.27 pct. 
+new cov matrix : 
+  0.0878578   0.0231512  -0.0182303    -54108.5     2.38083
+  0.0231512   0.0355214 -0.00656867      -43260      1.0715
+ -0.0182303 -0.00656867   0.0191961    -9343.96   -0.704186
+   -54108.5      -43260    -9343.96 1.23928e+12  4.6184e+06
+    2.38083      1.0715   -0.704186  4.6184e+06     180.784
+no scaling
+MCMC phase over.  time : 61 s, accept rate : 7.866 pct. 
+number of samples : 1999
+   0.701749    0.597462    0.184729 2.40795e+06     11.1986
+0.629357 0.332191 0.047493   674299  11.3727
+  0.0637844    0.434498   -0.285369 1.53418e+06     12.5406
+   0.757675    0.349466   0.0826761 1.12738e+06     14.2983
+   0.246777    0.381385    0.272843 2.14744e+06     19.2642
+intégrales avec nautocor = 2000
+ 1026.1 1038.85 1473.64 342.592  159.96
+maximum : 1473.64
+computing predictions with 1999 samples...
+Dmax : 707411 Dmin 5.37128
+Dmax : 98185.2 Dmin 0.646223
+Dmax : 770223 Dmin 21.3387
+Dmax : 540204 Dmin 4.41672
+Dmax : 951801 Dmin 10.6255
+Dmax : 952269 Dmin 60.0946
+Dmax : 1.14134e+06 Dmin 11.91
+Dmax : 2.17663e+06 Dmin 53.7092
+Dmax : 944582 Dmin 41.5807
+Dmax : 1.91272e+06 Dmin 70.3138
+début mcmc densité bayes expérience21
+fcurrent : -64.3854
+burn phase over.  time : 6 s, accept rate : 25.55 pct. 
+new cov matrix : 
+   0.0874315   -0.0189086   -0.0315215     -30764.4    0.0454669
+  -0.0189086    0.0536914    -0.019237     -33.9517     0.162348
+  -0.0315215    -0.019237    0.0319304     -3524.07 -0.000740639
+    -30764.4     -33.9517     -3524.07  8.33228e+11  1.73933e+06
+   0.0454669     0.162348 -0.000740639  1.73933e+06      182.536
+no scaling
+MCMC phase over.  time : 34 s, accept rate : 9.0676 pct. 
+number of samples : 1999
+0.0598246  0.329987  0.980622    157179   4.15442
+0.282734 0.402618 0.783945   194561  19.9762
+0.768214 0.857298 0.374599   551124  29.6911
+0.113603 0.729445 0.785129  83155.7  33.7106
+   0.508727    0.584767    0.613961 1.39362e+06     27.4434
+intégrales avec nautocor = 2000
+63.5786 66.5356 53.8582 64.5349 63.6352
+maximum : 66.5356
+computing predictions with 1999 samples...
+Dmax : 819009 Dmin 2.74197
+Dmax : 144611 Dmin 0.056332
+Dmax : 2.55245e+06 Dmin 44.2761
+Dmax : 545363 Dmin 7.24684
+Dmax : 717008 Dmin 2.59496
+Dmax : 1.1296e+06 Dmin 11.1636
+Dmax : 1.58074e+06 Dmin 18.0909
+Dmax : 705092 Dmin 3.28182
+Dmax : 594321 Dmin 1.70434
+Dmax : 1.31125e+06 Dmin 7.34831
+début mcmc densité bayes expérience22
+fcurrent : -78.1997
+burn phase over.  time : 7 s, accept rate : 61.88 pct. 
+new cov matrix : 
+   0.095423 -0.00773173  -0.0221344    -14521.3    0.160432
+-0.00773173    0.110963  -0.0354926    -11619.8  0.00596868
+ -0.0221344  -0.0354926   0.0469817    -28165.2   -0.384505
+   -14521.3    -11619.8    -28165.2 7.17084e+11 3.31079e+06
+   0.160432  0.00596868   -0.384505 3.31079e+06      54.999
+no scaling
+MCMC phase over.  time : 56 s, accept rate : 21.6814 pct. 
+number of samples : 1999
+0.645371 0.101876 0.821558   652118  5.07234
+   0.672866    0.728833    0.348574 1.71677e+06      20.753
+0.0672326  0.724036  0.630272    589875   6.65598
+   0.350205    0.752779    0.314841 3.96819e+06     45.6915
+   0.491189    0.649491    0.421446 1.28371e+06     4.42399
+intégrales avec nautocor = 2000
+22.5939 25.9913  58.897 27.7803 54.6342
+maximum : 58.897
+computing predictions with 1999 samples...
+Dmax : 3.52605e+06 Dmin 1578.94
+Dmax : 860951 Dmin 6.13784
+Dmax : 1.70657e+06 Dmin 51.7693
+Dmax : 894022 Dmin 9.69909
+Dmax : 1.05039e+06 Dmin 18.1581
+Dmax : 1.91698e+06 Dmin 271.536
+Dmax : 1.66449e+06 Dmin 58.7973
+Dmax : 803204 Dmin 4.70472
+Dmax : 1.00453e+06 Dmin 10.5901
+Dmax : 525364 Dmin 2.23515
+début mcmc densité bayes expérience23
+fcurrent : -147.628
+burn phase over.  time : 12 s, accept rate : 46.654 pct. 
+new cov matrix : 
+  0.0942914  -0.0156816  -0.0209186     31476.7    0.249898
+ -0.0156816    0.103005  -0.0307996      -13096   -0.145742
+ -0.0209186  -0.0307996   0.0499718    -68928.9   -0.316695
+    31476.7      -13096    -68928.9  9.1374e+11 4.88693e+06
+   0.249898   -0.145742   -0.316695 4.88693e+06     44.2051
+no scaling
+MCMC phase over.  time : 65 s, accept rate : 3.705 pct. 
+number of samples : 1999
+  0.720819 -0.0412595   0.570629     477520    1.06506
+  0.720819 -0.0412595   0.570629     477520    1.06506
+  0.720819 -0.0412595   0.570629     477520    1.06506
+  0.720819 -0.0412595   0.570629     477520    1.06506
+  0.571715 -0.0362072   0.625307     377393    1.13796
+intégrales avec nautocor = 2000
+93.4246 104.061 71.4457 153.736 77.9875
+maximum : 153.736
+computing predictions with 1999 samples...
+Dmax : 3.65655e+06 Dmin 1019.77
+Dmax : 3.39878e+06 Dmin 2076.15
+Dmax : 3.56681e+06 Dmin 3777.95
+Dmax : 2.10677e+06 Dmin 1399.19
+Dmax : 2.50193e+06 Dmin 1255.6
+Dmax : 2.78137e+06 Dmin 2569.08
+Dmax : 9.5397e+06 Dmin 1875.21
+Dmax : 5.40073e+06 Dmin 2278.28
+Dmax : 5.87827e+06 Dmin 2187.32
+Dmax : 5.44852e+06 Dmin 4825.22
+fin de l'opt koh : message 4
+32387.9  1.2088
+time : 18 s.
+fin de l'opt koh : message 4
+ 101577 1.41925
+time : 18 s.
+fin de l'opt koh : message 4
+ 108731 2.63118
+time : 18 s.
+fin de l'opt koh : message 4
+89088.2 2.64922
+time : 18 s.
+fin de l'opt koh : message 4
+3.07231e+06           1
+time : 18 s.
+fin de l'opt koh : message 4
+ 451061 1.48254
+time : 18 s.
+fin de l'opt koh : message 4
+ 191783 2.88188
+time : 18 s.
+fin de l'opt koh : message 4
+  10000 8.18725
+time : 18 s.
+fin de l'opt koh : message 4
+21764.8  1.3734
+time : 18 s.
+fin de l'opt koh : message 4
+ 263425 3.97705
+time : 18 s.
+fin de l'opt koh : message 4
+89320.3      50
+time : 18 s.
+fin de l'opt koh : message 4
+ 506961 4.45582
+time : 18 s.
+fin de l'opt koh : message 4
+394488      1
+time : 18 s.
+hparskoh sep:32387.9  1.2088
+début mcmc densité koh separate expérience3
+fcurrent : -114.656
+burn phase over.  time : 10 s, accept rate : 10.456 pct. 
+new cov matrix : 
+   0.165085   -0.106059 0.000784517
+  -0.106059    0.141303  -0.0249936
+0.000784517  -0.0249936   0.0130587
+no scaling
+MCMC phase over.  time : 86 s, accept rate : 6.5486 pct. 
+number of samples : 1999
+ 0.790788 -0.211214  0.791477
+0.395177 -0.04328 0.739051
+ 0.538464 0.0997561  0.617685
+  0.709124 0.00896103   0.632917
+ 0.723861 0.0975192  0.571663
+intégrales avec nautocor = 2000
+50.2756 65.1981 35.2275
+maximum : 65.1981
+computing predictions with 1999 samples...
+Dmax : 114919 Dmin 264.214
+Dmax : 114919 Dmin 264.214
+Dmax : 114919 Dmin 264.214
+Dmax : 114919 Dmin 264.214
+Dmax : 114919 Dmin 264.214
+Dmax : 114919 Dmin 264.214
+Dmax : 114919 Dmin 264.214
+Dmax : 114919 Dmin 264.214
+Dmax : 114919 Dmin 264.214
+Dmax : 114919 Dmin 264.214
+début mcmc densité koh separate expérience4
+fcurrent : -97.3402
+burn phase over.  time : 10 s, accept rate : 32.94 pct. 
+new cov matrix : 
+   0.147144 -0.00368585   -0.040929
+-0.00368585    0.129088  -0.0480731
+  -0.040929  -0.0480731   0.0347239
+no scaling
+MCMC phase over.  time : 93 s, accept rate : 22.5916 pct. 
+number of samples : 1999
+0.436838 0.816318 0.439543
+0.840926  1.11846 0.349192
+0.602617 0.661927 0.486071
+0.427989 0.358354 0.634667
+0.377033 0.944443 0.399203
+intégrales avec nautocor = 2000
+8.68431 9.74053 9.65595
+maximum : 9.74053
+computing predictions with 1999 samples...
+Dmax : 367872 Dmin 557.755
+Dmax : 367872 Dmin 557.755
+Dmax : 367872 Dmin 557.755
+Dmax : 367872 Dmin 557.755
+Dmax : 367872 Dmin 557.755
+Dmax : 367872 Dmin 557.755
+Dmax : 367872 Dmin 557.755
+Dmax : 367872 Dmin 557.755
+Dmax : 367872 Dmin 557.755
+Dmax : 367872 Dmin 557.755
+début mcmc densité koh separate expérience5
+fcurrent : -73.127
+burn phase over.  time : 8 s, accept rate : 27.97 pct. 
+new cov matrix : 
+  0.161624 -0.0235033 -0.0305485
+-0.0235033   0.102507 -0.0340932
+-0.0305485 -0.0340932  0.0241474
+no scaling
+MCMC phase over.  time : 75 s, accept rate : 20.822 pct. 
+number of samples : 1999
+0.587693 0.661761 0.462984
+0.450338 0.450871 0.606612
+0.813602 0.595739 0.461536
+0.217217 0.870462 0.537978
+0.153032  0.77564 0.509543
+intégrales avec nautocor = 2000
+12.5278 14.8174 23.7697
+maximum : 23.7697
+computing predictions with 1999 samples...
+Dmax : 362855 Dmin 128.889
+Dmax : 362855 Dmin 128.889
+Dmax : 362855 Dmin 128.889
+Dmax : 362855 Dmin 128.889
+Dmax : 362855 Dmin 128.889
+Dmax : 362855 Dmin 128.889
+Dmax : 362855 Dmin 128.889
+Dmax : 362855 Dmin 128.889
+Dmax : 362855 Dmin 128.889
+Dmax : 362855 Dmin 128.889
+début mcmc densité koh separate expérience6
+fcurrent : -216.73
+burn phase over.  time : 9 s, accept rate : 14.106 pct. 
+new cov matrix : 
+  0.180934 -0.0686744  -0.036336
+-0.0686744   0.202653 -0.0598902
+ -0.036336 -0.0598902  0.0425491
+no scaling
+MCMC phase over.  time : 75 s, accept rate : 8.9804 pct. 
+number of samples : 1999
+0.0477121  0.363018  0.578606
+-0.215439  0.787383  0.622339
+0.730458 0.105845 0.447792
+0.663881  1.10742 0.096316
+0.511536 0.132037 0.497901
+intégrales avec nautocor = 2000
+32.6088 23.1224 40.2304
+maximum : 40.2304
+computing predictions with 1999 samples...
+Dmax : 399397 Dmin 103.822
+Dmax : 399397 Dmin 103.822
+Dmax : 399397 Dmin 103.822
+Dmax : 399397 Dmin 103.822
+Dmax : 399397 Dmin 103.822
+Dmax : 399397 Dmin 103.822
+Dmax : 399397 Dmin 103.822
+Dmax : 399397 Dmin 103.822
+Dmax : 399397 Dmin 103.822
+Dmax : 399397 Dmin 103.822
+début mcmc densité koh separate expérience8
+fcurrent : -134.441
+burn phase over.  time : 11 s, accept rate : 76.504 pct. 
+new cov matrix : 
+  0.149844 -0.0100575 -0.0259021
+-0.0100575   0.157945 -0.0247007
+-0.0259021 -0.0247007   0.124695
+no scaling
+MCMC phase over.  time : 98 s, accept rate : 31.195 pct. 
+number of samples : 1999
+0.785315 0.967348 0.517964
+0.558028 0.660433 0.505016
+0.144377 0.803967 0.240018
+ 0.23418 0.854522 0.791904
+0.203248 0.828042 0.798449
+intégrales avec nautocor = 2000
+5.76431 7.63354 5.13813
+maximum : 7.63354
+computing predictions with 1999 samples...
+Dmax : 1.03769e+07 Dmin 39140.3
+Dmax : 1.03769e+07 Dmin 39140.3
+Dmax : 1.03769e+07 Dmin 39140.3
+Dmax : 1.03769e+07 Dmin 39140.3
+Dmax : 1.03769e+07 Dmin 39140.3
+Dmax : 1.03769e+07 Dmin 39140.3
+Dmax : 1.03769e+07 Dmin 39140.3
+Dmax : 1.03769e+07 Dmin 39140.3
+Dmax : 1.03769e+07 Dmin 39140.3
+Dmax : 1.03769e+07 Dmin 39140.3
+début mcmc densité koh separate expérience14
+fcurrent : -91.2037
+burn phase over.  time : 9 s, accept rate : 73.86 pct. 
+new cov matrix : 
+  0.162796 -0.0114085 -0.0356192
+-0.0114085   0.156738 -0.0215434
+-0.0356192 -0.0215434   0.102381
+no scaling
+MCMC phase over.  time : 77 s, accept rate : 29.1192 pct. 
+number of samples : 1999
+0.290589 0.783244 0.590712
+ 0.65045  0.91712 0.448788
+0.117862 0.357794 0.367829
+0.243952 0.370743 0.318509
+0.448584 0.277282 0.290172
+intégrales avec nautocor = 2000
+5.90515 7.33693 5.09082
+maximum : 7.33693
+computing predictions with 1999 samples...
+Dmax : 1.77926e+06 Dmin 2223.5
+Dmax : 1.77926e+06 Dmin 2223.5
+Dmax : 1.77926e+06 Dmin 2223.5
+Dmax : 1.77926e+06 Dmin 2223.5
+Dmax : 1.77926e+06 Dmin 2223.5
+Dmax : 1.77926e+06 Dmin 2223.5
+Dmax : 1.77926e+06 Dmin 2223.5
+Dmax : 1.77926e+06 Dmin 2223.5
+Dmax : 1.77926e+06 Dmin 2223.5
+Dmax : 1.77926e+06 Dmin 2223.5
+début mcmc densité koh separate expérience15
+fcurrent : -72.613
+burn phase over.  time : 7 s, accept rate : 52.388 pct. 
+new cov matrix : 
+    0.11288 -0.00593027  -0.0644459
+-0.00593027    0.112744  -0.0419375
+ -0.0644459  -0.0419375   0.0755645
+no scaling
+MCMC phase over.  time : 71 s, accept rate : 23.6392 pct. 
+number of samples : 1999
+0.580518 0.626676  0.54102
+0.556862 0.881844 0.433957
+0.550987 0.386516 0.736187
+0.584135 0.430372 0.624594
+0.342303 0.524337 0.735553
+intégrales avec nautocor = 2000
+7.99646 8.19409 8.32531
+maximum : 8.32531
+computing predictions with 1999 samples...
+Dmax : 721930 Dmin 181.202
+Dmax : 721930 Dmin 181.202
+Dmax : 721930 Dmin 181.202
+Dmax : 721930 Dmin 181.202
+Dmax : 721930 Dmin 181.202
+Dmax : 721930 Dmin 181.202
+Dmax : 721930 Dmin 181.202
+Dmax : 721930 Dmin 181.202
+Dmax : 721930 Dmin 181.202
+Dmax : 721930 Dmin 181.202
+début mcmc densité koh separate expérience16
+fcurrent : -120.361
+burn phase over.  time : 12 s, accept rate : 4.442 pct. 
+new cov matrix : 
+  0.0319506  -0.0294949 -0.00154208
+ -0.0294949   0.0549476 -0.00895682
+-0.00154208 -0.00895682  0.00448793
+no scaling
+MCMC phase over.  time : 129 s, accept rate : 6.1328 pct. 
+number of samples : 1999
+0.402912 0.614879 0.544265
+0.176801 0.162507 0.842115
+0.447419  0.64224 0.528985
+0.311591 0.664021 0.549023
+0.0202784  0.990118  0.529507
+intégrales avec nautocor = 2000
+736.453 328.241 1141.37
+maximum : 1141.37
+computing predictions with 1999 samples...
+Dmax : 44570.9 Dmin 0.696683
+Dmax : 44570.9 Dmin 0.696683
+Dmax : 44570.9 Dmin 0.696683
+Dmax : 44570.9 Dmin 0.696683
+Dmax : 44570.9 Dmin 0.696683
+Dmax : 44570.9 Dmin 0.696683
+Dmax : 44570.9 Dmin 0.696683
+Dmax : 44570.9 Dmin 0.696683
+Dmax : 44570.9 Dmin 0.696683
+Dmax : 44570.9 Dmin 0.696683
+début mcmc densité koh separate expérience18
+fcurrent : -1503.29
+burn phase over.  time : 9 s, accept rate : 8.904 pct. 
+new cov matrix : 
+  0.105126  0.0294339 -0.0304269
+ 0.0294339  0.0270076 -0.0155311
+-0.0304269 -0.0155311  0.0150292
+no scaling
+MCMC phase over.  time : 88 s, accept rate : 6.3902 pct. 
+number of samples : 1999
+0.242942 0.346583 0.235674
+ 0.36183 0.391396 0.203914
+0.730784 0.524783 0.119895
+0.360627 0.409242 0.224966
+0.410336 0.378418 0.241463
+intégrales avec nautocor = 2000
+146.737 1191.29 1127.51
+maximum : 1191.29
+computing predictions with 1999 samples...
+Dmax : 77836.2 Dmin 129.615
+Dmax : 77836.2 Dmin 129.615
+Dmax : 77836.2 Dmin 129.615
+Dmax : 77836.2 Dmin 129.615
+Dmax : 77836.2 Dmin 129.615
+Dmax : 77836.2 Dmin 129.615
+Dmax : 77836.2 Dmin 129.615
+Dmax : 77836.2 Dmin 129.615
+Dmax : 77836.2 Dmin 129.615
+Dmax : 77836.2 Dmin 129.615
+début mcmc densité koh separate expérience20
+fcurrent : -141.137
+burn phase over.  time : 11 s, accept rate : 37.596 pct. 
+new cov matrix : 
+    0.13491 -0.00867937  -0.0461581
+-0.00867937   0.0401398 -0.00406414
+ -0.0461581 -0.00406414   0.0387102
+no scaling
+MCMC phase over.  time : 96 s, accept rate : 14.8134 pct. 
+number of samples : 1999
+ 0.713008  0.454086 0.0621569
+0.501018 0.489839 0.148098
+0.349506  0.35098 0.235306
+0.510611 0.486201 0.163951
+0.506779 0.504428 0.156724
+intégrales avec nautocor = 2000
+ 39.327 47.7697 52.1135
+maximum : 52.1135
+computing predictions with 1999 samples...
+Dmax : 901820 Dmin 111.435
+Dmax : 901820 Dmin 111.435
+Dmax : 901820 Dmin 111.435
+Dmax : 901820 Dmin 111.435
+Dmax : 901820 Dmin 111.435
+Dmax : 901820 Dmin 111.435
+Dmax : 901820 Dmin 111.435
+Dmax : 901820 Dmin 111.435
+Dmax : 901820 Dmin 111.435
+Dmax : 901820 Dmin 111.435
+début mcmc densité koh separate expérience21
+fcurrent : -78.4257
+burn phase over.  time : 6 s, accept rate : 15.978 pct. 
+new cov matrix : 
+  0.137291 -0.0330555 -0.0527965
+-0.0330555  0.0784192 -0.0272749
+-0.0527965 -0.0272749  0.0480596
+no scaling
+MCMC phase over.  time : 61 s, accept rate : 10.533 pct. 
+number of samples : 1999
+0.210747 0.620793 0.730928
+0.512673 0.533795 0.710705
+0.458096 0.426116 0.764392
+0.346097 0.530431 0.728316
+-0.0677805   0.782519    1.00109
+intégrales avec nautocor = 2000
+28.2327 39.6973 29.7706
+maximum : 39.6973
+computing predictions with 1999 samples...
+Dmax : 150449 Dmin 0.0674724
+Dmax : 150449 Dmin 0.0674724
+Dmax : 150449 Dmin 0.0674724
+Dmax : 150449 Dmin 0.0674724
+Dmax : 150449 Dmin 0.0674724
+Dmax : 150449 Dmin 0.0674724
+Dmax : 150449 Dmin 0.0674724
+Dmax : 150449 Dmin 0.0674724
+Dmax : 150449 Dmin 0.0674724
+Dmax : 150449 Dmin 0.0674724
+début mcmc densité koh separate expérience22
+fcurrent : -77.5159
+burn phase over.  time : 7 s, accept rate : 62.756 pct. 
+new cov matrix : 
+  0.157816 -0.0122309 -0.0511012
+-0.0122309   0.163523 -0.0533564
+-0.0511012 -0.0533564   0.061503
+no scaling
+MCMC phase over.  time : 67 s, accept rate : 28.5328 pct. 
+number of samples : 1999
+0.775239 0.707404 0.514665
+0.0417013  0.487059  0.666921
+0.860444  1.05897 0.352113
+ 0.32003  0.28535 0.773717
+ 1.15078 0.677073 0.548043
+intégrales avec nautocor = 2000
+5.63097 8.08094 8.92676
+maximum : 8.92676
+computing predictions with 1999 samples...
+Dmax : 1.4084e+06 Dmin 161.468
+Dmax : 1.4084e+06 Dmin 161.468
+Dmax : 1.4084e+06 Dmin 161.468
+Dmax : 1.4084e+06 Dmin 161.468
+Dmax : 1.4084e+06 Dmin 161.468
+Dmax : 1.4084e+06 Dmin 161.468
+Dmax : 1.4084e+06 Dmin 161.468
+Dmax : 1.4084e+06 Dmin 161.468
+Dmax : 1.4084e+06 Dmin 161.468
+Dmax : 1.4084e+06 Dmin 161.468
+début mcmc densité koh separate expérience23
+fcurrent : -138.594
+burn phase over.  time : 12 s, accept rate : 45.65 pct. 
+new cov matrix : 
+  0.190957 -0.0404174 -0.0736028
+-0.0404174   0.168988 -0.0422306
+-0.0736028 -0.0422306  0.0796996
+no scaling
+MCMC phase over.  time : 110 s, accept rate : 15.6484 pct. 
+number of samples : 1999
+0.394207 0.353409 0.435279
+0.595778 0.394588 0.356418
+0.389403 0.538022 0.408783
+0.771612 0.389903 0.354747
+0.515732 0.316105 0.392211
+intégrales avec nautocor = 2000
+16.2673 13.5672 34.9012
+maximum : 34.9012
+computing predictions with 1999 samples...
+Dmax : 1.29338e+06 Dmin 5119.73
+Dmax : 1.29338e+06 Dmin 5119.73
+Dmax : 1.29338e+06 Dmin 5119.73
+Dmax : 1.29338e+06 Dmin 5119.73
+Dmax : 1.29338e+06 Dmin 5119.73
+Dmax : 1.29338e+06 Dmin 5119.73
+Dmax : 1.29338e+06 Dmin 5119.73
+Dmax : 1.29338e+06 Dmin 5119.73
+Dmax : 1.29338e+06 Dmin 5119.73
+Dmax : 1.29338e+06 Dmin 5119.73
+Prepare Halton sequence of size 100
+ fin de calcul des hpars opti sur le grid. Moyenne : 1.27194e+06     3.91119
+moyenne des logposts:-6.60837e+06
+temps de calcul : 200 s
+construction des hGPs individuels sans PCA : 
+The GP will use 100 observations
+The GP will use 100 observations
+optimisation du gp pour hpars numero 0
+par after opt : 0.918415 0.499293   0.0001 0.592322  0.25952
+temps pour optimisation : 0 s
+optimisation du gp pour hpars numero 1
+par after opt :     1.00666    0.288605 0.000702713           5   0.0116222
+temps pour optimisation : 0 s
+fcurrent : -101.301
+burn phase over.  time : 10 s, accept rate : 39.228 pct. 
+new cov matrix : 
+  0.140527 -0.0236326 -0.0270202
+-0.0236326   0.145748 -0.0443322
+-0.0270202 -0.0443322  0.0338925
+no scaling
+MCMC phase over.  time : 95 s, accept rate : 19.9676 pct. 
+number of samples : 1999
+ 0.821922 -0.183531  0.771597
+0.442832  1.10099 0.204903
+0.492628 0.938581 0.506042
+0.488558 0.589129 0.501272
+0.535726 0.521313 0.431912
+rajout de 200 points :
+updating hGPs with 200new points...
+new number of points for hGPs : 300
+construction des hGPs individuels sans PCA : 
+The GP will use 300 observations
+The GP will use 300 observations
+optimisation du gp pour hpars numero 0
+par after opt : 0.954865 0.510979   0.0001 0.429721 0.146107
+temps pour optimisation : 2 s
+optimisation du gp pour hpars numero 1
+par after opt :   1.26985  0.124095    0.0001  0.448097 0.0165755
+temps pour optimisation : 2 s
+fcurrent : -100.988
+burn phase over.  time : 11 s, accept rate : 32.496 pct. 
+new cov matrix : 
+  0.124087 -0.0237569 -0.0212253
+-0.0237569   0.156939 -0.0489306
+-0.0212253 -0.0489306  0.0277379
+no scaling
+MCMC phase over.  time : 99 s, accept rate : 21.1934 pct. 
+number of samples : 1999
+  0.90012 0.0494666  0.556996
+0.164342 0.535086  0.53184
+0.482075 0.123731 0.657837
+0.0757636  0.625874  0.582024
+0.705177 0.289226 0.463625
+rajout de 200 points :
+updating hGPs with 200new points...
+new number of points for hGPs : 500
+construction des hGPs individuels sans PCA : 
+The GP will use 500 observations
+The GP will use 500 observations
+optimisation du gp pour hpars numero 0
+par after opt :    1.04826   0.511389 0.00381004   0.393449   0.147517
+temps pour optimisation : 7 s
+optimisation du gp pour hpars numero 1
+par after opt :   1.47848 0.0529975    0.0001  0.705178 0.0231585
+temps pour optimisation : 7 s
+fcurrent : -100.995
+burn phase over.  time : 11 s, accept rate : 31.358 pct. 
+new cov matrix : 
+   0.13151 -0.0308754 -0.0203252
+-0.0308754   0.180391 -0.0557727
+-0.0203252 -0.0557727  0.0298727
+no scaling
+MCMC phase over.  time : 101 s, accept rate : 19.9794 pct. 
+number of samples : 1999
+0.645027 0.117147 0.644071
+ 0.904021 -0.107211  0.697783
+0.284466 0.720707 0.433402
+ 0.706988 0.0604087  0.606808
+0.276619 0.480882 0.588413
+rajout de 200 points :
+updating hGPs with 200new points...
+new number of points for hGPs : 700
+construction des hGPs individuels sans PCA : 
+The GP will use 700 observations
+The GP will use 700 observations
+optimisation du gp pour hpars numero 0
+par after opt :    1.11064   0.489801 0.00580766   0.375939   0.144661
+temps pour optimisation : 4 s
+optimisation du gp pour hpars numero 1
+par after opt :   1.62504  0.056414    0.0001  0.643517 0.0275954
+temps pour optimisation : 18 s
+fcurrent : -100.984
+burn phase over.  time : 12 s, accept rate : 30.894 pct. 
+new cov matrix : 
+  0.118419 -0.0296494 -0.0191757
+-0.0296494   0.170621 -0.0521015
+-0.0191757 -0.0521015  0.0291312
+no scaling
+MCMC phase over.  time : 107 s, accept rate : 20.0326 pct. 
+number of samples : 1999
+0.569964 0.393277 0.533661
+0.183043 0.575747 0.578213
+  0.3339 0.212719 0.660327
+1.36759 0.49551 0.15553
+0.367597 0.731677  0.43087
+rajout de 200 points :
+updating hGPs with 200new points...
+new number of points for hGPs : 900
+construction des hGPs individuels sans PCA : 
+The GP will use 900 observations
+The GP will use 900 observations
+optimisation du gp pour hpars numero 0
+par after opt :    1.13775     0.4651 0.00576459   0.342919   0.138619
+temps pour optimisation : 10 s
+optimisation du gp pour hpars numero 1
+par after opt :   1.32399 0.0443892    0.0001 0.0288673  0.131513
+temps pour optimisation : 38 s
+fcurrent : -100.984
+burn phase over.  time : 14 s, accept rate : 30.972 pct. 
+new cov matrix : 
+  0.145834 -0.0319147 -0.0220887
+-0.0319147   0.172805 -0.0533575
+-0.0220887 -0.0533575   0.029147

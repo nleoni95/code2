@@ -498,30 +498,52 @@ int Density::optroutine_withgrad(nlopt::vfunc optfunc,void *data_ptr, VectorXd &
   return fin;
 }
 
-int Density::optroutine_lightwithgrad(nlopt::vfunc optfunc,void *data_ptr, VectorXd &X, VectorXd const & lb_hpars, VectorXd const & ub_hpars) const{
-  //routine d'optimisation avec gradient
+int Density::optroutine_lightwithgrad(nlopt::vfunc optfunc,void *data_ptr, VectorXd &X, VectorXd const & lb_hpars, VectorXd const & ub_hpars, double max_time) const{
+  //routine d'optimisation avec gradient. une simple optimisation locale.
   vector<double> x=VXDtoV(X);
   vector<double> lb_hpars_opt=VXDtoV(lb_hpars);
   vector<double> ub_hpars_opt=VXDtoV(ub_hpars);
   //paramètres d'optimisation
-  int maxeval=10000;
-  int popsize=80;
-  double ftol=1e-6;
-  // 1 opti globale et 1 opti locale.
+  double ftol_fin=1e-20;
+  double xtol_fin=1e-15;
+  // seulement 1 opti locale
   //glo
-  nlopt::opt opt(nlopt::LD_AUGLAG, x.size());
+  nlopt::opt opt(nlopt::LD_MMA, x.size());
   opt.set_max_objective(optfunc, data_ptr); 
   opt.set_lower_bounds(lb_hpars_opt);
   opt.set_upper_bounds(ub_hpars_opt);
-  opt.set_maxeval(maxeval);
+  opt.set_maxtime(max_time);
   //opt.set_population(popsize);
-  opt.set_ftol_rel(ftol);
+  opt.set_ftol_rel(ftol_fin);
   double msup; /* the maximum objective value, upon return */
   int fin=opt.optimize(x, msup); //messages d'arrêt 
-  if (!fin==3){cout << "opti hpars message d'erreur : " << fin << endl;}
   X=VtoVXD(x);
   return fin;
 }
+
+int Density::optroutine_lightnograd(nlopt::vfunc optfunc,void *data_ptr, VectorXd &X, VectorXd const & lb_hpars, VectorXd const & ub_hpars, double max_time) const{
+  //routine d'optimisation sans gradient. une simple optimisation locale.
+  vector<double> x=VXDtoV(X);
+  vector<double> lb_hpars_opt=VXDtoV(lb_hpars);
+  vector<double> ub_hpars_opt=VXDtoV(ub_hpars);
+  //paramètres d'optimisation
+  double ftol_fin=1e-20;
+  double xtol_fin=1e-15;
+  // seulement 1 opti locale
+  //glo
+  nlopt::opt opt(nlopt::LN_SBPLX, x.size());
+  opt.set_max_objective(optfunc, data_ptr); 
+  opt.set_lower_bounds(lb_hpars_opt);
+  opt.set_upper_bounds(ub_hpars_opt);
+  opt.set_maxtime(max_time);
+  //opt.set_population(popsize);
+  opt.set_ftol_rel(ftol_fin);
+  double msup; /* the maximum objective value, upon return */
+  int fin=opt.optimize(x, msup); //messages d'arrêt 
+  X=VtoVXD(x);
+  return fin;
+}
+
 
 VectorXd Density::HparsKOH(VectorXd const & hpars_guess, double max_time) const {
   //calcule les hyperparamètres optimaux selon KOH.
@@ -1007,7 +1029,8 @@ void Density::Autocor_diagnosis(int nstepsmax, string const & filename) const
   //on oublie les 10% premières steps dans le diagnostic, pour la phase de burn.
   //on centre les données
   int dim_mcmc=m_allmcmcsamples[0].size();
-  int nselected=0.9*m_allmcmcsamples.size();
+  int nselected=0.2*m_allmcmcsamples.size(); //on estime sur les derniers 10%
+  cout << "autocorrélation calculée sur les 20 derniers pourcents des samples !" << endl;
   vector<VectorXd> allmcmcsamples_selected(nselected);
   VectorXd mean=VectorXd::Zero(dim_mcmc);
   VectorXd var=VectorXd::Zero(dim_mcmc); //variance composante par composante
@@ -1404,20 +1427,11 @@ void Density::WritePriorPredictions(VectorXd const & X, string const & filename,
   m_samples=samples;
 }
 
-void Density::WritePriorPredictionsF(VectorXd const & X, string const & filename, default_random_engine & generator) {
+void Density::WritePriorPredictionsF(VectorXd const & X, string const & filename, vector<VectorXd> const & prior_sample) {
   //prédictions à priori, avec un prior uniforme sur les paramètres. Je ne sais pas encore traiter z, donc je laisse comme ça.
   //avec prior normal !!!!
-  VectorXd mean=0.5*VectorXd::Ones(3);
-  MatrixXd cov=pow(0.3,2)*MatrixXd::Identity(3,3);
-  MatrixXd sqrtCOV=cov.llt().matrixL();
   vector<VectorXd> samples=m_samples;
-  normal_distribution<double> distN(0,1);
-  for (int i=0;i<2000;i++){
-    VectorXd N(3);
-    for (int j=0;j<3;j++){N(j)=distN(generator);}
-    VectorXd x=mean+sqrtCOV*N;
-    m_samples[i]=x;    
-  }
+  m_samples=prior_sample;
   WritePredictionsF(X,filename);
   m_samples=samples;
 }
@@ -1569,6 +1583,41 @@ VectorXd DensityOpt::HparsOpt(VectorXd const & theta, VectorXd const & hpars_gue
   int fin=optroutine(optfuncOpt_nograd,&p,guess,m_lb_hpars,m_ub_hpars,max_time);
   return guess;
 }
+VectorXd DensityOpt::HparsOpt_quicknograd(VectorXd const & theta, VectorXd const & hpars_guess, double max_time) const{
+  VectorXd guess=hpars_guess;
+  //on fait une simple optimisation locale, et avec le gradient.
+  //guess(2)=1e-3; //modif nico
+  //calcul des données f-theta
+  VectorXd obsmtheta(m_Xprofile.size());
+  VectorXd Yexp=m_data_exp[0].Value();
+  VectorXd Fpred=m_model(m_data_exp[0].GetX(),theta);
+  obsmtheta=Yexp-Fpred; //la priormean sera mise dans optfuncopt
+  auto p=make_pair(&obsmtheta,this);
+  //int fin=optroutine_withgrad(optfuncOpt_withgrad,&p,guess,m_lb_hpars,m_ub_hpars,max_time);
+  //version sans gradient quand la prior mean est compliquée...
+  //on optimise les paramètres du noyau
+  int fin=optroutine_lightnograd(optfuncOpt_nograd,&p,guess,m_lb_hpars,m_ub_hpars,max_time);
+  return guess;
+}
+
+
+
+VectorXd DensityOpt::HparsOpt_quickwithgrad(VectorXd const & theta, VectorXd const & hpars_guess, double max_time) const{
+  VectorXd guess=hpars_guess;
+  //on fait une simple optimisation locale, et avec le gradient.
+  //guess(2)=1e-3; //modif nico
+  //calcul des données f-theta
+  VectorXd obsmtheta(m_Xprofile.size());
+  VectorXd Yexp=m_data_exp[0].Value();
+  VectorXd Fpred=m_model(m_data_exp[0].GetX(),theta);
+  obsmtheta=Yexp-Fpred; //la priormean sera mise dans optfuncopt
+  auto p=make_pair(&obsmtheta,this);
+  //int fin=optroutine_withgrad(optfuncOpt_withgrad,&p,guess,m_lb_hpars,m_ub_hpars,max_time);
+  //version sans gradient quand la prior mean est compliquée...
+  //on optimise les paramètres du noyau
+  int fin=optroutine_lightwithgrad(optfuncOpt_withgrad,&p,guess,m_lb_hpars,m_ub_hpars,max_time);
+  return guess;
+}
 
 
 double DensityOpt::optfuncOpt_nograd(const std::vector<double> &x, std::vector<double> &grad, void *data){
@@ -1579,8 +1628,7 @@ double DensityOpt::optfuncOpt_nograd(const std::vector<double> &x, std::vector<d
   const VectorXd *obs=p->first;
   const DensityOpt *d=p->second;
   VectorXd hpars=VtoVXD(x);
-  VectorXd pmean=d->EvaluatePMean(d->GetXprofile(),hpars);
-  VectorXd obsmodif=*obs-pmean;
+  VectorXd obsmodif=*obs;
   const vector<VectorXd> *xconv=d->GetXconverted();
   LDLT<MatrixXd> ldlt(d->Gamma(*xconv,hpars)+d->IncX(*xconv));
   double ll=d->loglikelihood_fast(obsmodif,ldlt);
@@ -1592,15 +1640,15 @@ double DensityOpt::optfuncOpt_nograd(const std::vector<double> &x, std::vector<d
 
 double DensityOpt::optfuncOpt_withgrad(const std::vector<double> &x, std::vector<double> &grad, void *data){
   /* fonction à optimiser pour trouver les hpars optimaux.*/
+  //écrite pour 2 hyperparamètres.
   //cast du null pointer
   pair<const VectorXd*,const DensityOpt*> *p=(pair<const VectorXd*,const DensityOpt*> *) data;
   const VectorXd *obs=p->first; //contient déjà yobs-ftheta.
   const DensityOpt *d=p->second;
   VectorXd hpars=VtoVXD(x);
-  VectorXd pmean=d->EvaluatePMean(d->GetXprofile(),hpars);
-  VectorXd obsmodif=*obs-pmean;
+  VectorXd obsmodif=*obs;
   const vector<VectorXd> *xconv=d->GetXconverted();
-  LDLT<MatrixXd> ldlt(d->Gamma(*xconv,hpars));
+  LDLT<MatrixXd> ldlt(d->Gamma(*xconv,hpars)+ d->Get_IncX()); //incX ici
   double ll=d->loglikelihood_fast(obsmodif,ldlt);
   double lp=d->m_logpriorhpars(hpars);
   //calcul des matrices des gradients
@@ -1608,30 +1656,21 @@ double DensityOpt::optfuncOpt_withgrad(const std::vector<double> &x, std::vector
     int nd=xconv->size();
     MatrixXd DG1=MatrixXd::Zero(nd,nd);
     MatrixXd DG2=MatrixXd::Zero(nd,nd);
-    MatrixXd DG3=MatrixXd::Zero(nd,nd);
     for(int i=0; i<nd; i++){
       for(int j=i; j<nd; j++){
         DG1(i,j)=d->m_DKernel1((*xconv)[i],(*xconv)[j],hpars);
-        DG3(i,j)=d->m_DKernel3((*xconv)[i],(*xconv)[j],hpars);
+        DG2(i,j)=d->m_DKernel2((*xconv)[i],(*xconv)[j],hpars);
         if(i!=j){
           DG1(j,i) = DG1(i,j);
-          DG3(j,i) = DG3(i,j);
-        }else{
-          DG2(i,j)+=2*hpars(1);
+          DG2(j,i) = DG2(i,j);
         }
       }
     }
     MatrixXd Kinv=ldlt.solve(MatrixXd::Identity(nd,nd));
     VectorXd alpha=Kinv*obsmodif;
     MatrixXd aat=alpha*alpha.transpose();
-    grad[0]=0.5*((aat-Kinv)*DG1).trace()-2/hpars(0); //le prior
-    grad[1]=0.5*((aat-Kinv)*DG2).trace()-2/hpars(1); // si prior
-    grad[2]=0.5*((aat-Kinv)*DG3).trace();
-    
-    if(hpars.size()==4){
-    //calcul du gradient par rapport à un terme constant.
-      grad[3]=alpha.sum();
-    }
+    grad[0]=0.5*((aat-Kinv)*DG1).trace(); // pas de prior
+    grad[1]=0.5*((aat-Kinv)*DG2).trace(); // pas de prior non plus
   }
   return ll+lp;
 };

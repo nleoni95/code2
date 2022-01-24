@@ -169,6 +169,19 @@ double Kernel_Z_Matern52(VectorXd const &x, VectorXd const &y, VectorXd const &h
   //return pow(hpar(0),2)*exp(-d/hpar(2));
   return pow(hpar(0),2)*(1+(d/l)+(1./3)*pow(d/l,2))*exp(-d/l); //5/2
 }
+double D1Kernel_Z_Matern52(VectorXd const &x, VectorXd const &y, VectorXd const &hpar){
+  //dérivée par rapport à sigma
+  double d=abs(x(0)-y(0));
+  //return pow(hpar(0),2)*exp(-d/hpar(2));
+  return 2*hpar(0)*(1+(d/hpar(1))+(1./3)*pow(d/hpar(1),2))*exp(-d/hpar(1)); //5/2
+}
+
+double D2Kernel_Z_Matern52(VectorXd const &x, VectorXd const &y, VectorXd const &hpar){
+  //dérivée par rapport à lcor
+  double d=abs(x(0)-y(0));
+  double X=d/hpar(1);
+  return pow(hpar(0),2)*exp(-X)*pow(X,2)*(d+hpar(1))/(3*pow(hpar(1),2));
+}
 
 double Kernel_GP_Matern12(VectorXd const &x, VectorXd const &y, VectorXd const &hpar){
   //noyau pour le GP. 0:intensity, 2:noise, 1:lcor par1, 3:lcor par2, 4:lcor par3.
@@ -733,6 +746,57 @@ tuple<vector<VectorXd>,vector<vector<VectorXd>>,vector<VectorXd>,vector<double>,
   return tp;
 }
 
+void compute_Rubin(vector<vector<VectorXd>> & v){
+      auto begin=chrono::steady_clock::now();
+  //calculer le critère de Rubin pour la variance inter chaînes.
+  //centrer les échantillons
+  int m=v.size(); //nombre de chaînes
+  int n=v[0].size(); //taille des chaînes
+  int d=v[0][0].size(); //dimension des chaînes
+  vector<VectorXd> means;
+  for(int i=0;i<m;i++){
+    VectorXd mean=VectorXd::Zero(d);
+    for(int j=0;j<n;j++){
+      mean+=v[i][j];
+    }
+    mean/=n;
+    means.push_back(mean);
+  }
+  for(int i=0;i<m;i++){
+    for(int j=0;j<n;j++){
+      v[i][j]-=means[i];
+    }
+  }
+  VectorXd totalmean=VectorXd::Zero(d);
+  for(int i=0;i<m;i++){
+    totalmean+=means[i];
+  }
+  totalmean/=m;
+  VectorXd B=VectorXd::Zero(d); //between-sequence variance
+  for(int i=0;i<m;i++){
+    B.array()+=(means[i]-totalmean).array().square();
+  }
+  B*=(1.0*n)/(m-1.0);
+  VectorXd W=VectorXd::Zero(d);
+  for(int i=0;i<m;i++){
+    VectorXd sjs=VectorXd::Zero(d);
+    for(int j=0;j<n;j++){
+      sjs.array()+=(v[i][j]-means[i]).array().square();
+    }
+    sjs/=n-1.0;
+    W+=sjs;
+  }
+  W/=1.0*m;
+  cout << "B : " << B.transpose() << endl;
+  cout << "W : " << W.transpose() << endl;
+  VectorXd var=W*(n-1.0)/(n*1.0)+B*(1.0/n);
+  VectorXd R=(var.array()/W.array()).sqrt();
+  cout << "R : " << R.transpose() << endl;
+
+    auto end=chrono::steady_clock::now();
+  cout << "Rubin criterion over.  " << " time : " << chrono::duration_cast<chrono::seconds>(end-begin).count() << " s " << endl;
+}
+
 
 vector<vector<VectorXd>> revert_vector(vector<vector<VectorXd>> const &v){
   //inverse les deux vecteurs.
@@ -955,6 +1019,7 @@ int main(int argc, char **argv){
     cout << "\t Number of obs, seed_obs\n";
     exit(0);
   }
+  cout << "OUICBON" << endl;
 
   int nd  = atoi(argv[1]);
   uint32_t seed_obs=atoi(argv[2]);//
@@ -978,6 +1043,11 @@ int main(int argc, char **argv){
   VectorXd ub_hpars(2); ub_hpars(0)=4e6;ub_hpars(1)=25; //bornes sur l'optimisation des hpars. edm exp lcor
   //VectorXd lb_hpars(2); lb_hpars(0)=1e4;lb_hpars(1)=0.1;
   //VectorXd ub_hpars(2); ub_hpars(0)=1e6;ub_hpars(1)=25; //bornes sur l'optimisation des hpars. edm exp lcor
+  VectorXd lb_mi(3); lb_mi(0)=20; lb_mi(1)=0.5*18.9E-6; lb_mi(2)=0.5*0.75; //0.2 avant
+  VectorXd ub_mi(3); ub_mi(0)=60; ub_mi(1)=1.5*18.9E-6; ub_mi(2)=1.5*0.75;
+  VectorXd lb_t_support(dim_theta); for(int i=0;i<dim_theta;i++){lb_t_support(i)=-lb_mi(i)/(ub_mi(i)-lb_mi(i));}
+  VectorXd ub_t_support=VectorXd::Zero(dim_theta); ub_t_support(0)=(90-lb_mi(0))/(ub_mi(0)-lb_mi(0));
+  cout << "lb_t et ub_t support :" << lb_t_support.transpose() << ub_t_support.transpose() << endl;
  
   VectorXd hpars_z_guess=0.5*(lb_hpars+ub_hpars);
 
@@ -1032,13 +1102,13 @@ int main(int argc, char **argv){
   //construction du vecteur de Density. On construira le vecteur de DensOpt par dessus.
   //vector<int> cases={3,6,16,20};
   //vector<int> cases={6,14,15,16,18,20};
-  //vector<int> cases={3,4,5,6,14,15,16,18,20,21,22,23}; // le cas 18 est puni. avec le 8. On retire 3, 14, 16, 23 car les hyperparamètres koh sont au bord. La 15 mélange pas très bien on dirait.
   
   
 
 
-  vector<int> cases={3,4,5,6,8,14,15,16,18,20,21,22,23}; // enlevé cas 8 et 14 et 23 et 15
-  //vector<int> cases={6};
+  vector<int> cases={3,4,5,6,8,14,15,16,18,20,21,22,23}; // total
+  //vector<int> cases={3,4,5,6,15,16,18,20,21}; // cases cool sans ceux qui plantent .
+  //vector<int> cases={3};
   //vector<int> cases={4,5,6,15,18,20,21,22}; //tous les bons
   //vector<int> cases={3,6,14}; //que quelque cas cette nuit
   //hyperparamètres optimaux pour les GPs des surrogates.
@@ -1113,6 +1183,7 @@ int main(int argc, char **argv){
     Density MainDensity(doe_init);
     MainDensity.SetModel(lambda_modelwish);
     MainDensity.SetKernel(Kernel_Z_Matern52);
+    MainDensity.SetKernelDerivatives(D1Kernel_Z_Matern52,D2Kernel_Z_Matern52,D1Kernel_Z_Matern52);
     MainDensity.SetHparsBounds(lb_hpars,ub_hpars);
     MainDensity.SetLogPriorHpars(logprior_hpars);
     MainDensity.SetLogPriorPars(logprior_pars);
@@ -1126,6 +1197,25 @@ int main(int argc, char **argv){
     vDens.push_back(MainDensity);
   }
 
+  //écriture des prior predictions
+  {
+    vector<VectorXd> prior_sample;
+    VectorXd mean=0.5*VectorXd::Ones(3);
+    MatrixXd cov=pow(0.3,2)*MatrixXd::Identity(3,3);
+    MatrixXd sqrtCOV=cov.llt().matrixL();
+    for(int i=0;i<nombre_samples_collected;i++){
+      VectorXd N(lb_t.size());
+      for (int j=0;j<N.size();j++){N(j)=distN(generator);}
+      VectorXd x=mean+sqrtCOV*N;
+      prior_sample.push_back(x);
+    }
+    for(int i;i<vsize;i++){
+      string fname="results/fulldensities/prior/predsF"+to_string(cases[i])+".gnu";
+      vDens[i].WritePriorPredictionsF(XPREDS,fname,prior_sample);
+    }
+
+
+  }
 
   VectorXd X_init_mcmc=0.5*VectorXd::Ones(dim_theta);
   MatrixXd COV_init=MatrixXd::Identity(dim_theta,dim_theta);
@@ -1137,70 +1227,324 @@ int main(int argc, char **argv){
 
 //début des calibrations.
 
+//constitution du sample multifb, puis prédictions sur chaque densité. on a 10 chaînes de 5e6 steps, on prend 100 points par chaîne. Donc 1 tous les 50000. 
+//extraire intelligemment pour rester dans la mémoire d'un terminal.
+{
+  int nrepet=10;
+  vector<VectorXd> sample;
+  for(int i=0;i<nrepet;i++){
+    string fname="results/middensities/multifb/allsamp"+to_string(i)+".gnu";
+    vector<VectorXd> s=readVector(fname);
+    for (int j=0;j<100;j++){
+      int index=j*50000;
+      sample.push_back(s[index]);
+    }
+  }
+  cout << "taille du sample : " << sample.size();
+  for(int i=0;i<vsize;i++){
+    vDens[i].SetNewSamples(sample);
+    vDens[i].SetNewHparsOfSamples(sample);
+    string fname="results/middensities/multifb/samp"+to_string(cases[i])+".gnu";
+    string fnamepredF="results/middensities/multifb/predsF"+to_string(cases[i])+".gnu";
+    vDens[i].WriteSamples(fname);
+    vDens[i].WritePredictionsF(XPREDS,fnamepredF);
+  }
+}
 
- //MCMC koh separate sur les densités séparées
+exit(0);
 
-     // phase KOH separate
-    auto hparskoh_separate=HparsKOH_separate(vDens,hpars_z_guess,20*cases.size());
-    cout << "hparskoh sep:" << hparskoh_separate[0].transpose() << endl;
+//multiples MCMC phase Bayes sur la densité complète 
 
+    {
+      int nrepet=10; //on fait 1 MCMC pour l'instant      
+      string f1="results/middensities/Xinit.gnu";
+      string f2="results/middensities/Minit.gnu";
+      vector<VectorXd> xsave=readVector(f1);
+      vector<VectorXd> Msave=readVector(f2);
+      MatrixXd COV_fromFMP(Msave.size(),Msave.size());
+      for(int i=0;i<COV_fromFMP.cols();i++){
+        COV_fromFMP.col(i)=Msave[i];
+      }
+      //tirage de multiples points de départ
+      vector<VectorXd> starting_points; starting_points.push_back(xsave[0]);
+      for(int i=0;i<nrepet-1;i++){
+        VectorXd S(xsave[0].size());
+        for(int j=0;j<3;j++){
+          S(j)=lb_t(j)+(ub_t(j)-lb_t(j))*distU(generator);
+        }
+        for(int j=3;j<S.size();j++){
+          int u; if(j%2){ //j impair donc edm
+          u=0;}
+          else{u=1;}
+          S(j)=lb_hpars(u)+(ub_hpars(u)-lb_hpars(u))*distU(generator);
+        }
+        starting_points.push_back(S);
+      }
+
+      cout << "starting points : " << endl;
+      for(int i=0;i<starting_points.size();i++){
+        cout << starting_points[i].transpose() << endl;
+      }
+      cout << "cov matrix : " << endl;
+      cout << COV_fromFMP << endl;
+      
+
+      for(int luck=0;luck<nrepet;luck++ ){
+        //initial MCMC. remplissage des états initiaux.
+        int mcmc_fb_size=3+vsize*lb_hpars.size();
+        
+        VectorXd X_init_mcmc_fb(mcmc_fb_size);
+        MatrixXd COV_init_fb=MatrixXd::Zero(mcmc_fb_size,mcmc_fb_size);
+        X_init_mcmc_fb.head(3)=X_init_mcmc;
+        COV_init_fb(0,0)=pow(3.0/72,2);
+        COV_init_fb(1,1)=pow(5e-7/18.9e-6,2);
+        COV_init_fb(2,2)=pow(0.01/0.75,2);
+        int m=lb_hpars.size();
+        for(int i=0;i<vsize;i++){
+          for(int j=0;j<ub_hpars.size();j++){
+            X_init_mcmc_fb(3+i*m+j)=0.5*(lb_hpars(j)+ub_hpars(j));
+          }
+          COV_init_fb(3+i*m,3+i*m)=pow(2e4,2);
+          COV_init_fb(3+i*m+1,3+i*m+1)=pow(0.5,2);
+          //COV_init_fb(3+i*m+2,3+i*m+2)=pow(0.1,2);
+          //COV_init_fb(3+i*m+3,3+i*m+3)=pow(0.2,2);
+        }
+        cout << "XinitMCMC : " << X_init_mcmc_fb.transpose() << endl;
+        cout << "COV init FB : " << endl << COV_init_fb << endl;
+        auto in_bounds_fb=[&vDens,&vsize,&lb_hpars,&ub_hpars,&lb_t_support,&ub_t_support](VectorXd const & X){
+          VectorXd theta=X.head(3);
+          vector<VectorXd> hp;
+          for(int i=0;i<vsize;i++){
+            VectorXd h(lb_hpars.size());
+            for(int j=0;j<h.size();j++){
+              h(j)=X(3+j+i*h.size());
+            }
+            hp.push_back(h);
+          }
+          bool in=true;
+          for(int i=0;i<vsize;i++){
+            for(int j=0;j<lb_hpars.size();j++){
+              if (hp[i](j)<lb_hpars(j) || hp[i](j)>ub_hpars(j)){
+              in=false;
+              }
+            }
+          }
+          if(X(0)<lb_t_support(0) || X(0)>ub_t_support(0) || X(1)<lb_t_support(1) || X(2)<lb_t_support(2) ){
+            in=false;}
+          return in;
+        };
+
+        auto get_hpars_fb=[](VectorXd const & X){
+          //renvoyer un vecteur sans intérêt.
+          vector<VectorXd> v(1);
+          return v;
+        };
+        auto compute_score_fb=[&vsize,&lb_hpars,&vDens](vector<VectorXd> p, VectorXd const &X){
+          //il faut décomposer X en thetas/ hpars. 3 est la dimension des paramètres
+          VectorXd theta=X.head(3);
+          vector<VectorXd> hp;
+          for(int i=0;i<vsize;i++){
+            VectorXd h(lb_hpars.size());
+            for(int j=0;j<h.size();j++){
+              h(j)=X(3+j+i*h.size());
+            }
+            hp.push_back(h);
+          }
+          double res=0;
+          for(int i=0;i<vsize;i++){
+            double d=vDens[i].loglikelihood_theta_incx(theta,hp[i]);
+            //cout << i << " : " << d << endl;
+            res+=d;
+          }
+          res+=logprior_pars(theta);
+          return res;
+        };
+        auto res=Run_MCMC(10*nombre_steps_mcmc,nombre_samples_collected,starting_points[luck],COV_fromFMP,compute_score_fb,get_hpars_fb,in_bounds_fb,generator);
+          vector<VectorXd> allsamples_fb_gros=get<2>(res);
+          //set des samples dans la première densité pour calculer la corrélation.
+          vDens[0].SetNewAllSamples(allsamples_fb_gros);
+          //diagnostic d'autocor doit être bien plus gros.
+          auto begin=chrono::steady_clock::now();
+          //vDens[0].Autocor_diagnosis(20000,"results/middensities/multifb/autocor"+to_string(luck)+".gnu");
+          auto end=chrono::steady_clock::now();
+          cout << "temps pour calcul autocor bayes:. " << " time : " << chrono::duration_cast<chrono::seconds>(end-begin).count() << " s" <<  endl;
+          string fnameall="results/middensities/multifb/allsamp"+to_string(luck)+".gnu";
+          vDens[0].WriteMCMCSamples(fnameall);
+    }
+
+  }
+//profitons-en pour le calcul du critère de Rubin
+{
+  int nrepet=10;
+  vector<vector<VectorXd>> v;
+  for(int i=0;i<nrepet;i++){
+    string fname="results/middensities/multifb/allsamp"+to_string(i)+".gnu";
+    vector<VectorXd> s=readVector(fname);
+    v.push_back(s);
+  }
+  compute_Rubin(v);
+}
+
+
+
+
+
+exit(0);
+
+
+
+//MCMC phase Bayes. sur la densité complète. oskour. 
 
   {
+    string f1="results/fulldensities/Xinit.gnu";
+    string f2="results/fulldensities/Minit.gnu";
+    vector<VectorXd> xsave=readVector(f1);
+    vector<VectorXd> Msave=readVector(f2);
+    MatrixXd COV_fromFMP(Msave.size(),Msave.size());
+    for(int i=0;i<COV_fromFMP.cols();i++){
+      COV_fromFMP.col(i)=Msave[i];
+    }
+    //initial MCMC. remplissage des états initiaux.
+    int mcmc_fb_size=3+vsize*lb_hpars.size();
+    
+    VectorXd X_init_mcmc_fb(mcmc_fb_size);
+    MatrixXd COV_init_fb=MatrixXd::Zero(mcmc_fb_size,mcmc_fb_size);
+    X_init_mcmc_fb.head(3)=X_init_mcmc;
+    COV_init_fb(0,0)=pow(3.0/72,2);
+    COV_init_fb(1,1)=pow(5e-7/18.9e-6,2);
+    COV_init_fb(2,2)=pow(0.01/0.75,2);
+    int m=lb_hpars.size();
     for(int i=0;i<vsize;i++){
+      for(int j=0;j<ub_hpars.size();j++){
+        X_init_mcmc_fb(3+i*m+j)=0.5*(lb_hpars(j)+ub_hpars(j));
+      }
+      COV_init_fb(3+i*m,3+i*m)=pow(2e4,2);
+      COV_init_fb(3+i*m+1,3+i*m+1)=pow(0.5,2);
+      //COV_init_fb(3+i*m+2,3+i*m+2)=pow(0.1,2);
+      //COV_init_fb(3+i*m+3,3+i*m+3)=pow(0.2,2);
+    }
 
-    auto in_bounds=[&vDens](VectorXd const & X){
-        
-        return vDens[0].in_bounds_pars(X);
+    COV_fromFMP/=4;
+    //COV_fromFMP(7,7)/=2;
+    //COV_fromFMP(8,8)/=2;
+    //COV_fromFMP(12,12)/=2;
+    //COV_fromFMP(13,13)/=2;
+    //COV_fromFMP(14,14)/=2;
+    //COV_fromFMP(16,16)/=2;
+    //COV_fromFMP(27,27)/=4;
+    //COV_fromFMP(28,28)/=4;
+
+
+    cout << "XinitMCMC : " << xsave[0].transpose() << endl;
+    cout << "COV init FB : " << endl << COV_fromFMP << endl;
+    auto in_bounds_fb=[&vDens,&vsize,&lb_hpars,&ub_hpars,&lb_t_support,&ub_t_support](VectorXd const & X){
+      VectorXd theta=X.head(3);
+      vector<VectorXd> hp;
+      for(int i=0;i<vsize;i++){
+        VectorXd h(lb_hpars.size());
+        for(int j=0;j<h.size();j++){
+          h(j)=X(3+j+i*h.size());
+        }
+        hp.push_back(h);
+      }
+      bool in=true;
+      for(int i=0;i<vsize;i++){
+        for(int j=0;j<lb_hpars.size();j++){
+          if (hp[i](j)<lb_hpars(j) || hp[i](j)>ub_hpars(j)){
+          in=false;
+          }
+        }
+      }
+      if(X(0)<lb_t_support(0) || X(0)>ub_t_support(0) || X(1)<lb_t_support(1) || X(2)<lb_t_support(2) ){
+        in=false;}
+      return in;
     };
 
-    auto get_hpars_kohs=[&hparskoh_separate,&i](VectorXd const & X){
-      vector<VectorXd> h(1);
-      h[0]=hparskoh_separate[i];
-      return h;
+    auto get_hpars_fb=[](VectorXd const & X){
+      //renvoyer un vecteur sans intérêt.
+      vector<VectorXd> v(1);
+      return v;
     };
-    auto compute_score_kohs=[&vDens,&i](vector<VectorXd> p, VectorXd const &X){
-      double res=vDens[i].loglikelihood_theta_incx(X,p[0])+vDens[i].EvaluateLogPPars(X);
+    auto compute_score_fb=[&vsize,&lb_hpars,&vDens](vector<VectorXd> p, VectorXd const &X){
+      //il faut décomposer X en thetas/ hpars. 3 est la dimension des paramètres
+      VectorXd theta=X.head(3);
+      vector<VectorXd> hp;
+      for(int i=0;i<vsize;i++){
+        VectorXd h(lb_hpars.size());
+        for(int j=0;j<h.size();j++){
+          h(j)=X(3+j+i*h.size());
+        }
+        hp.push_back(h);
+      }
+      double res=0;
+      for(int i=0;i<vsize;i++){
+        double d=vDens[i].loglikelihood_theta_incx(theta,hp[i]);
+        //cout << i << " : " << d << endl;
+        res+=d;
+      }
+      res+=logprior_pars(theta);
       return res;
     };
+    generator.seed(42);
+    auto res=Run_MCMC(10*nombre_steps_mcmc,nombre_samples_collected,xsave[0],COV_fromFMP,compute_score_fb,get_hpars_fb,in_bounds_fb,generator);
+      auto samples_fb_gros=get<0>(res);
+      vector<VectorXd> allsamples_fb_gros=get<2>(res);
+      vector<VectorXd> samples_fb_theta;
+      vector<vector<VectorXd>> samples_fb_hpars_wrongorder;
+      //décomposer le tout en paramètres et hpars.
+      for(int i=0;i<samples_fb_gros.size();i++){
+        samples_fb_theta.push_back(samples_fb_gros[i].head(3));
+        vector<VectorXd> hpars_stepi;
+        for(int j=0;j<vsize;j++){
+          VectorXd h(lb_hpars.size());
+          for(int k=0;k<h.size();k++){
+            h(k)=samples_fb_gros[i](3+k+j*h.size());
+          }
+          hpars_stepi.push_back(h);
+        }
+        samples_fb_hpars_wrongorder.push_back(hpars_stepi);
+      }
+      auto samples_fb_hpars=revert_vector(samples_fb_hpars_wrongorder);
+      //set des samples dans la première densité pour calculer la corrélation.
+      vDens[0].SetNewAllSamples(allsamples_fb_gros);
+      //diagnostic d'autocor doit être bien plus gros.
+      auto begin=chrono::steady_clock::now();
+      vDens[0].Autocor_diagnosis(140000,"results/fulldensities/fb/autocor.gnu");
+      auto end=chrono::steady_clock::now();
+  cout << "temps pour calcul autocor bayes:. " << " time : " << chrono::duration_cast<chrono::seconds>(end-begin).count() << " s" <<  endl;
+      string fnameall="results/fulldensities/fb/allsamp.gnu";
+      vDens[0].WriteMCMCSamples(fnameall);
+      //Set des samples dans chaque densité + prédictions
+      for(int i=0;i<vsize;i++){
 
-    cout << "début mcmc densité koh separate expérience" << cases[i] << endl;
-    auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,X_init_mcmc,COV_init,compute_score_kohs,get_hpars_kohs,in_bounds,generator);
-      auto samples_opti=get<0>(res);
-      vector<VectorXd> allsamples_opti=get<2>(res);
-      vector<vector<VectorXd>> vhpars_opti_noninverted=get<1>(res); //là le premier vecteur c'est les steps, et le second vecteur les densités. Il faut inverser ça...
-      auto vhpars_opti=revert_vector(vhpars_opti_noninverted);
 
-      //Set des samples dans chaque densité
-      
-        vDens[i].SetNewSamples(samples_opti);
-        vDens[i].SetNewHparsOfSamples(vhpars_opti[0]);
-      
-      vDens[i].SetNewAllSamples(allsamples_opti);
-      //diagnostic
-      vDens[i].Autocor_diagnosis(nautocor,"results/separatedensities/kohs/autocor"+to_string(cases[i])+".gnu");
-      //écriture des samples. Il faut une fonction dédiée.
-        string fname="results/separatedensities/kohs/samp"+to_string(cases[i])+".gnu";
-        string fnameall="results/separatedensities/kohs/allsamp"+to_string(cases[i])+".gnu";
-        string fnamepred="results/separatedensities/kohs/preds"+to_string(cases[i])+".gnu";
-        string fnamepredF="results/separatedensities/kohs/predsF"+to_string(cases[i])+".gnu";
+        vDens[i].SetNewSamples(samples_fb_theta);
+        vDens[i].SetNewHparsOfSamples(samples_fb_hpars[i]);
+        string fname="results/fulldensities/fb/samp"+to_string(cases[i])+".gnu";
+        string fnamepred="results/fulldensities/fb/preds"+to_string(cases[i])+".gnu";
+        string fnamepredF="results/fulldensities/fb/predsF"+to_string(cases[i])+".gnu";
         vDens[i].WriteSamples(fname);
-        vDens[i].WriteMCMCSamples(fnameall);
 
-                    //prédictions
-  
         vDens[i].WritePredictionsF(XPREDS,fnamepredF);
         vDens[i].WritePredictions(XPREDS,fnamepred);
-        //prédictions
+      }
+
+
   }
-  }
+exit(0);
 
 
-   //MCMC opt sur les densités séparées.
 
-     //Phase Opti
+
+
+
+
+  exit(0);
+
+    //Phase Opti
   vector<DensityOpt> vDopt;
   //construction du vecteur de densityopt avec DoE fixe.
-  /*
+  
   for(int i=0;i<vsize;i++){
     DensityOpt Dopt(vDens[i]);
     string fname="results/hparsopt"+to_string(cases[i])+".gnu";
@@ -1211,11 +1555,293 @@ int main(int argc, char **argv){
     Dopt.opti_allgps(hpars_gp_guess);
     vDopt.push_back(Dopt);
   }
-  */
+  
+
+          //MCMC opt avec toutes les densités en même temps. on retente. 
+  MatrixXd COV_init_from_FMP=MatrixXd::Zero(3+vsize*lb_hpars.size(),3+vsize*lb_hpars.size());
+  VectorXd X_init_from_FMP=VectorXd(3+vsize*lb_hpars.size());
+
+  {
+
+    auto in_bounds=[&vDens,&lb_t_support,&ub_t_support](VectorXd const & X){
+      bool in=true;
+      if(X(0)<lb_t_support(0) || X(0)>ub_t_support(0) || X(1)<lb_t_support(1) || X(2)<lb_t_support(2) ){
+        in=false;}
+      return in;
+    };
+    auto get_hpars_opti=[&vDopt,&vsize,&lb_hpars,&ub_hpars](VectorXd const & X){
+      vector<VectorXd> p(vsize);
+      for(int i=0;i<vsize;i++){
+        VectorXd init=vDopt[i].EvaluateHparOpt(X);
+        init(0)=max(init(0),lb_hpars(0));
+        init(1)=max(init(1),lb_hpars(1));
+        init(0)=min(init(0),ub_hpars(0));
+        init(1)=min(init(1),ub_hpars(1));
+        p[i]=vDopt[i].HparsOpt(X,init,1e-4);
+      }
+      return p;
+    };
+    auto compute_score_opti=[&vDopt,&vsize](vector<VectorXd> p, VectorXd const &X){
+      double res=0;
+      //cout << "comp score : " << endl;
+      for(int i=0;i<vsize;i++){
+        double d=vDopt[i].loglikelihood_theta_incx(X,p[i]);
+        //cout << i << " : " << d << endl;
+        res+=d;
+      }
+      res+=vDopt[0].EvaluateLogPPars(X);
+      return res;
+    };
+
+
+    auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,X_init_mcmc,COV_init,compute_score_opti,get_hpars_opti,in_bounds,generator);
+      auto samples_opti=get<0>(res);
+      vector<VectorXd> allsamples_opti=get<2>(res);
+      vector<vector<VectorXd>> vhpars_opti_noninverted=get<1>(res); //là le premier vecteur c'est les steps, et le second vecteur les densités. Il faut inverser ça...
+      auto vhpars_opti=revert_vector(vhpars_opti_noninverted);
+      vector<vector<VectorXd>> allhpars_opti_inverted=get<4>(res);// dans le cas 1D ici, le outer vector est de taille nsteps, et le inner vector de taille 1 (voir fct get_hpars)
+
+      vector<vector<VectorXd>> allhpars_opti=revert_vector(allhpars_opti_inverted);
+
+      //Set des samples dans chaque densité
+      for(int i=0;i<vsize;i++){
+        vDopt[i].SetNewSamples(samples_opti);
+        vDopt[i].SetNewHparsOfSamples(vhpars_opti[i]);
+      }
+      vDopt[0].SetNewAllSamples(allsamples_opti);
+      //diagnostic
+      vDopt[0].Autocor_diagnosis(nautocor,"results/middensities/opt/autocor.gnu");
+      //écriture des samples. Il faut une fonction dédiée. 
+      for(int i=0;i<vsize;i++){
+        string fname="results/middensities/opt/samp"+to_string(cases[i])+".gnu";
+        string fnameall="results/middensities/opt/allsamp"+to_string(cases[i])+".gnu";
+        string fnameallh="results/middensities/opt/allhpars"+to_string(cases[i])+".gnu";
+        string fnamepred="results/middensities/opt/preds"+to_string(cases[i])+".gnu";
+        string fnamepredF="results/middensities/opt/predsF"+to_string(cases[i])+".gnu";
+        string fnameprior="results/middensities/prior/predsF"+to_string(cases[i])+".gnu";
+
+      writeVector(fnameallh,allhpars_opti[i]);
+        vDopt[i].WriteSamples(fname);
+        vDopt[i].WriteMCMCSamples(fnameall);
+        vDopt[i].WritePredictionsF(XPREDS,fnamepredF);
+        vDopt[i].WritePredictions(XPREDS,fnamepred);
+      }
+      //calcul de la matrice de covariance complète.
+      //on va faire un petit truc sympa (idée olm : calculer une matrice de covariance a posteriori sur les samples de FMP, puis utiliser ça comme starting point de la densité Bayes.)
+      //création d'un grand vector<VectorXd> avec plein d'échantillons FMP.
+      vector<VectorXd> grossamples_fmp;
+      int t=3; int h=2;
+      for(int k=0;k<allsamples_opti.size();k++){
+        VectorXd theta=allsamples_opti[k];
+        VectorXd grossample(theta.size()+vsize*lb_hpars.size());
+        for(int j=0;j<t;j++){
+          grossample(j)=theta(j);
+        }
+        for(int j=0;j<vsize;j++){
+          VectorXd hp=allhpars_opti[j][k];
+          grossample(3+2*j)=hp(0);
+          grossample(3+2*j+1)=hp(1);
+        }
+        grossamples_fmp.push_back(grossample);
+      }
+      cout << "grossamples : " << endl;
+      cout << grossamples_fmp[0].transpose() << endl;
+      cout << grossamples_fmp[1].transpose() << endl;
+      cout << grossamples_fmp[2].transpose() << endl;
+      cout << grossamples_fmp[3].transpose() << endl;
+      //calcul matrice de covariance de grossamples.
+      VectorXd sampmean=VectorXd::Zero(grossamples_fmp[0].size());
+      for(int j=0;j<grossamples_fmp.size();j++){
+        sampmean+=grossamples_fmp[j];
+      }
+      sampmean/=grossamples_fmp.size();
+      for(int j=0;j<grossamples_fmp.size();j++){
+        VectorXd x=grossamples_fmp[j]-sampmean;
+        COV_init_from_FMP+=x*x.transpose();
+      }
+      COV_init_from_FMP/=grossamples_fmp.size();
+      cout << "COV_init_from_FMP : " << endl;
+      cout << COV_init_from_FMP << endl;
+      X_init_from_FMP=sampmean;
+      cout << "X_init_from_FMP : " << endl;
+      cout << X_init_from_FMP.transpose() << endl;
+      for(int j=3;j<X_init_from_FMP.size();j++){
+        if (X_init_from_FMP(j)<=1.0){
+          X_init_from_FMP(j)=2; //pour les longueurs de corrélation mal prédites
+        }
+      }
+      cout << "X_init_from_FMP update: " << endl;
+      cout << X_init_from_FMP.transpose() << endl;
+      //écriture de la matrice de corrélation dans un fichier pour la réutiliser trkl.
+
+      vector<VectorXd> xsave;
+      vector<VectorXd> Msave;
+      xsave.push_back(X_init_from_FMP);
+      for(int i=0;i<COV_init_from_FMP.cols(); i++){
+        Msave.push_back(COV_init_from_FMP.col(i));
+      }
+      string f1="results/middensities/Xinit.gnu";
+      string f2="results/middensities/Minit.gnu";
+      writeVector(f1,xsave);
+      writeVector(f2,Msave);
+  }
+
+//MCMC kohseparate toutes les expériences
+
+     // calcul hpars ko separate
+    auto hparskoh_separate=HparsKOH_separate(vDens,hpars_z_guess,20*cases.size());
+    cout << "hparskoh sep:" << hparskoh_separate[0].transpose() << endl;
+
+  //cout << hparskoh_separate[1].transpose() << endl;
+  {
+    auto in_bounds=[&vDens,&lb_t_support,&ub_t_support](VectorXd const & X){
+      bool in=true;
+      if(X(0)<lb_t_support(0) || X(0)>ub_t_support(0) || X(1)<lb_t_support(1) || X(2)<lb_t_support(2) ){
+        in=false;}
+      return in;
+    };
+    auto get_hpars_kohs=[&hparskoh_separate](VectorXd const & X){
+      return hparskoh_separate;
+    };
+
+    auto compute_score_kohs=[&vDens,&vsize](vector<VectorXd> p, VectorXd const &X){
+      double res=0;
+      for(int i=0;i<vsize;i++){
+        double d=vDens[i].loglikelihood_theta_incx(X,p[i]);
+        res+=d;
+      }
+      res+=vDens[0].EvaluateLogPPars(X);
+      return res;
+    };
+    auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,X_init_mcmc,COV_init,compute_score_kohs,get_hpars_kohs,in_bounds,generator);
+      auto samples_koh=get<0>(res);
+      vector<VectorXd> allsamples_koh=get<2>(res);
+      vector<vector<VectorXd>> vhpars_koh_noninverted=get<1>(res); //là le premier vecteur c'est les steps, et le second vecteur les densités. Il faut inverser ça...
+      auto vhpars_koh=revert_vector(vhpars_koh_noninverted);
+
+      //Set des samples dans chaque densité
+      for(int i=0;i<vsize;i++){
+        vDens[i].SetNewSamples(samples_koh);
+        vDens[i].SetNewHparsOfSamples(vhpars_koh[i]);
+      }
+      vDens[0].SetNewAllSamples(allsamples_koh);
+      //diagnostic
+      vDens[0].Autocor_diagnosis(nautocor,"results/middensities/koh/autocorkohs.gnu");
+      //écriture des samples. Il faut une fonction dédiée. 
+      for(int i=0;i<vsize;i++){
+
+        
+        string fname="results/middensities/koh/samp"+to_string(cases[i])+".gnu";
+        string fnameall="results/middensities/koh/allsamp"+to_string(cases[i])+".gnu";
+        string fnamepred="results/middensities/koh/preds"+to_string(cases[i])+".gnu";
+        string fnamepredF="results/middensities/koh/predsF"+to_string(cases[i])+".gnu";
+        vDens[i].WriteSamples(fname);
+        vDens[i].WriteMCMCSamples(fnameall);
+
+        vDens[i].WritePredictionsF(XPREDS,fnamepredF);
+        vDens[i].WritePredictions(XPREDS,fnamepred);
+      }
+      //prédictions
+  }
+
+
+exit(0);
+
+
+
+
+exit(0);
+
+
+
+       //MCMC phase Bayes sur les densités séparées. Pour chaque densités : que 2 hpars. La variance et la correlation length.
+  {
+    //initial MCMC. remplissage des états initiaux.
+    int mcmc_fb_size=5;
+    
+    VectorXd X_init_mcmc_fb(mcmc_fb_size);
+    MatrixXd COV_init_fb=MatrixXd::Zero(mcmc_fb_size,mcmc_fb_size);
+    X_init_mcmc_fb.head(3)=X_init_mcmc;
+    X_init_mcmc_fb(3)=1e6; X_init_mcmc_fb(4)=5;
+    COV_init_fb.topLeftCorner(3,3)=COV_init;
+    int m=lb_hpars.size();
+    COV_init_fb(3,3)=pow(2e4,2);
+    COV_init_fb(4,4)=pow(0.5,2);
+    cout << "covinitfb" << endl << COV_init_fb << endl;
+    cout << "Xinitfb" << endl << X_init_mcmc_fb.transpose() << endl;
+
+for(int i=0;i<vsize;i++){
+    auto in_bounds_fb=[&vDens,&vsize,&lb_hpars,&lb_t_support,&ub_t_support](VectorXd const & X){
+      VectorXd hp=X.tail(2);
+      VectorXd theta=X.head(3);
+      bool in=vDens[0].in_bounds_hpars(hp);
+      if(X(0)<lb_t_support(0) || X(0)>ub_t_support(0) || X(1)<lb_t_support(1) || X(2)<lb_t_support(2) ){
+        in=false;}
+      return in;
+    };
+
+    auto get_hpars_fb=[](VectorXd const & X){
+      //renvoyer un vecteur sans intérêt.
+      vector<VectorXd> v(1);
+      return v;
+    };
+    auto compute_score_fb=[&vsize,&lb_hpars,&vDens,&i](vector<VectorXd> p, VectorXd const &X){
+      //il faut décomposer X en thetas/ hpars. 3 est la dimension des paramètres
+      //logpriorhpars=0 I think
+      VectorXd theta=X.head(3);
+      VectorXd hp=X.tail(2);
+      double d=vDens[i].loglikelihood_theta_incx(theta,hp);
+      double lp=vDens[i].EvaluateLogPHpars(hp)+vDens[i].EvaluateLogPPars(theta);
+      return d+lp;
+    }; 
+    cout << "début mcmc densité bayes expérience" << cases[i] << endl;
+      
+    auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,X_init_mcmc_fb,COV_init_fb,compute_score_fb,get_hpars_fb,in_bounds_fb,generator);
+
+      auto samples_fb_gros=get<0>(res);
+      vector<VectorXd> allsamples_fb_gros=get<2>(res);
+      vector<VectorXd> samples_fb_theta;
+      vector<VectorXd> samples_fb_hpars;
+      //décomposer le tout en paramètres et hpars.
+      for(int j=0;j<samples_fb_gros.size();j++){
+        VectorXd X=samples_fb_gros[j];
+        samples_fb_theta.push_back(X.head(3));
+        samples_fb_hpars.push_back(X.tail(2));
+      }
+      //set des samples dans la première densité pour calculer la corrélation.
+      vDens[i].SetNewAllSamples(allsamples_fb_gros);
+      //diagnostic
+      vDens[i].Autocor_diagnosis(5000,"results/separatedensities/fb/autocor"+to_string(cases[i])+".gnu");
+
+      vDens[i].SetNewSamples(samples_fb_theta);
+      vDens[i].SetNewHparsOfSamples(samples_fb_hpars);
+
+      //écriture des samples. Il faut une fonction dédiée.
+      string fname="results/separatedensities/fb/samp"+to_string(cases[i])+".gnu";
+      string fnameall="results/separatedensities/fb/allsamp"+to_string(cases[i])+".gnu";
+        
+      string fnamepred="results/separatedensities/fb/preds"+to_string(cases[i])+".gnu";
+      string fnamepredF="results/separatedensities/fb/predsF"+to_string(cases[i])+".gnu";
+      vDens[i].WriteSamples(fname);
+      vDens[i].WriteMCMCSamples(fnameall); 
+
+            //prédictions
+      vDens[i].WritePredictionsF(XPREDS,fnamepredF);
+      vDens[i].WritePredictions(XPREDS,fnamepred);
+
+    }
+  }
+
+
+exit(0);
+
+
+
+   //MCMC opt sur les densités séparées.
 
 
   //construction du vecteur de densityopt avec algorithme adaptatif. construction adaptative des surrogates
-  
+  /*
   for(int i=0;i<vsize;i++){
     cout << "FMP construction hGPs case " << cases[i] << endl;
     DensityOpt Dopt(vDens[i]);
@@ -1280,23 +1906,36 @@ int main(int argc, char **argv){
       vDopt.push_back(Dopt);
     
   }
+  */
   
+
+    //calibration opti densités séparées
   {
     for(int i=0;i<vsize;i++){
-      auto in_bounds=[&vDens](VectorXd const & X){
-        return vDens[0].in_bounds_pars(X);
+      auto in_bounds=[&vDens,&lb_t_support,&ub_t_support](VectorXd const & X){
+              bool in=true;
+      if(X(0)<lb_t_support(0) || X(0)>ub_t_support(0) || X(1)<lb_t_support(1) || X(2)<lb_t_support(2) ){
+        in=false;}
+      return in;
       };
-      auto get_hpars_opti=[&vDopt,&i](VectorXd const & X){
+      auto get_hpars_opti=[&vDopt,&i,&lb_hpars,&ub_hpars](VectorXd const & X){
         vector<VectorXd> p(1);
-        p[0]=vDopt[i].EvaluateHparOpt(X);
+        //on fait une optimisation locale en partant du point deviné par le GP. ça permet de ne pas être hors des clous.
+        VectorXd init=vDopt[i].EvaluateHparOpt(X);
+        init(0)=max(init(0),lb_hpars(0));
+        init(1)=max(init(1),lb_hpars(1));
+        init(0)=min(init(0),ub_hpars(0));
+        init(1)=min(init(1),ub_hpars(1));
+        p[0]=vDopt[i].HparsOpt(X,init,1e-4);
         return p;
       };
       auto compute_score_opti=[&vDopt,&i](vector<VectorXd> const &p, VectorXd const &X){
+
         double d=vDopt[i].loglikelihood_theta_incx(X,p[0])+vDopt[i].EvaluateLogPPars(X);
         return d;
       };
       cout << "début mcmc densité fmp expérience" << cases[i] << endl;
-      auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,X_init_mcmc,COV_init,compute_score_opti,get_hpars_opti,in_bounds,generator);
+      auto res=Run_MCMC(3*nombre_steps_mcmc,nombre_samples_collected,X_init_mcmc,COV_init,compute_score_opti,get_hpars_opti,in_bounds,generator);
       auto samples_opti=get<0>(res);
       vector<VectorXd> allsamples_opti=get<2>(res);
       vector<vector<VectorXd>> allhpars_opti_inverted=get<4>(res);// dans le cas 1D ici, le outer vector est de taille nsteps, et le inner vector de taille 1 (voir fct get_hpars) 
@@ -1328,364 +1967,71 @@ int main(int argc, char **argv){
   }
 
 
-       //MCMC phase Bayes sur les densités séparées. Pour chaque densités : que 2 hpars. La variance et la correlation length.
+ //MCMC koh separate sur les densités séparées
+
+
+//calibration koh separate
   {
-    //initial MCMC. remplissage des états initiaux.
-    int mcmc_fb_size=5;
-    
-    VectorXd X_init_mcmc_fb(mcmc_fb_size);
-    MatrixXd COV_init_fb=MatrixXd::Zero(mcmc_fb_size,mcmc_fb_size);
-    X_init_mcmc_fb.head(3)=X_init_mcmc;
-    X_init_mcmc_fb(3)=1e6; X_init_mcmc_fb(4)=5;
-    COV_init_fb.topLeftCorner(3,3)=COV_init;
-    int m=lb_hpars.size();
-    COV_init_fb(3,3)=pow(1e5,2);
-    COV_init_fb(4,4)=pow(0.5,2);
-    cout << "covinitfb" << endl << COV_init_fb << endl;
-    cout << "Xinitfb" << endl << X_init_mcmc_fb.transpose() << endl;
+    for(int i=0;i<vsize;i++){
 
-for(int i=0;i<vsize;i++){
-    auto in_bounds_fb=[&vDens,&vsize,&lb_hpars](VectorXd const & X){
-      VectorXd hp=X.tail(2);
-      VectorXd theta=X.head(3);
-      return vDens[0].in_bounds_hpars(hp) && vDens[0].in_bounds_pars(theta);
+    auto in_bounds=[&vDens,&ub_t_support,&lb_t_support](VectorXd const & X){
+              bool in=true;
+      if(X(0)<lb_t_support(0) || X(0)>ub_t_support(0) || X(1)<lb_t_support(1) || X(2)<lb_t_support(2) ){
+        in=false;}
+      return in;
     };
 
-    auto get_hpars_fb=[](VectorXd const & X){
-      //renvoyer un vecteur sans intérêt.
-      vector<VectorXd> v(1);
-      return v;
+    auto get_hpars_kohs=[&hparskoh_separate,&i](VectorXd const & X){
+      vector<VectorXd> h(1);
+      h[0]=hparskoh_separate[i];
+      return h;
     };
-    auto compute_score_fb=[&vsize,&lb_hpars,&vDens,&i](vector<VectorXd> p, VectorXd const &X){
-      //il faut décomposer X en thetas/ hpars. 3 est la dimension des paramètres
-      //logpriorhpars=0 I think
-      VectorXd theta=X.head(3);
-      VectorXd hp=X.tail(2);
-      double d=vDens[i].loglikelihood_theta_incx(theta,hp);
-      double lp=vDens[i].EvaluateLogPHpars(hp)+vDens[i].EvaluateLogPPars(theta);
-      return d+lp;
-    }; 
-    cout << "début mcmc densité bayes expérience" << cases[i] << endl;
-      
-    auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,X_init_mcmc_fb,COV_init_fb,compute_score_fb,get_hpars_fb,in_bounds_fb,generator);
-
-      auto samples_fb_gros=get<0>(res);
-      vector<VectorXd> allsamples_fb_gros=get<2>(res);
-      vector<VectorXd> samples_fb_theta;
-      vector<VectorXd> samples_fb_hpars;
-      //décomposer le tout en paramètres et hpars.
-      for(int j=0;j<samples_fb_gros.size();j++){
-        VectorXd X=samples_fb_gros[j];
-        samples_fb_theta.push_back(X.head(3));
-        samples_fb_hpars.push_back(X.tail(2));
-      }
-      //set des samples dans la première densité pour calculer la corrélation.
-      vDens[i].SetNewAllSamples(allsamples_fb_gros);
-      //diagnostic
-      vDens[i].Autocor_diagnosis(nautocor,"results/diag/autocorfb.gnu");
-
-      vDens[i].SetNewSamples(samples_fb_theta);
-      vDens[i].SetNewHparsOfSamples(samples_fb_hpars);
-
-      //écriture des samples. Il faut une fonction dédiée.
-      string fname="results/separatedensities/fb/samp"+to_string(cases[i])+".gnu";
-      string fnameall="results/separatedensities/fb/allsamp"+to_string(cases[i])+".gnu";
-        
-      string fnamepred="results/separatedensities/fb/preds"+to_string(cases[i])+".gnu";
-      string fnamepredF="results/separatedensities/fb/predsF"+to_string(cases[i])+".gnu";
-      vDens[i].WriteSamples(fname);
-      vDens[i].WriteMCMCSamples(fnameall); 
-
-            //prédictions
-      vDens[i].WritePredictionsF(XPREDS,fnamepredF);
-      vDens[i].WritePredictions(XPREDS,fnamepred);
-
-    }
-  }
-
-
-exit(0);
-
-        //MCMC opt avec toutes les densités en même temps. on retente. 
-  MatrixXd COV_init_from_FMP=MatrixXd::Zero(3+vsize*lb_hpars.size(),3+vsize*lb_hpars.size());
-  VectorXd X_init_from_FMP=VectorXd(3+vsize*lb_hpars.size());
-
-  {
-
-    auto in_bounds=[&vDens](VectorXd const & X){
-        return vDens[0].in_bounds_pars(X);
-    };
-    auto get_hpars_opti=[&vDopt,&vsize](VectorXd const & X){
-      vector<VectorXd> p(vsize);
-      for(int i=0;i<vsize;i++){
-        p[i]=vDopt[i].EvaluateHparOpt(X);
-      }
-      return p;
-    };
-    auto compute_score_opti=[&vDopt,&vsize](vector<VectorXd> p, VectorXd const &X){
-      double res=0;
-      //cout << "comp score : " << endl;
-      for(int i=0;i<vsize;i++){
-        double d=vDopt[i].loglikelihood_theta_incx(X,p[i]);
-        //cout << i << " : " << d << endl;
-        res+=d;
-      }
-      res+=vDopt[0].EvaluateLogPPars(X);
+    auto compute_score_kohs=[&vDens,&i](vector<VectorXd> p, VectorXd const &X){
+      double res=vDens[i].loglikelihood_theta_incx(X,p[0])+vDens[i].EvaluateLogPPars(X);
       return res;
     };
 
-
-    auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,X_init_mcmc,COV_init,compute_score_opti,get_hpars_opti,in_bounds,generator);
+    cout << "début mcmc densité koh separate expérience" << cases[i] << endl;
+    auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,X_init_mcmc,COV_init,compute_score_kohs,get_hpars_kohs,in_bounds,generator);
       auto samples_opti=get<0>(res);
       vector<VectorXd> allsamples_opti=get<2>(res);
       vector<vector<VectorXd>> vhpars_opti_noninverted=get<1>(res); //là le premier vecteur c'est les steps, et le second vecteur les densités. Il faut inverser ça...
       auto vhpars_opti=revert_vector(vhpars_opti_noninverted);
-      vector<vector<VectorXd>> allhpars_opti_inverted=get<4>(res);// dans le cas 1D ici, le outer vector est de taille nsteps, et le inner vector de taille 1 (voir fct get_hpars)
-
-      vector<vector<VectorXd>> allhpars_opti=revert_vector(allhpars_opti_inverted);
 
       //Set des samples dans chaque densité
-      for(int i=0;i<vsize;i++){
-        vDopt[i].SetNewSamples(samples_opti);
-        vDopt[i].SetNewHparsOfSamples(vhpars_opti[i]);
-      }
-      vDopt[0].SetNewAllSamples(allsamples_opti);
+      
+        vDens[i].SetNewSamples(samples_opti);
+        vDens[i].SetNewHparsOfSamples(vhpars_opti[0]);
+      
+      vDens[i].SetNewAllSamples(allsamples_opti);
       //diagnostic
-      vDopt[0].Autocor_diagnosis(nautocor,"results/fulldensities/opt/autocor.gnu");
-      //écriture des samples. Il faut une fonction dédiée. 
-      for(int i=0;i<vsize;i++){
-        string fname="results/fulldensities/opt/samp"+to_string(cases[i])+".gnu";
-        string fnameall="results/fulldensities/opt/allsamp"+to_string(cases[i])+".gnu";
-        string fnameallh="results/fulldensities/opt/allhpars"+to_string(cases[i])+".gnu";
-        string fnamepred="results/fulldensities/opt/preds"+to_string(cases[i])+".gnu";
-        string fnamepredF="results/fulldensities/opt/predsF"+to_string(cases[i])+".gnu";
-        string fnameprior="results/fulldensities/prior/predsF"+to_string(cases[i])+".gnu";
-
-      writeVector(fnameallh,allhpars_opti[i]);
-        vDopt[i].WriteSamples(fname);
-        vDopt[i].WriteMCMCSamples(fnameall);
-        vDopt[i].WritePredictionsF(XPREDS,fnamepredF);
-        vDopt[i].WritePredictions(XPREDS,fnamepred);
-      }
-      //calcul de la matrice de covariance complète.
-      //on va faire un petit truc sympa (idée olm : calculer une matrice de covariance a posteriori sur les samples de FMP, puis utiliser ça comme starting point de la densité Bayes.)
-      //création d'un grand vector<VectorXd> avec plein d'échantillons FMP.
-      vector<VectorXd> grossamples_fmp;
-      int t=3; int h=2;
-      for(int k=0;k<allsamples_opti.size();k++){
-        VectorXd theta=allsamples_opti[k];
-        VectorXd grossample(theta.size()+vsize*lb_hpars.size());
-        for(int j=0;j<t;j++){
-          grossample(j)=theta(j);
-        }
-        for(int j=0;j<vsize;j++){
-          VectorXd hp=allhpars_opti[j][k];
-          grossample(3+2*j)=hp(0);
-          grossample(3+2*j+1)=hp(1);
-        }
-        grossamples_fmp.push_back(grossample);
-      }
-      cout << "grossamples : " << endl;
-      cout << grossamples_fmp[0].transpose() << endl;
-      cout << grossamples_fmp[1].transpose() << endl;
-      cout << grossamples_fmp[2].transpose() << endl;
-      cout << grossamples_fmp[3].transpose() << endl;
-      //calcul matrice de covariance de grossamples.
-      VectorXd sampmean=VectorXd::Zero(grossamples_fmp[0].size());
-      for(int j=0;j<grossamples_fmp.size();j++){
-        sampmean+=grossamples_fmp[j];
-      }
-      sampmean/=grossamples_fmp.size();
-      for(int j=0;j<grossamples_fmp.size();j++){
-        VectorXd x=grossamples_fmp[j]-sampmean;
-        COV_init_from_FMP+=x*x.transpose();
-      }
-      COV_init_from_FMP/=grossamples_fmp.size();
-      cout << "COV_init_from_FMP : " << endl;
-      cout << COV_init_from_FMP << endl;
-      X_init_from_FMP=sampmean;
-      cout << "X_init_from_FMP : " << endl;
-      cout << X_init_from_FMP.transpose() << endl;
-      for(int j=3;j<X_init_from_FMP.size();j++){
-        if (X_init_from_FMP(j)<=1.0){
-          X_init_from_FMP(j)=2; //pour les longueurs de corrélation mal prédites
-        }
-      }
-      cout << "X_init_from_FMP update: " << endl;
-      cout << X_init_from_FMP.transpose() << endl;
-  }
-
-//MCMC phase Bayes. sur la densité complète. oskour. 
-
-  {
-    //initial MCMC. remplissage des états initiaux.
-    int mcmc_fb_size=3+vsize*lb_hpars.size();
-    
-    VectorXd X_init_mcmc_fb(mcmc_fb_size);
-    MatrixXd COV_init_fb=MatrixXd::Zero(mcmc_fb_size,mcmc_fb_size);
-    X_init_mcmc_fb.head(3)=X_init_mcmc;
-    COV_init_fb(0,0)=pow(3.0/72,2);
-    COV_init_fb(1,1)=pow(5e-7/18.9e-6,2);
-    COV_init_fb(2,2)=pow(0.01/0.75,2);
-    int m=lb_hpars.size();
-    for(int i=0;i<vsize;i++){
-      for(int j=0;j<ub_hpars.size();j++){
-        X_init_mcmc_fb(3+i*m+j)=0.5*(lb_hpars(j)+ub_hpars(j));
-      }
-      COV_init_fb(3+i*m,3+i*m)=pow(5e4,2);
-      COV_init_fb(3+i*m+1,3+i*m+1)=pow(2,2);
-      //COV_init_fb(3+i*m+2,3+i*m+2)=pow(0.1,2);
-      //COV_init_fb(3+i*m+3,3+i*m+3)=pow(0.2,2);
-    }
-    cout << "XinitMCMC : " << X_init_mcmc_fb.transpose() << endl;
-    cout << "COV init FB : " << endl << COV_init_fb << endl;
-    auto in_bounds_fb=[&vDens,&vsize,&lb_hpars,&ub_hpars](VectorXd const & X){
-      VectorXd theta=X.head(3);
-      vector<VectorXd> hp;
-      for(int i=0;i<vsize;i++){
-        VectorXd h(lb_hpars.size());
-        for(int j=0;j<h.size();j++){
-          h(j)=X(3+j+i*h.size());
-        }
-        hp.push_back(h);
-      }
-      bool in=true;
-      for(int i=0;i<vsize;i++){
-        for(int j=0;j<lb_hpars.size();j++){
-        if (hp[i](j)<lb_hpars(j) || hp[i](j)>ub_hpars(j)){
-          in=false;
-        }
-        }
-      }
-
-      if(!vDens[0].in_bounds_pars(X)){in=false;}
-      return in;
-    };
-
-    auto get_hpars_fb=[](VectorXd const & X){
-      //renvoyer un vecteur sans intérêt.
-      vector<VectorXd> v(1);
-      return v;
-    };
-    auto compute_score_fb=[&vsize,&lb_hpars,&vDens](vector<VectorXd> p, VectorXd const &X){
-      //il faut décomposer X en thetas/ hpars. 3 est la dimension des paramètres
-      VectorXd theta=X.head(3);
-      vector<VectorXd> hp;
-      for(int i=0;i<vsize;i++){
-        VectorXd h(lb_hpars.size());
-        for(int j=0;j<h.size();j++){
-          h(j)=X(3+j+i*h.size());
-        }
-        hp.push_back(h);
-      }
-      double res=0;
-      for(int i=0;i<vsize;i++){
-        double d=vDens[i].loglikelihood_theta_incx(theta,hp[i]);
-        //cout << i << " : " << d << endl;
-        res+=d;
-      }
-      res+=logprior_pars(theta);
-      return res;
-    };
-    auto res=Run_MCMC_noburn(3*nombre_steps_mcmc,nombre_samples_collected,X_init_from_FMP,COV_init_from_FMP,compute_score_fb,get_hpars_fb,in_bounds_fb,generator);
-      auto samples_fb_gros=get<0>(res);
-      vector<VectorXd> allsamples_fb_gros=get<2>(res);
-      vector<VectorXd> samples_fb_theta;
-      vector<vector<VectorXd>> samples_fb_hpars_wrongorder;
-      //décomposer le tout en paramètres et hpars.
-      for(int i=0;i<samples_fb_gros.size();i++){
-        samples_fb_theta.push_back(samples_fb_gros[i].head(3));
-        vector<VectorXd> hpars_stepi;
-        for(int j=0;j<vsize;j++){
-          VectorXd h(lb_hpars.size());
-          for(int k=0;k<h.size();k++){
-            h(k)=samples_fb_gros[i](3+k+j*h.size());
-          }
-          hpars_stepi.push_back(h);
-        }
-        samples_fb_hpars_wrongorder.push_back(hpars_stepi);
-      }
-      auto samples_fb_hpars=revert_vector(samples_fb_hpars_wrongorder);
-      //set des samples dans la première densité pour calculer la corrélation.
-      vDens[0].SetNewAllSamples(allsamples_fb_gros);
-      //diagnostic d'autocor doit être bien plus gros.
-      vDens[0].Autocor_diagnosis(nautocor,"results/diag/autocorfb.gnu");
-      string fnameall="results/fulldensities/fb/allsamp.gnu";
-      vDens[0].WriteMCMCSamples(fnameall);
-      //Set des samples dans chaque densité + prédictions
-      for(int i=0;i<vsize;i++){
-
-
-        vDens[i].SetNewSamples(samples_fb_theta);
-        vDens[i].SetNewHparsOfSamples(samples_fb_hpars[i]);
-        string fname="results/fulldensities/fb/samp"+to_string(cases[i])+".gnu";
-        string fnamepred="results/fulldensities/fb/preds"+to_string(cases[i])+".gnu";
-        string fnamepredF="results/fulldensities/fb/predsF"+to_string(cases[i])+".gnu";
-        vDens[i].WriteSamples(fname);
-
-        vDens[i].WritePredictionsF(XPREDS,fnamepredF);
-        vDens[i].WritePredictions(XPREDS,fnamepred);
-      }
-
-
-  }
-
-
-exit(0);
-
-
-
-
-//MCMC kohseparate toutes les expériences
-
-  //cout << hparskoh_separate[1].transpose() << endl;
-  {
-    auto in_bounds=[&vDens](VectorXd const & X){
-        return vDens[0].in_bounds_pars(X);
-    };
-    auto get_hpars_kohs=[&hparskoh_separate](VectorXd const & X){
-      return hparskoh_separate;
-    };
-
-    auto compute_score_kohs=[&vDens,&vsize](vector<VectorXd> p, VectorXd const &X){
-      double res=0;
-      for(int i=0;i<vsize;i++){
-        double d=vDens[i].loglikelihood_theta_incx(X,p[i]);
-        res+=d;
-      }
-      res+=vDens[0].EvaluateLogPPars(X);
-      return res;
-    };
-    auto res=Run_MCMC(nombre_steps_mcmc,nombre_samples_collected,X_init_mcmc,COV_init,compute_score_kohs,get_hpars_kohs,in_bounds,generator);
-      auto samples_koh=get<0>(res);
-      vector<VectorXd> allsamples_koh=get<2>(res);
-      vector<vector<VectorXd>> vhpars_koh_noninverted=get<1>(res); //là le premier vecteur c'est les steps, et le second vecteur les densités. Il faut inverser ça...
-      auto vhpars_koh=revert_vector(vhpars_koh_noninverted);
-
-      //Set des samples dans chaque densité
-      for(int i=0;i<vsize;i++){
-        vDens[i].SetNewSamples(samples_koh);
-        vDens[i].SetNewHparsOfSamples(vhpars_koh[i]);
-      }
-      vDens[0].SetNewAllSamples(allsamples_koh);
-      //diagnostic
-      vDens[0].Autocor_diagnosis(nautocor,"results/fulldensities/koh/autocorkohs.gnu");
-      //écriture des samples. Il faut une fonction dédiée. 
-      for(int i=0;i<vsize;i++){
-
-        
-        string fname="results/fulldensities/koh/samp"+to_string(cases[i])+".gnu";
-        string fnameall="results/fulldensities/koh/allsamp"+to_string(cases[i])+".gnu";
-        string fnamepred="results/fulldensities/koh/preds"+to_string(cases[i])+".gnu";
-        string fnamepredF="results/fulldensities/koh/predsF"+to_string(cases[i])+".gnu";
+      vDens[i].Autocor_diagnosis(nautocor,"results/separatedensities/kohs/autocor"+to_string(cases[i])+".gnu");
+      //écriture des samples. Il faut une fonction dédiée.
+        string fname="results/separatedensities/kohs/samp"+to_string(cases[i])+".gnu";
+        string fnameall="results/separatedensities/kohs/allsamp"+to_string(cases[i])+".gnu";
+        string fnamepred="results/separatedensities/kohs/preds"+to_string(cases[i])+".gnu";
+        string fnamepredF="results/separatedensities/kohs/predsF"+to_string(cases[i])+".gnu";
         vDens[i].WriteSamples(fname);
         vDens[i].WriteMCMCSamples(fnameall);
 
+                    //prédictions
+  
         vDens[i].WritePredictionsF(XPREDS,fnamepredF);
         vDens[i].WritePredictions(XPREDS,fnamepred);
-      }
-      //prédictions
+        //prédictions
   }
+  }
+
+
+
+
+
+  exit(0);
+
+
+
+
+
   
 
 exit(0);
@@ -1767,9 +2113,12 @@ exit(0);
 /*
   {
     for(int i=0;i<vsize;i++){
-      auto in_bounds=[vDens](VectorXd const & X){
-          return vDens[0].in_bounds_pars(X);
-      };
+   auto in_bounds=[&vDens,&lb_t_support,&ub_t_support](VectorXd const & X){
+      bool in=true;
+      if(X(0)<lb_t_support(0) || X(0)>ub_t_support(0) || X(1)<lb_t_support(1) || X(2)<lb_t_support(2) ){
+        in=false;}
+      return in;
+    };
       auto get_hpars_opti=[vDopt,i](VectorXd const & X){
         vector<VectorXd> p(1);
         p[0]=vDopt[i].EvaluateHparOpt(X);
@@ -1867,8 +2216,11 @@ exit(0);
   //mcmc koh pooled toutes les expériences à la fois
 /*
   {
-    auto in_bounds=[vDens](VectorXd const & X){
-        return vDens[0].in_bounds_pars(X);
+   auto in_bounds=[&vDens,&lb_t_support,&ub_t_support](VectorXd const & X){
+      bool in=true;
+      if(X(0)<lb_t_support(0) || X(0)>ub_t_support(0) || X(1)<lb_t_support(1) || X(2)<lb_t_support(2) ){
+        in=false;}
+      return in;
     };
     auto get_hpars_kohp=[hparskoh_pooled](VectorXd const & X){
       return hparskoh_pooled;

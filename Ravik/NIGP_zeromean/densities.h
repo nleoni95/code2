@@ -128,7 +128,8 @@ class Density
     //routine d'optimisation
     int optroutine(nlopt::vfunc optfunc,void *data_ptr, Eigen::VectorXd &x, Eigen::VectorXd const & lb_hpars, Eigen::VectorXd const & ub_hpars, double max_time) const;
     int optroutine_withgrad(nlopt::vfunc optfunc,void *data_ptr, Eigen::VectorXd &x, Eigen::VectorXd const & lb_hpars, Eigen::VectorXd const & ub_hpars, double max_time)const;
-    int optroutine_lightwithgrad(nlopt::vfunc optfunc,void *data_ptr, Eigen::VectorXd &x, Eigen::VectorXd const & lb_hpars, Eigen::VectorXd const & ub_hpars)const;
+    int optroutine_lightwithgrad(nlopt::vfunc optfunc,void *data_ptr, Eigen::VectorXd &x, Eigen::VectorXd const & lb_hpars, Eigen::VectorXd const & ub_hpars, double max_time)const;
+    int optroutine_lightnograd(nlopt::vfunc optfunc,void *data_ptr, Eigen::VectorXd &x, Eigen::VectorXd const & lb_hpars, Eigen::VectorXd const & ub_hpars, double max_time)const;
     int optroutine_light(nlopt::vfunc optfunc,void *data_ptr, Eigen::VectorXd &x, Eigen::VectorXd const & lb_hpars, Eigen::VectorXd const & ub_hpars)const;
     int optroutine_heavy(nlopt::vfunc optfunc,void *data_ptr, Eigen::VectorXd &x, Eigen::VectorXd const & lb_hpars, Eigen::VectorXd const & ub_hpars)const;
 
@@ -169,7 +170,7 @@ class Density
     void WritePredictions(Eigen::VectorXd const &X,std::string const & filename) const;
     void WritePredictionsF(Eigen::VectorXd const &X,std::string const & filename) const;
     void WritePriorPredictions(Eigen::VectorXd const &X,std::string const & filename,std::default_random_engine & generator);
-    void WritePriorPredictionsF(Eigen::VectorXd const &X,std::string const & filename,std::default_random_engine & generator);
+    void WritePriorPredictionsF(Eigen::VectorXd const &X,std::string const & filename,std::vector<Eigen::VectorXd> const & prior_sample);
     void WriteFinePredictions(Eigen::VectorXd const &X,std::string const & filename) const;
     void WriteFinePriorPredictions(Eigen::VectorXd const &X,std::string const & filename,std::default_random_engine & generator);
 
@@ -193,6 +194,7 @@ class Density
 
     void Set_Inputerr(double d){m_inputerr=d; m_incx_obs=IncX(m_Xprofile_converted);} 
     void Compute_derivatives_f(std::vector<Eigen::VectorXd> const & obs_locs,std::vector<Eigen::VectorXd> const & preds_locs,double max_time, std::string const & filename);
+    Eigen::MatrixXd Get_IncX() const{return m_incx_obs;}
 
     static double optfuncfitpol(const std::vector<double> &x, std::vector<double> &grad, void *data);
 
@@ -241,6 +243,8 @@ class DensityOpt : public Density{
     //calcul des hpars optimaux
     //Eigen::VectorXd HparsOpt(Eigen::VectorXd const & theta, Eigen::VectorXd const & hpars_guess);
     Eigen::VectorXd HparsOpt(Eigen::VectorXd const & theta, Eigen::VectorXd const & hpars_guess,double max_time)const;
+    Eigen::VectorXd HparsOpt_quickwithgrad(Eigen::VectorXd const & theta, Eigen::VectorXd const & hpars_guess,double max_time)const;
+    Eigen::VectorXd HparsOpt_quicknograd(Eigen::VectorXd const & theta, Eigen::VectorXd const & hpars_guess,double max_time)const;
     static double optfuncOpt_nograd(const std::vector<double> &x, std::vector<double> &grad, void *data);
     static double optfuncOpt_withgrad(const std::vector<double> &x, std::vector<double> &grad, void *data);
     Eigen::VectorXd EvaluateHparOpt(Eigen::VectorXd const & theta) const;

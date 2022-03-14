@@ -55,6 +55,30 @@ void WriteVector(vector<VectorXd> const &v, string const &filename)
   ofile.close();
 }
 
+void WriteVectors(vector<VectorXd> const &v1, vector<VectorXd> const &v2, string const &filename)
+{
+  //write two vectors of same size to a file
+  if (!v1.size() == v2.size())
+  {
+    cerr << "warning : vecteurs de taille différente" << endl;
+  }
+  int size = min(v1.size(), v2.size());
+  ofstream ofile(filename);
+  for (int i = 0; i < size; i++)
+  {
+    for (int j = 0; j < v1[i].size(); j++)
+    {
+      ofile << v1[i](j) << " ";
+    }
+    for (int j = 0; j < v2[i].size(); j++)
+    {
+      ofile << v2[i](j) << " ";
+    }
+    ofile << endl;
+  }
+  ofile.close();
+}
+
 double optroutine(nlopt::vfunc optfunc, void *data_ptr, VectorXd &X, VectorXd const &lb_hpars, VectorXd const &ub_hpars, double max_time)
 {
   //routine d'optimisation sans gradient
@@ -154,9 +178,10 @@ double optfuncKOH(const std::vector<double> &x, std::vector<double> &grad, void 
   VectorXd hpars = VtoVXD(x);
   double logvstyp = 30; //typical value of the log-likelihood function. Necessary when taking the exponential to avoid out of bounds numbers. Error messages appear when this value is too low.
   vector<double> prob(Residus->cols());
-  MatrixXd G = d->Gamma(*xconv, hpars);
+  MatrixXd G = d->Gamma(*xconv, hpars) + pow(d->GetOutputerr(hpars), 2) * MatrixXd::Identity(xconv->size(), xconv->size());
+  if(d->GetPresenceInputerr()){G+=pow(d->GetInputerr(hpars), 2)*d->GetDerMatrix();}
   LDLT<MatrixXd> ldlt(G);
-  VectorXd pmean = d->EvaluatePMean(*xconv, hpars); 
+  VectorXd pmean = d->EvaluatePMean(*xconv, hpars);
   for (int i = 0; i < Residus->cols(); i++)
   {
     double g = d->loglikelihood_fast(Residus->col(i) - pmean, ldlt);
@@ -190,7 +215,9 @@ double optfuncOpt_nograd(const std::vector<double> &x, std::vector<double> &grad
   const DensityOpt *d = p->second;
   VectorXd hpars = VtoVXD(x);
   const vector<VectorXd> *xconv = d->GetXlocations();
-  LDLT<MatrixXd> ldlt(d->Gamma(*xconv, hpars));
+  MatrixXd G=d->Gamma(*xconv, hpars) + pow(d->GetOutputerr(hpars), 2)*MatrixXd::Identity(xconv->size(), xconv->size());
+  if(d->GetPresenceInputerr()){G+=pow(d->GetInputerr(hpars), 2)*d->GetDerMatrix();}
+  LDLT<MatrixXd> ldlt(G);
   double ll = d->loglikelihood_fast(*obs, ldlt);
   double lp = d->EvaluateLogPHpars(hpars);
   return ll + lp;
@@ -207,7 +234,9 @@ double optfuncOpt_withgrad(const std::vector<double> &x, std::vector<double> &gr
   VectorXd hpars = VtoVXD(x);
   VectorXd obsmodif = *obs;
   const vector<VectorXd> *xconv = d->GetXlocations();
-  LDLT<MatrixXd> ldlt(d->Gamma(*xconv, hpars)); //incX ici
+  MatrixXd G=d->Gamma(*xconv, hpars) + pow(d->GetOutputerr(hpars), 2) * MatrixXd::Identity(xconv->size(), xconv->size());
+  if(d->GetPresenceInputerr()){G+=pow(d->GetInputerr(hpars), 2)*d->GetDerMatrix();}
+  LDLT<MatrixXd> ldlt(G);
   double ll = d->loglikelihood_fast(obsmodif, ldlt);
   double lp = d->EvaluateLogPHpars(hpars);
   //calcul des matrices des gradients
@@ -537,8 +566,11 @@ Density::Density(Density const &d)
   m_hparsofsamples = d.m_hparsofsamples;
   m_allmcmcsamples = d.m_allmcmcsamples;
   m_inputerr = d.m_inputerr;
+  m_outputerr = d.m_outputerr;
+  m_indexinputerr = d.m_indexinputerr;
+  m_indexoutputerr = d.m_indexoutputerr;
   m_derivatives_obs = d.m_derivatives_obs;
-  m_derivatives_preds = d.m_derivatives_preds;
+  m_presence_inputerr = d.m_presence_inputerr;
 };
 
 Density::Density(DoE const &g)
@@ -572,13 +604,84 @@ void Density::SetObservations(vector<VectorXd> const &Xlocations, VectorXd const
   }
 }
 
+void Density::SetInputerr(bool b, double value, int index, VectorXd derivatives_at_obs)
+{
+  // call if the input error is present, and choose if it is learned or fixed.
+  // if b is true, it is learned (then value is useless)
+  // if b is false, it is fixed (then index is useless)
+  // value : standard deviation of the error if it is fixed.
+  // index : position of the inputerr in the vector of hyperparameters if it is learned.
+  // if value is 0 : then the two vectorXd arguments are useless.
+  // if value is nonnegative : the two vectorXd must contain the derivatives of the true process at the observation points and the predicted points, in the same order as them. In particular, check that they have the same size.
+  if (b)
+  {
+    //inputerr is learned
+    m_presence_inputerr = true;
+    m_inputerr = -1;
+    m_indexinputerr = index;
+    VectorXd derivativessquared = derivatives_at_obs.array().square();
+    m_derivatives_obs = derivativessquared.asDiagonal();
+  }
+  else
+  {
+    //input error is fixed in the problem
+    m_presence_inputerr = true;
+    m_inputerr = value;
+    VectorXd derivativessquared = derivatives_at_obs.array().square();
+    m_derivatives_obs = derivativessquared.asDiagonal();
+  }
+}
+
+void Density::SetOutputerr(bool b, double value, int index)
+{
+  //choose if the output error is present, and if it is learned or fixed.
+  // if b is true, it is learned (then value is useless)
+  // if b is false, it is fixed (then index is useless)
+  // value : standard deviation of the error if it is fixed.
+  // index : position of the inputerr in the vector of hyperparameters if it is learned.
+  if (b)
+  {
+    m_outputerr = -1;
+    m_indexoutputerr = index;
+  }
+  else
+  {
+    if (value<0){ cerr << "error : negative output error" << endl; exit(0);}
+    m_outputerr = value;
+  }
+}
+
+double Density::GetOutputerr(VectorXd const &hpars) const
+{
+  if (m_outputerr == -1)
+  {
+    //outputerr is learned
+    return hpars(m_indexoutputerr);
+  }
+  else
+  {
+    return m_outputerr;
+  }
+}
+
+double Density::GetInputerr(VectorXd const &hpars) const
+{
+  if (m_inputerr == -1)
+  {
+    //inputerr is learned
+    return hpars(m_indexinputerr);
+  }
+  else
+  {
+    return m_inputerr;
+  }
+}
+
 Eigen::MatrixXd Density::Gamma(vector<VectorXd> const &locs, Eigen::VectorXd const &hpar) const
 {
-  // Renvoie la matrice de corrélation avec  bruit
-  //bruit en nugget juste pour être sûr de l'inversibilité.
+  // Non-noisy correlation matrix
   int nd = locs.size();
-  double noisey = hpar(0); //bruit
-  Eigen::MatrixXd A(nd, nd);
+  Eigen::MatrixXd A = MatrixXd::Zero(nd, nd);
   for (int i = 0; i < nd; i++)
   {
     for (int j = i; j < nd; j++)
@@ -587,10 +690,6 @@ Eigen::MatrixXd Density::Gamma(vector<VectorXd> const &locs, Eigen::VectorXd con
       if (i != j)
       {
         A(j, i) = A(i, j);
-      }
-      else
-      {
-        A(i, j) += pow(noisey, 2); //kernel.
       }
     }
   }
@@ -616,16 +715,10 @@ double Density::loglikelihood_theta_fast(Eigen::VectorXd const &theta, Eigen::Ve
 double Density::loglikelihood_theta(Eigen::VectorXd const &theta, Eigen::VectorXd const &hpar) const
 {
   //évaluation de la LDLT de Gamma. a priori écrite pour un AUGDATA de taille 1 également. Si la taille change, on pourrait faire plusieurs gamma (plusieurs hpars.)
-  MatrixXd G = Gamma(m_Xlocations, hpar);
+  MatrixXd G = Gamma(m_Xlocations, hpar) + pow(GetOutputerr(hpar), 2) * MatrixXd::Identity(m_Xlocations.size(), m_Xlocations.size());
+  if(m_presence_inputerr){G+=pow(GetInputerr(hpar), 2)*m_derivatives_obs;}
   LDLT<MatrixXd> ldlt(G);
   return loglikelihood_theta_fast(theta, hpar, ldlt);
-}
-
-LDLT<MatrixXd> Density::GetLDLT(VectorXd const &hpars)
-{
-  MatrixXd G = Gamma(m_Xlocations, hpars);
-  LDLT<MatrixXd> ldlt(G);
-  return ldlt;
 }
 
 VectorXd Density::HparsKOH(VectorXd const &hpars_guess, double max_time) const
@@ -718,7 +811,9 @@ VectorXd Density::meanZCondTheta(vector<VectorXd> const &X, VectorXd const &thet
   //prédiction moyenne de Z sur Xprofile, pour le i-ème theta de m_samples.
   VectorXd y(X.size());
   y = m_observations - m_model(m_Xlocations, theta) - m_priormean(m_Xlocations, hpars);
-  MatrixXd G = Gamma(m_Xlocations, hpars);
+  MatrixXd G = Gamma(m_Xlocations, hpars) + pow(GetOutputerr(hpars), 2) * MatrixXd::Identity(m_Xlocations.size(), m_Xlocations.size());
+  if(m_presence_inputerr){G+=pow(GetInputerr(hpars), 2)*m_derivatives_obs;}
+  LDLT<MatrixXd> ldlt(G);
   MatrixXd K = MatrixXd::Zero(X.size(), m_Xlocations.size());
   for (int i = 0; i < K.rows(); i++)
   {
@@ -727,7 +822,6 @@ VectorXd Density::meanZCondTheta(vector<VectorXd> const &X, VectorXd const &thet
       K(i, j) = m_Kernel(X[i], m_Xlocations[j], hpars);
     }
   }
-  LDLT<MatrixXd> ldlt(G);
   VectorXd predmean = m_priormean(X, hpars) + K * ldlt.solve(y);
   return predmean;
 }
@@ -735,7 +829,9 @@ VectorXd Density::meanZCondTheta(vector<VectorXd> const &X, VectorXd const &thet
 MatrixXd Density::varZCondTheta(vector<VectorXd> const &X, VectorXd const &theta, VectorXd const &hpars) const
 {
   //variance prédictive de z sur Xprofile, pour le i-ème theta de m_samples.
-  MatrixXd G = Gamma(m_Xlocations, hpars);
+  MatrixXd G = Gamma(m_Xlocations, hpars) + pow(GetOutputerr(hpars), 2) * MatrixXd::Identity(m_Xlocations.size(), m_Xlocations.size());
+  if(m_presence_inputerr){G+=pow(GetInputerr(hpars), 2)*m_derivatives_obs;}
+  LDLT<MatrixXd> ldlt(G);
   MatrixXd K = MatrixXd::Zero(X.size(), m_Xlocations.size());
   for (int i = 0; i < K.rows(); i++)
   {
@@ -752,7 +848,6 @@ MatrixXd Density::varZCondTheta(vector<VectorXd> const &X, VectorXd const &theta
       Kprior(i, j) = m_Kernel(X[i], X[j], hpars);
     }
   }
-  LDLT<MatrixXd> ldlt(G);
   MatrixXd VarPred = Kprior - K * ldlt.solve(K.transpose());
   return VarPred;
 }
@@ -806,7 +901,7 @@ VectorXd Density::DrawZCondTheta(vector<VectorXd> const &X, VectorXd const &thet
 
 void Density::WritePredictions(vector<VectorXd> const &X, string const &filename) const
 {
-  // write predictions of f and f+z, with uncertainty. f+z is normally distributed so its variance is explicit. For uncertainty about f, we use all posterior samples to compute 95% confidence intervals. 
+  // write predictions of f and f+z, with uncertainty. f+z is normally distributed so its variance is explicit. For uncertainty about f, we use all posterior samples to compute 95% confidence intervals.
   default_random_engine generator{static_cast<long unsigned int>(time(0))};
   uniform_int_distribution<int> U(0, m_samples.size() - 1);
 
@@ -840,10 +935,11 @@ void Density::WritePredictions(vector<VectorXd> const &X, string const &filename
   //columns printed in the file : X(maybe multiple columns), E_theta[f+z], sqrt(Var[f+z]), sqrt(E_theta[Var[z]]), E_theta[f], t_2.5[f], t_97.5[f].
   for (int i = 0; i < Predictions.rows(); i++)
   {
-    for (int j=0; j < X[i].size();j++){
+    for (int j = 0; j < X[i].size(); j++)
+    {
       ofile << X[i](j) << " ";
     }
-    ofile << Predictions(i,0) << " " << sqrt(Predictions(i,1)+Predictions(i,2)) << " " << sqrt(Predictions(i,2)) << " " << meanf(i) << " " << quant2p5(i) << " " << quant97p5(i) << endl;
+    ofile << Predictions(i, 0) << " " << sqrt(Predictions(i, 1) + Predictions(i, 2)) << " " << sqrt(Predictions(i, 2)) << " " << meanf(i) << " " << quant2p5(i) << " " << quant97p5(i) << endl;
   }
   ofile.close();
 }
@@ -852,7 +948,7 @@ void Density::WriteSamplesFandZ(vector<VectorXd> const &X, string const &filenam
 {
   //draw samples of f and corresponding samples of z.
   int ndraws = 10;
-  cout << "drawing " << ndraws <<" samples of f and z" << endl;
+  cout << "drawing " << ndraws << " samples of f and z" << endl;
   default_random_engine generator{static_cast<long unsigned int>(time(0))};
   uniform_int_distribution<int> U(0, m_samples.size() - 1);
   vector<VectorXd> fs(ndraws);
@@ -906,427 +1002,103 @@ VectorXd DensityOpt::HparsOpt(VectorXd const &theta, VectorXd hpars_guess, doubl
 VectorXd DensityOpt::EvaluateHparOpt(VectorXd const &theta) const
 {
   //évaluation de l'hpar optimal par les GPs. On utilise uniquement la prédiction moyenne.
-  int nmodes = m_vgp_hpars_opti.size();
-  VectorXd meansgps(nmodes);
-  for (int i = 0; i < nmodes; i++)
+  VectorXd meansgps(m_hGPs.size());
+  for (int i = 0; i < m_hGPs.size(); i++)
   {
-    meansgps(i) = m_vgp_hpars_opti[i].EvalMean(theta);
+    meansgps(i) = m_hGPs[i].EvalMean(theta);
   }
-  VectorXd Ymean = m_featureMeans + m_VP * m_Acoefs * meansgps;
-  return Ymean;
+  VectorXd scaledmeans=m_scales_hGPs.cwiseProduct(meansgps)+m_means_hGPs;
+  return scaledmeans;
 }
 
-std::vector<Eigen::VectorXd> DensityOpt::Compute_optimal_hpars(double max_time, string filename)
+void DensityOpt::BuildHGPs(std::vector<Eigen::VectorXd> const & thetas,std::vector<Eigen::VectorXd> const & hpars_optimaux, double (*Kernel_GP)(Eigen::VectorXd const &, Eigen::VectorXd const &, Eigen::VectorXd const &))
 {
-  //calcul de tous les hpars optimaux sur m_grid, et rangement dans m_hpars_opti.
-  //on les écrit ensuite dans le fichier correspondant.
-  m_hpars_opti.clear();
-  VectorXd hpars_guess = 0.5 * (m_lb_hpars + m_ub_hpars);
-  const vector<VectorXd> *grid = GetGrid();
-  auto begin = chrono::steady_clock::now();
-  transform(grid->begin(), grid->end(), back_inserter(m_hpars_opti), [&hpars_guess, this, max_time](VectorXd const &theta) mutable
-            {
-              VectorXd hpars_opt = HparsOpt(theta, hpars_guess, max_time);
-              hpars_guess = hpars_opt; //warm restart
-              AUGDATA dat;
-              dat.SetX(theta);
-              dat.SetValue(hpars_opt);
-              return dat;
-            });
-  auto end = chrono::steady_clock::now();
-  //affichage dans un fichier
-  ofstream ofile(filename);
-  for (AUGDATA const &d : m_hpars_opti)
-  {
-    VectorXd X = d.GetX();
-    VectorXd hpars = d.Value();
-    //cout << "theta : " << X.transpose() << endl;
-    //cout << "hparsopt : " << hpars.transpose() << endl;
-    for (int i = 0; i < X.size(); i++)
-    {
-      ofile << X(i) << " ";
-    }
-    for (int i = 0; i < hpars.size(); i++)
-    {
-      ofile << hpars(i) << " ";
-    }
-    ofile << endl;
+  if(!thetas.size()==hpars_optimaux.size()){cerr << "error : thetas and optimal hpars with different sizes !" << endl; exit(0);}
+  //compute means and stds to scale the data.
+  VectorXd means=VectorXd::Zero(hpars_optimaux[0].size());
+  VectorXd stds=VectorXd::Zero(hpars_optimaux[0].size());
+  for(int i=0;i<thetas.size();i++){
+    means+=hpars_optimaux[i];
   }
-  ofile.close();
-  //calcul de quelques statistiques sur ces hpars optimaux obtenus. moyenne, et matrice de covariance des données.
-  VectorXd mean = VectorXd::Zero(m_dim_hpars);
-  MatrixXd SecondMoment = MatrixXd::Zero(m_dim_hpars, m_dim_hpars);
-  double mean_lp = 0;
-  for (AUGDATA const &a : m_hpars_opti)
-  {
-    mean_lp += loglikelihood_theta(a.GetX(), a.Value());
-    mean += a.Value();
-    SecondMoment += a.Value() * a.Value().transpose();
+  means/=thetas.size();
+  for(int i=0;i<thetas.size();i++){
+    VectorXd v=(hpars_optimaux[i]-means).array().square();
+    stds+=v;
   }
-  mean_lp /= m_hpars_opti.size();
-  mean /= m_hpars_opti.size();
-  SecondMoment /= m_hpars_opti.size();
-  MatrixXd Var = SecondMoment - mean * mean.transpose();
-  cout << " fin de calcul des hpars opti sur le grid. Moyenne : " << mean.transpose() << endl;
-  cout << "moyenne des logposts:" << mean_lp << endl;
-  cout << "temps de calcul : " << chrono::duration_cast<chrono::seconds>(end - begin).count() << " s" << endl;
-  //on resize les hpars dans un vector<VectorXd> pour les renvoyer
-  vector<VectorXd> hparsfound;
-  for (AUGDATA const &d : m_hpars_opti)
-  {
-    hparsfound.push_back(d.Value());
-  }
-  return hparsfound;
-}
+  stds=stds.array().sqrt();
+  stds/=sqrt(thetas.size());
+  //split the data sets into vectors of DATA for GPs.
+//test
+  //means=VectorXd::Ones(3);
+  //stds=VectorXd::Ones(3);
 
-vector<VectorXd> DensityOpt::Return_optimal_hpars(double max_time) const
-{
-  //calcul de tous les hpars optimaux sur m_grid.
-  vector<VectorXd> res;
-  VectorXd hpars_guess = 0.5 * (m_lb_hpars + m_ub_hpars);
-  const vector<VectorXd> *grid = GetGrid();
-  auto begin = chrono::steady_clock::now();
-  transform(grid->begin(), grid->end(), back_inserter(res), [&hpars_guess, this, max_time](VectorXd const &theta) mutable
-            {
-              VectorXd hpars_opt = HparsOpt(theta, hpars_guess, max_time);
-              hpars_guess = hpars_opt; //warm restart
-              return hpars_opt;
-            });
-  auto end = chrono::steady_clock::now();
-  cout << "fin des optimisations. temps : " << chrono::duration_cast<chrono::seconds>(end - begin).count() << " s." << endl;
-  return res;
-}
 
-void DensityOpt::Test_hGPs(int npoints, double max_time)
-{
-  //calcul d'un nouveau grid de thetas, optimisation sur ces points, et évaluation de la qualité de prédiction des GPs sur ces points.
-  default_random_engine generator;
-  generator.seed(16);
-  int nthetas = npoints;
-  auto ps = [](MatrixXd const &A, MatrixXd const &B) -> double
-  {
-    return (A.transpose() * B).trace();
-  };
-  VectorXd hpars_guess = 0.5 * (m_lb_hpars + m_ub_hpars);
-  uniform_real_distribution<double> distU(0, 1);
-  vector<VectorXd> newgrid; //taille nthetas
-  MatrixXd Hopt(m_dim_hpars, nthetas);
-  if (m_newgrid.size() == 0)
-  {
-    //construction des valeurs
-    for (int i = 0; i < nthetas; i++)
-    {
-      VectorXd t(3);
-      t << distU(generator), distU(generator), distU(generator);
-      newgrid.push_back(t);
+  vector<vector<DATA>> vdata;
+  for(int i=0;i< m_dim_hpars;i++){
+    vector<DATA> data_hgp;
+    for(int j=0;j<thetas.size();j++){
+      DATA d; d.SetValue(((hpars_optimaux[j](i)-means(i))/stds(i)));
+      d.SetX(thetas[j]);
+      data_hgp.push_back(d);
     }
-    for (int i = 0; i < nthetas; i++)
-    {
-      Hopt.col(i) = HparsOpt(newgrid[i], hpars_guess, max_time);
-    }
-    m_newgrid = newgrid;
-    m_Hopt_newgrid = Hopt;
+    vdata.push_back(data_hgp);
   }
-  else
-  {
-    //valeurs précédemment construites
-    newgrid = m_newgrid;
-    Hopt = m_Hopt_newgrid;
-  }
-  MatrixXd Hoptpred(m_dim_hpars, nthetas);
-  for (int i = 0; i < nthetas; i++)
-  {
-    Hoptpred.col(i) = EvaluateHparOpt(newgrid[i]);
-  }
-  MatrixXd Hoptv = Hopt.row(0);
-  MatrixXd Hoptpredv = Hoptpred.row(0);
-  double erredm = sqrt(ps(Hoptv - Hoptpredv, Hoptv - Hoptpredv) / ps(Hoptv, Hoptv));
-  Hoptv = Hopt.row(1);
-  Hoptpredv = Hoptpred.row(1);
-  double errexp = sqrt(ps(Hoptv - Hoptpredv, Hoptv - Hoptpredv) / ps(Hoptv, Hoptv));
-  cout << "erreur relative des hGPs sur le grid de validation : edm : " << erredm * 100 << " pct,lcor : " << errexp * 100 << endl;
-}
-
-Eigen::VectorXd DensityOpt::Test_hGPs_on_sample(std::vector<Eigen::VectorXd> const &theta_ref, std::vector<Eigen::VectorXd> const &hpars_ref) const
-{
-  //test de la performance des hgps sur un sample donné.
-  if (theta_ref.size() != hpars_ref.size())
-  {
-    cerr << "erreur de taille" << endl;
-  }
-  cout << "test hgps on a sample size " << theta_ref.size() << endl;
-  vector<VectorXd> approx_hpars(theta_ref.size());
-  transform(theta_ref.begin(), theta_ref.end(), approx_hpars.begin(), [this](VectorXd const &theta)
-            { return EvaluateHparOpt(theta); });
-  vector<double> true_logliks(theta_ref.size());
-  vector<double> approx_logliks(theta_ref.size());
-  for (int i = 0; i < theta_ref.size(); i++)
-  {
-    true_logliks[i] = loglikelihood_theta(theta_ref[i], hpars_ref[i]) + m_logpriorhpars(hpars_ref[i]);
-    approx_logliks[i] = loglikelihood_theta(theta_ref[i], approx_hpars[i]) + m_logpriorhpars(approx_hpars[i]);
-  }
-  //calcul de l'erreur moyenne en log-vraisemblance
-  double errmoy = 0;
-  for (int i = 0; i < true_logliks.size(); i++)
-  {
-    errmoy += pow(true_logliks[i] - approx_logliks[i], 2);
-
-    if (true_logliks[i] - approx_logliks[i] > 1)
-    {
-      cerr << "erreur ll true sous-estimation. " << endl;
-      cerr << "hpars true : " << hpars_ref[i].transpose() << endl;
-      cerr << "hpars approx : " << approx_hpars[i].transpose() << endl;
-      cerr << "ll true : " << true_logliks[i] << ", ll approx : " << approx_logliks[i] << endl;
-      cerr << "in bounds hpars approx ? " << in_bounds_hpars(approx_hpars[i]) << endl;
-    }
-    /*
-  if(approx_logliks[i]>0.1+true_logliks[i]){cerr << "erreur ll true surestimation. " <<endl;
-  cerr<< "hpars true : " << hpars_ref[i].transpose()<< endl;
-  cerr<< "hpars approx : " <<approx_hpars[i].transpose()<< endl;
-  cerr<< "ll true : " << true_logliks[i]<< ", ll approx : "<< approx_logliks[i] <<endl;
-  cerr <<"in bounds hpars approx ? "<<in_bounds_hpars(approx_hpars[i])<< endl;}*/
-  }
-  //valeur rms
-  errmoy = sqrt(errmoy / true_logliks.size()); //erreur moyenne en log-probabilité.
-  //calcul de l'erreur moyenne sur chaque hpar
-  VectorXd errmoy_hpars = VectorXd::Zero(m_dim_hpars);
-  VectorXd cumsum_hpars = VectorXd::Zero(m_dim_hpars);
-  for (int i = 0; i < true_logliks.size(); i++)
-  {
-    errmoy_hpars.array() += ((hpars_ref[i] - approx_hpars[i]).array().square());
-    cumsum_hpars.array() += ((hpars_ref[i]).array().square());
-  }
-  errmoy_hpars.array() = 100 * (errmoy_hpars.cwiseQuotient(cumsum_hpars)).array().sqrt(); //assignation à array ou au vectorxd directement ?
-  VectorXd res(m_dim_hpars + 1);
+  cout << "construction of " << m_dim_hpars << " hGPs with " << thetas.size() << " points." << endl;
+  vector<GP> vgp;
   for (int i = 0; i < m_dim_hpars; i++)
-  {
-    res(i) = errmoy_hpars(i);
-  }
-  res(m_dim_hpars) = errmoy;
-  cout << "testou : " << endl;
-  cout << "hpars true : " << hpars_ref[50].transpose() << endl;
-  cout << "hpars estimated : " << approx_hpars[50].transpose() << endl;
-  cout << "ll true : " << true_logliks[50] << endl;
-  cout << "ll estimated : " << approx_logliks[50] << endl;
-  return res;
-}
-
-void DensityOpt::BuildHGPs_noPCA(double (*Kernel_GP)(Eigen::VectorXd const &, Eigen::VectorXd const &, Eigen::VectorXd const &), MatrixXd const &Bounds_hpars_GPs, VectorXd const &Hpars_guess_GPs)
-{
-  //initialisation des HGPs sans faire de PCA (un hGP par hyperparamètre directement)
-  //on normalise quand même la valeur des GPs pour qu'ils soient sur le même range/
-  //récupération des data pour les GPs.
-  if (m_hpars_opti.size() == 0)
-  {
-    cerr << "erreur : hpars optis non calculés !" << endl;
-  }
-  cout << "construction des hGPs individuels sans PCA : " << endl;
-  int nmodes = m_dim_hpars;
-  MatrixXd U(m_dim_hpars, m_hpars_opti.size()); //matrice des données
-  MatrixXd P(m_dim_pars, m_hpars_opti.size());  //matrice des thetas
-  for (int i = 0; i < m_hpars_opti.size(); i++)
-  {
-    U.col(i) = m_hpars_opti[i].Value();
-    P.col(i) = m_hpars_opti[i].GetX();
-  }
-  m_featureMeans = U.rowwise().mean();
-  U = U.colwise() - m_featureMeans;
-  //calcul des STDs de chaque feature et normalisation.
-  VectorXd stds = VectorXd::Zero(m_dim_hpars);
-  for (int i = 0; i < m_dim_hpars; i++)
-  {
-    stds(i) = sqrt(U.row(i).array().square().sum() / m_hpars_opti.size());
-    if (stds(i) == 0.)
-    {
-      stds(i) += 0.01 * m_featureMeans(i);
-      cout << "correction d'hpars constants." << endl;
-    }
-  }
-  m_VP = MatrixXd::Identity(m_dim_hpars, m_dim_hpars);
-  m_Acoefs = stds.asDiagonal();
-  MatrixXd normedA = m_Acoefs.inverse() * U;
-  //on met sous forme vector<vector> DATA pour la passer aux GPs
-  vector<vector<DATA>> vd(nmodes);
-  for (int j = 0; j < nmodes; j++)
-  {
-    vector<DATA> v(m_hpars_opti.size());
-    for (int i = 0; i < m_hpars_opti.size(); i++)
-    {
-      DATA dat;
-      dat.SetX(P.col(i));
-      dat.SetValue(normedA(j, i));
-      v[i] = dat;
-    }
-    vd[j] = v;
-  }
-  vector<GP> vgp(nmodes);
-  for (int i = 0; i < nmodes; i++)
   {
     GP gp(Kernel_GP);
-    gp.SetData(vd[i]);
-    gp.SetGP(Hpars_guess_GPs);
-    vgp[i] = gp;
+    gp.SetData(vdata[i]);
+    vgp.push_back(gp);
+    cout << vdata[i][0].GetX().transpose() << endl;
+    cout << vdata[i][0].Value() << endl;
+    cout << vdata[i][1].GetX().transpose() << endl;
+    cout << vdata[i][1].Value() << endl;
+    cout << vdata[i][2].GetX().transpose() << endl;
+    cout << vdata[i][2].Value() << endl;
   }
-  m_vgp_hpars_opti = vgp;
-  m_Bounds_hpars_GPs = Bounds_hpars_GPs;
+  cout << means.transpose() << endl;
+  cout << stds.transpose() << endl;
+  m_hGPs=vgp;
+  m_means_hGPs=means;
+  m_scales_hGPs=stds;
 }
 
-VectorXd DensityOpt::opti_1gp(int i, VectorXd &hpars_guess)
+void DensityOpt::OptimizeHGPs(Eigen::MatrixXd Bounds_hpars_GPs, Eigen::VectorXd Hpars_guess_GPs)
 {
-  cout << "optimisation du gp pour hpars numero " << i << endl;
-  auto begin = chrono::steady_clock::now();
-  m_vgp_hpars_opti[i].OptimizeGP(myoptfunc_gp, &m_Bounds_hpars_GPs, &hpars_guess, hpars_guess.size());
-  auto end = chrono::steady_clock::now();
-  hpars_guess = m_vgp_hpars_opti[i].GetPar();
-  cout << "par after opt : " << hpars_guess.transpose() << endl;
-  cout << "temps pour optimisation : " << chrono::duration_cast<chrono::seconds>(end - begin).count() << " s" << endl;
-  return hpars_guess;
-}
-
-void DensityOpt::opti_allgps(VectorXd const &hpars_guess)
-{
-  if (m_vhpars_pour_gp.empty())
-  {
-    for (int i = 0; i < m_vgp_hpars_opti.size(); i++)
-    {
-      m_vhpars_pour_gp.push_back(hpars_guess);
-    }
-  }
-  if (!m_vhpars_pour_gp.size() == m_vgp_hpars_opti.size())
-  {
-    cerr << "problem in vhpars size" << endl;
-  }
-  for (int i = 0; i < m_vgp_hpars_opti.size(); i++)
-  {
-    VectorXd h = opti_1gp(i, m_vhpars_pour_gp[i]);
-    m_vhpars_pour_gp[i] = h;
+  for(int i=0;i<m_hGPs.size();i++){
+    m_hGPs[i].SetGP(Hpars_guess_GPs);
+    cout << "optimization of HGP number " << i << endl;
+    cout << "guess : " << Hpars_guess_GPs.transpose() << endl;
+    auto begin = chrono::steady_clock::now();
+    m_hGPs[i].OptimizeGP(myoptfunc_gp, &Bounds_hpars_GPs, &Hpars_guess_GPs, Hpars_guess_GPs.size());
+    auto end = chrono::steady_clock::now();
+    cout << "optimisation over in " << chrono::duration_cast<chrono::seconds>(end - begin).count() << " seconds." << endl;
+    cout << "result : " << m_hGPs[i].GetPar().transpose() << endl;
   }
 }
 
-void DensityOpt::update_hGPs_noPCA(vector<VectorXd> const &new_thetas, vector<VectorXd> const &new_hpars, double (*Kernel_GP)(Eigen::VectorXd const &, Eigen::VectorXd const &, Eigen::VectorXd const &), MatrixXd const &Bounds_hpars_GPs, VectorXd const &Hpars_guess_GPs)
-{
-  //on fait une optimisation fine sur les new thetas, puis on les rajoute aux hGPs. On optimise les hyperparamètres avec le tout.
-  cout << "updating hGPs with " << new_thetas.size() << "new points..." << endl;
-  for (int i = 0; i < new_thetas.size(); i++)
-  {
-    AUGDATA dat;
-    dat.SetX(new_thetas[i]), dat.SetValue(new_hpars[i]);
-    m_hpars_opti.push_back(dat);
-  }
-  cout << "new number of points for hGPs : " << m_hpars_opti.size() << endl;
-  BuildHGPs_noPCA(Kernel_GP, Bounds_hpars_GPs, Hpars_guess_GPs);
-}
-
-std::vector<Eigen::VectorXd> DensityOpt::update_hGPs_noPCA(vector<VectorXd> const &new_thetas, double (*Kernel_GP)(Eigen::VectorXd const &, Eigen::VectorXd const &, Eigen::VectorXd const &), MatrixXd const &Bounds_hpars_GPs, VectorXd const &Hpars_guess_GPs, double max_time)
-{
-  //on fait une optimisation fine sur les new thetas, puis on les rajoute aux hGPs. On optimise les hyperparamètres avec le tout.
-  cout << "updating hGPs with " << new_thetas.size() << "new points..." << endl;
-  vector<VectorXd> new_hpars(new_thetas.size());
-  VectorXd hpars_guess = 0.5 * (m_lb_hpars + m_ub_hpars);
-  for (int i = 0; i < new_thetas.size(); i++)
-  {
-    new_hpars[i] = HparsOpt(new_thetas[i], hpars_guess, max_time);
-  }
-  for (int i = 0; i < new_thetas.size(); i++)
-  {
-    AUGDATA dat;
-    dat.SetX(new_thetas[i]), dat.SetValue(new_hpars[i]);
-    m_hpars_opti.push_back(dat);
-  }
-  cout << "new number of points for hGPs : " << m_hpars_opti.size() << endl;
-  BuildHGPs_noPCA(Kernel_GP, Bounds_hpars_GPs, Hpars_guess_GPs);
-  return new_hpars;
-}
-
-double DensityOpt::myoptfunc_gp(const std::vector<double> &x, std::vector<double> &grad, void *data)
-{
-  /* This is the function you optimize for defining the GP */
-  GP *proc = (GP *)data;       //Pointer to the GP
-  Eigen::VectorXd p(x.size()); //Parameters to be optimized
-  for (int i = 0; i < (int)x.size(); i++)
-    p(i) = x[i];                 //Setting the proposed value of the parameters
-  double value = proc->SetGP(p); //Evaluate the function
-  if (!grad.empty())
-  { //Cannot compute gradient : stop!
-    std::cout << "Asking for gradient, I stop !" << std::endl;
-    exit(1);
-  }
-  return value;
-};
-
-void DensityOpt::WritehGPs(string const &filename) const
-{
-  //écriture des hyperparamètres optimaux des GPs
-  //écrit pour 3 GPs avec 7 hpars chacun.
-  ofstream ofile(filename);
-  for (int i = 0; i < m_vhpars_pour_gp.size(); i++)
-  {
-    for (int j = 0; j < m_vhpars_pour_gp[0].size(); j++)
-    {
-      ofile << m_vhpars_pour_gp[i](j) << " ";
-    }
-    ofile << endl;
-  }
-  ofile.close();
-}
-
-void DensityOpt::ReadhGPs(string const &filename)
-{
-  //ne marche pas avec priormean
-  ifstream ifile(filename);
-  if (ifile)
-  {
-    string line;
-    while (getline(ifile, line))
-    {
-      istringstream iss(line);
-      vector<string> words((istream_iterator<string>(iss)), istream_iterator<string>());
-      VectorXd hpars(7);
-      for (int i = 0; i < 7; i++)
-      {
-        hpars(i) = stod(words[i]);
-      }
-      m_vhpars_pour_gp.push_back(hpars);
-    }
-    cout << "number of GPs loaded : " << m_vhpars_pour_gp.size() << endl;
-  }
-  else
-  {
-    cerr << "empty file : " << filename << endl;
-  }
-  if (m_vgp_hpars_opti.empty())
-  {
-    cerr << "erreur : hGPs opti non initialisés" << endl;
-  }
-  //on applique les hyperparamètres aux hGPs.
-  for (int i = 0; i < m_vgp_hpars_opti.size(); i++)
-  {
-    m_vgp_hpars_opti[i].SetGP(m_vhpars_pour_gp[i]);
-  }
-  ifile.close();
-}
 
 double DensityOpt::EstimatePredError(VectorXd const &theta) const
 {
-  //estimateur de l'erreur de prédiction des hGPs en un point theta. Fait à partir de la variance de prédiction des hGPs.
-  VectorXd var = EvaluateVarHparOpt(theta);
-  VectorXd stds_scale = m_Acoefs.diagonal().array().square();
-  return var.cwiseQuotient(stds_scale).array().sum();
+  //scaled prediction variances for fair comparison
+  int nmodes = m_hGPs.size();
+  VectorXd vargps(nmodes);
+  for (int i = 0; i < nmodes; i++)
+  {
+    vargps(i) = m_hGPs[i].Eval(theta)(1);
+  }
+  return vargps.array().sum();
 }
 
 VectorXd DensityOpt::EvaluateVarHparOpt(VectorXd const &theta) const
 {
-  //estimateur de l'erreur de prédiction des hGPs en un point theta. Fait à partir de la variance de prédiction des hGPs.
-  int nmodes = m_vgp_hpars_opti.size();
-  VectorXd vargps(nmodes); //on stocke les variances de prédiction de chaque GP.
+  int nmodes = m_hGPs.size();
+  VectorXd vargps(nmodes);
   for (int i = 0; i < nmodes; i++)
   {
-    vargps(i) = m_vgp_hpars_opti[i].Eval(theta)(1);
+    vargps(i) = m_hGPs[i].Eval(theta)(1);
   }
-  //variances de prédiction pour chaque hyperparamètre
-  MatrixXd scaledVP = (m_Acoefs * m_VP).array().square();
-  VectorXd Variances = scaledVP * vargps;
-  //on renvoie la somme des variances, sans scaling pour le moment car je ne sais pas comment faire.
-
-  return Variances;
+  VectorXd stds2=m_scales_hGPs.array().square();
+  return stds2.cwiseProduct(vargps);
 }

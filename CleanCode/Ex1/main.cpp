@@ -200,8 +200,6 @@ double Kernel_GP_Matern32(VectorXd const &x, VectorXd const &y, VectorXd const &
   //noyau pour le GP. 0:intensity, 2:noise, 1:lcor par1, 3:lcor par2, 4:lcor par3.
   double cor = pow(hpar(0), 2);
   cor *= (1 + abs(x(0) - y(0)) / hpar(1)) * exp(-abs(x(0) - y(0)) / hpar(1)); //phi
-  cor *= (1 + abs(x(1) - y(1)) / hpar(3)) * exp(-abs(x(1) - y(1)) / hpar(3)); //BK
-  cor *= (1 + abs(x(2) - y(2)) / hpar(4)) * exp(-abs(x(2) - y(2)) / hpar(4)); //COAL
   return cor;
 }
 
@@ -505,7 +503,7 @@ int main(int argc, char **argv)
   }
 
 
-  //construction du DoE initial
+  //building initial DoE
   DoE doe_init(lb_t, ub_t, 100, 10); //doe halton de 100 points
   doe_init.WriteGrid("results/grid.gnu");
 
@@ -532,6 +530,8 @@ int main(int argc, char **argv)
   MainDensity.SetLogPriorPars(logprior_pars);
   MainDensity.SetPriorMean(lambda_priormean);
   MainDensity.SetObservations(Xlocs, data);
+  MainDensity.SetOutputerr(true,0.1,0);
+  //MainDensity.SetInputerr(false,0.0,0,VectorXd::Zero(Xlocs.size()));
 
   VectorXd X_init_mcmc = 0.5 * VectorXd::Ones(dim_theta);
   MatrixXd COV_init = MatrixXd::Identity(dim_theta, dim_theta);
@@ -539,17 +539,54 @@ int main(int argc, char **argv)
   cout << "COV_init : " << endl
        << COV_init << endl;
 
-  //début des calibrations.
+  //Calibration phase
 
-  //MCMC koh separate sur les densités séparées
+   /*test FMP calibration*/
+  {
+    MatrixXd Bounds_hpars_HGPs(2,2); //3 hpars HGPs. std, noise, 1 longueur de corrélation.
+    Bounds_hpars_HGPs(0,0)=0; //std
+    Bounds_hpars_HGPs(1,0)=10;
+    Bounds_hpars_HGPs(0,1)=0; //lcor
+    Bounds_hpars_HGPs(1,1)=100;
 
-  // calcul hpars koh separate
+    VectorXd Hpars_guess_HGPs=0.5*(Bounds_hpars_HGPs.row(0)+Bounds_hpars_HGPs.row(1)).transpose();
+
+    DensityOpt Dopt(MainDensity);
+    int ngrid=100;
+    double timeopt=1e-3;
+    //construction de deux DoE de thetas.
+    DoE doe1(lb_t,ub_t,ngrid,1);
+    DoE doe2(lb_t,ub_t,ngrid,168464);
+    auto thetas1=doe1.GetGrid();
+    auto thetas2=doe2.GetGrid();
+    vector<VectorXd> hpars1;
+    vector<VectorXd> hpars2;
+    for(int i=0;i<ngrid;i++){
+      VectorXd hpar1=Dopt.HparsOpt(thetas1[i],hpars_z_guess,timeopt);
+      VectorXd hpar2=Dopt.HparsOpt(thetas2[i],hpars_z_guess,timeopt);
+      hpars1.push_back(hpar1);
+      hpars2.push_back(hpar2);
+    }
+    //construction des surrogates des hpars optimaux.
+    Dopt.BuildHGPs(thetas1,hpars1,Kernel_GP_Matern32);
+    Dopt.OptimizeHGPs(Bounds_hpars_HGPs,Hpars_guess_HGPs);
+
+    //évaluation des performances
+    ofstream ofile("results/perf.gnu");
+    for(int i=0;i<ngrid;i++){
+      ofile << hpars2[i].transpose() << endl;
+      ofile << Dopt.EvaluateHparOpt(thetas2[i]).transpose() << endl;
+      ofile << endl;
+    }
+    ofile.close();
+    exit(0);
+  }
+
+  /*KOH calibration*/
+  //compute hyperparameters
   vector<VectorXd> hparskoh_separate(1);
   hparskoh_separate[0] = MainDensity.HparsKOH(hpars_z_guess, 10);
-
   cout << "hparskoh sep:" << hparskoh_separate[0].transpose() << endl;
-
-  //calibration koh separate
   {
     auto in_bounds = [&MainDensity](VectorXd const &X)
     {
@@ -576,38 +613,30 @@ int main(int argc, char **argv)
       samples[i]=visited_steps[i*(visited_steps.size()/samples.size())];
       hparsofsamples[i]=get_hpars_kohs(samples[i])[0];
     }
-    //Set des samples dans chaque densité
-
-    MainDensity.SetNewSamples(samples);
-    MainDensity.SetNewHparsOfSamples(hparsofsamples);
-    MainDensity.SetNewAllSamples(visited_steps);
-
     //diagnostic
     Selfcor_diagnosis(visited_steps, nautocor, 1, "results/separatedensities/kohs/autocor.gnu");
-    //écriture des samples. Il faut une fonction dédiée.
-    string fname = "results/separatedensities/kohs/samp.gnu";
-    string fnameall = "results/separatedensities/kohs/allsamp.gnu";
-    string fnamepred = "results/separatedensities/kohs/preds.gnu";
-    string fnamepredF = "results/separatedensities/kohs/predsF.gnu";
-    string fnamesF = "results/separatedensities/kohs/sampsF.gnu";
-    string fnamesZ = "results/separatedensities/kohs/sampsZ.gnu";
-    MainDensity.WriteSamples(fname);
-    //MainDensity.WriteMCMCSamples(fnameall);
-    //prédictions
+
+    //write samples
+    string fnamesamp = "results/sampkoh.gnu";
+    string fnameallsamp = "results/allstepskoh.gnu";
+    WriteVectors(samples,hparsofsamples,fnamesamp);
+    WriteVector(visited_steps,fnameallsamp);
+
+    //predictions
+    MainDensity.SetNewSamples(samples);
+    MainDensity.SetNewHparsOfSamples(hparsofsamples);
+    string fnamepred = "results/predskoh.gnu";
+    string fnamesF = "results/sampsFkoh.gnu";
+    string fnamesZ = "results/sampsZkoh.gnu";
     MainDensity.WritePredictions(XPREDS, fnamepred);
     MainDensity.WriteSamplesFandZ(XPREDS, fnamesF, fnamesZ);
-    //prédictions
-    //écriture des observations avec erreur expérimentale KOH
-    string filename = "results/obs.gnu";
-    exit(0);
+
   }
 
-  //Phase Opti
-  //surrogates sur 200 points et assez rapides.
-  DensityOpt Dopt(MainDensity);
 
-  //MCMC opt sur les densités séparées.calibration opti densités séparées
+  /*FMP calibration*/
   {
+    DensityOpt Dopt(MainDensity);
     auto in_bounds = [&Dopt](VectorXd const &X)
     {
       return Dopt.in_bounds_pars(X);
@@ -623,7 +652,7 @@ int main(int argc, char **argv)
       double d = Dopt.loglikelihood_theta(X, p[0]) + Dopt.EvaluateLogPPars(X);
       return d;
     };
-    cout << "début mcmc densité fmp" << endl;
+    cout << "Beginning FMP calibration..." << endl;
     vector<VectorXd> visited_steps = Run_MCMC(nombre_steps_mcmc, X_init_mcmc, COV_init, compute_score_opti, get_hpars_opti, in_bounds, generator);
     vector<VectorXd> samples(nombre_samples_collected);
     vector<VectorXd> hparsofsamples(nombre_samples_collected);
@@ -631,32 +660,28 @@ int main(int argc, char **argv)
       samples[i]=visited_steps[i*(visited_steps.size()/samples.size())];
       hparsofsamples[i]=get_hpars_opti(samples[i])[0];
     }
-    //Set des samples dans chaque densité
-    Dopt.SetNewSamples(samples);
-    Dopt.SetNewHparsOfSamples(hparsofsamples);
-    Dopt.SetNewAllSamples(visited_steps);
     //diagnostic
     Selfcor_diagnosis(visited_steps, nautocor, 1, "results/separatedensities/opt/autocor.gnu");
-    //écriture des samples. Il faut une fonction dédiée.
-    string fname = "results/separatedensities/opt/samp.gnu";
-    string fnameall = "results/separatedensities/opt/allsamp.gnu";
-    string fnameallh = "results/separatedensities/opt/allhpars.gnu";
-    string fnamepred = "results/separatedensities/opt/preds.gnu";
-    string fnamepredF = "results/separatedensities/opt/predsF.gnu";
-    string fnamesF = "results/separatedensities/opt/sampsF.gnu";
-    string fnamesZ = "results/separatedensities/opt/sampsZ.gnu";
-    Dopt.WriteSamples(fname);
-    //Dopt.WriteMCMCSamples(fnameall);
-    //WriteVector(fnameallh,allhpars_opti);
 
-    //prédictions
+    //write samples
+    string fnamesamp = "results/sampfmp.gnu";
+    string fnameallsamp = "results/allstepsfmp.gnu";
+    WriteVectors(samples,hparsofsamples,fnamesamp);
+    WriteVector(visited_steps,fnameallsamp);
+
+    //predictions
+    Dopt.SetNewSamples(samples);
+    Dopt.SetNewHparsOfSamples(hparsofsamples);
+    string fnamepred = "results/predsfmp.gnu";
+    string fnamesF = "results/sampsFfmp.gnu";
+    string fnamesZ = "results/sampsZfmp.gnu";
     Dopt.WritePredictions(XPREDS, fnamepred);
     Dopt.WriteSamplesFandZ(XPREDS, fnamesF, fnamesZ);
+
   }
 
   //MCMC phase Bayes sur les densités séparées. Pour chaque densités : que 2 hpars. La variance et la correlation length.
   {
-    //initial MCMC. remplissage des états initiaux.
 
     VectorXd X_init_mcmc_fb(dim_theta + dim_hpars);
     MatrixXd COV_init_fb = MatrixXd::Zero(dim_theta + dim_hpars, dim_theta + dim_hpars);
@@ -698,7 +723,7 @@ int main(int argc, char **argv)
       double lp = MainDensity.EvaluateLogPHpars(hp) + MainDensity.EvaluateLogPPars(theta);
       return d + lp;
     };
-    cout << "début mcmc densité bayes expérience" << endl;
+    cout << "Beginning Bayes calibration..." << endl;
 
     vector<VectorXd> visited_steps = Run_MCMC(5 * nombre_steps_mcmc, X_init_mcmc_fb, COV_init_fb, compute_score_fb, get_hpars_fb, in_bounds_fb, generator);
     vector<VectorXd> samples(nombre_samples_collected);
@@ -707,25 +732,22 @@ int main(int argc, char **argv)
       samples[i]=visited_steps[i*(visited_steps.size()/samples.size())].head(dim_theta);
       hparsofsamples[i]=visited_steps[i*(visited_steps.size()/samples.size())].tail(dim_hpars);
     }
-    //set des samples dans la première densité pour calculer la corrélation.
-    //diagnostic
-    Selfcor_diagnosis(visited_steps, nautocor, 1, "results/separatedensities/fb/autocor.gnu");
 
+    //diagnostic
+    Selfcor_diagnosis(visited_steps, nautocor, 1, "results/autocorfb.gnu");
+
+    //write samples
+    string fnamesamp = "results/sampfb.gnu";
+    string fnameallsamp = "results/allstepsfb.gnu";
+    WriteVectors(samples,hparsofsamples,fnamesamp);
+    WriteVector(visited_steps,fnameallsamp);
+
+    //predictions
     MainDensity.SetNewSamples(samples);
     MainDensity.SetNewHparsOfSamples(hparsofsamples);
-
-    //écriture des samples. Il faut une fonction dédiée.
-    string fname = "results/separatedensities/fb/samp.gnu";
-    string fnameall = "results/separatedensities/fb/allsamp.gnu";
-
-    string fnamepred = "results/separatedensities/fb/preds.gnu";
-    string fnamepredF = "results/separatedensities/fb/predsF.gnu";
-    string fnamesF = "results/separatedensities/fb/sampsF.gnu";
-    string fnamesZ = "results/separatedensities/fb/sampsZ.gnu";
-    MainDensity.WriteSamples(fname);
-    //MainDensity.WriteMCMCSamples(fnameall);
-
-    //prédictions
+    string fnamepred = "results/predsfb.gnu";
+    string fnamesF = "results/sampsFfb.gnu";
+    string fnamesZ = "results/sampsZfb.gnu";
     MainDensity.WritePredictions(XPREDS, fnamepred);
     MainDensity.WriteSamplesFandZ(XPREDS, fnamesF, fnamesZ);
   }

@@ -17,11 +17,14 @@
 #include "gp++.h"
 #include "my_samplers.h"
 
+typedef std::pair<Eigen::VectorXd, Eigen::VectorXd> AUGDATA;
+
 /*utility functions*/
 Eigen::VectorXd VtoVXD(std::vector<double> const &v);
 std::vector<double> VXDtoV(Eigen::VectorXd const &X);
 double FindQuantile(double pct, Eigen::VectorXd const &X);
 void WriteVector(std::vector<Eigen::VectorXd> const &v, std::string const &filename);
+void WriteVectors(std::vector<Eigen::VectorXd> const &v1, std::vector<Eigen::VectorXd> const &v2, std::string const &filename);
 double optroutine(nlopt::vfunc optfunc, void *data_ptr, Eigen::VectorXd &X, Eigen::VectorXd const &lb_hpars, Eigen::VectorXd const &ub_hpars, double max_time);
 double optroutine_withgrad(nlopt::vfunc optfunc, void *data_ptr, Eigen::VectorXd &X, Eigen::VectorXd const &lb_hpars, Eigen::VectorXd const &ub_hpars, double max_time);
 
@@ -40,47 +43,6 @@ std::vector<Eigen::VectorXd> Run_MCMC(int nsteps, Eigen::VectorXd const &Xinit, 
 Eigen::VectorXd Lagged_mean(std::vector<Eigen::VectorXd> const &v, int n);
 void Selfcor_diagnosis(std::vector<Eigen::VectorXd> const &samples, int nstepsmax, double proportion, std::string const &filename);
 
-class AUGDATA
-{
-public:
-    AUGDATA(){};
-    AUGDATA(Eigen::VectorXd const &x, Eigen::VectorXd const &f)
-    {
-        X = x;
-        F = f;
-    };
-    AUGDATA(AUGDATA const &d)
-    {
-        X = d.X;
-        F = d.F;
-    };
-    void operator=(const AUGDATA d)
-    {
-        X = d.X;
-        F = d.F;
-    };
-    Eigen::VectorXd GetX() const { return X; };
-    Eigen::VectorXd Value() const { return F; };
-    void SetX(Eigen::VectorXd x) { X = x; };
-    void SetValue(Eigen::VectorXd f) { F = f; };
-    std::vector<DATA> split() const
-    {
-        std::vector<DATA> v(F.size());
-        DATA dat;
-        dat.SetX(X);
-        for (int i = 0; i < F.size(); i++)
-        {
-            dat.SetValue(F(i));
-            v[i] = dat;
-        }
-        return v;
-    };
-
-private:
-    Eigen::VectorXd X;
-    Eigen::VectorXd F;
-};
-
 class DoE
 {
     friend class Density;
@@ -97,7 +59,7 @@ public:
     //utility
     Eigen::VectorXd Randpert(int n, std::default_random_engine &generator) const;
     Eigen::VectorXd indices(int const s, int const n, int const d);
-    
+
 protected:
     Eigen::VectorXd m_lb_pars;           //bornes inf des paramètres
     Eigen::VectorXd m_ub_pars;           //bornes sup des paramètres
@@ -125,6 +87,10 @@ public:
         m_ub_hpars = ub_hpars;
     };
     void SetObservations(std::vector<Eigen::VectorXd> const &Xlocations, Eigen::VectorXd const &observations);
+
+    //necessary calls to include input and output Gaussian error, with fixed value or learned.
+    void SetOutputerr(bool learned, double value, int index);
+    void SetInputerr(bool learned, double value, int index, Eigen::VectorXd derivatives_at_obs);
 
     //non-necessary calls, for convenience.
     void SetDoE(DoE const &g);
@@ -155,13 +121,17 @@ public:
     //external access
     const std::vector<Eigen::VectorXd> *GetGrid() const { return &m_Grid.m_grid; }
     const std::vector<Eigen::VectorXd> *GetXlocations() const { return &m_Xlocations; }
-    Eigen::LDLT<Eigen::MatrixXd> GetLDLT(Eigen::VectorXd const &hpars);
     std::pair<Eigen::VectorXd, Eigen::VectorXd> GetBoundsHpars() const { return std::make_pair(m_lb_hpars, m_ub_hpars); }
     Eigen::VectorXd EvaluateModel(std::vector<Eigen::VectorXd> const &X, Eigen::VectorXd const &theta) const { return m_model(X, theta); }
     Eigen::VectorXd EvaluatePMean(std::vector<Eigen::VectorXd> const &X, Eigen::VectorXd const &hpars) const { return m_priormean(X, hpars); }
     double EvaluateLogPHpars(Eigen::VectorXd const &hpars) const { return m_logpriorhpars(hpars); }
     double EvaluateLogPPars(Eigen::VectorXd const &pars) const { return m_logpriorpars(pars); }
+    double GetInputerr(Eigen::VectorXd const &hpars) const;
+    double GetOutputerr(Eigen::VectorXd const &hpars) const;
+    bool GetPresenceInputerr() const {return m_presence_inputerr;}
+    Eigen::MatrixXd GetDerMatrix() const {return m_derivatives_obs;}
 
+protected:
     //internal methods
     Eigen::VectorXd meanF(std::vector<Eigen::VectorXd> const &X) const;
     Eigen::VectorXd meanZCondTheta(std::vector<Eigen::VectorXd> const &X, Eigen::VectorXd const &theta, Eigen::VectorXd const &hpars_z) const;
@@ -170,11 +140,16 @@ public:
     Eigen::MatrixXd PredFZ(std::vector<Eigen::VectorXd> const &X) const;
     Eigen::VectorXd DrawZCondTheta(std::vector<Eigen::VectorXd> const &X, Eigen::VectorXd const &theta, Eigen::VectorXd const &hpars_z, std::default_random_engine &generator) const;
 
-protected:
+    //input error and output error
+    bool m_presence_inputerr = false;
+    double m_inputerr = 0;
+    double m_outputerr = 0;
+    int m_indexinputerr;
+    int m_indexoutputerr;
+    //derivatives of the true process at the observation points
+    Eigen::MatrixXd m_derivatives_obs;
+
     DoE m_Grid;
-    double m_inputerr;
-    Eigen::VectorXd m_derivatives_obs;
-    Eigen::VectorXd m_derivatives_preds;
 
     //model, priors, kernel and its derivatives
     std::function<Eigen::VectorXd(std::vector<Eigen::VectorXd> const &, Eigen::VectorXd const &)> m_model;
@@ -207,54 +182,28 @@ class DensityOpt : public Density
 public:
     DensityOpt(Density const &d);
 
-    //necessary call to use derivatives to compute optimal hyperparameters
+    //two necessary calls to use the gradient-based algorithm (HparsOpt_withgrad)
     void SetKernelDerivatives(std::vector<std::function<double(Eigen::VectorXd const &, Eigen::VectorXd const &, Eigen::VectorXd const &)>> vector_derivatives) {}
 
-    //calcul des hpars optimaux
-    Eigen::VectorXd HparsOpt(Eigen::VectorXd const &theta, Eigen::VectorXd hpars_guess, double max_time) const;
-    Eigen::VectorXd HparsOpt_withgrad(Eigen::VectorXd const &theta, Eigen::VectorXd hpars_guess, double max_time) const;
+    //compute optimal hyperparameters
 
-    Eigen::VectorXd EvaluateHparOpt(Eigen::VectorXd const &theta) const;
+    Eigen::VectorXd HparsOpt(Eigen::VectorXd const &theta, Eigen::VectorXd hpars_guess, double max_time) const;          //without using gradients
+    Eigen::VectorXd HparsOpt_withgrad(Eigen::VectorXd const &theta, Eigen::VectorXd hpars_guess, double max_time) const; //using gradients
+    Eigen::VectorXd EvaluateHparOpt(Eigen::VectorXd const &theta) const;                                                 //by interrogating the GPs
 
-    //Calcul des hpars optimaux sur le grid.
-    std::vector<Eigen::VectorXd> Compute_optimal_hpars(double max_time, std::string filename);
-    std::vector<Eigen::VectorXd> Return_optimal_hpars(double max_time) const;
-
-    //Initialisation des GPs.
-    void BuildHGPs_noPCA(double (*Kernel_GP)(Eigen::VectorXd const &, Eigen::VectorXd const &, Eigen::VectorXd const &), Eigen::MatrixXd const &Bounds_hpars_GPs, Eigen::VectorXd const &Hpars_guess_GPs);
-    void Test_hGPs(int npoints, double max_time);
-    Eigen::VectorXd Test_hGPs_on_sample(std::vector<Eigen::VectorXd> const &theta_ref, std::vector<Eigen::VectorXd> const &hpars_ref) const;
-    //Optimisation du GP pour les hpars. Il faut autant de GPs que d'hpars de z.
-    static double myoptfunc_gp(const std::vector<double> &x, std::vector<double> &grad, void *data);
-    Eigen::VectorXd opti_1gp(int i, Eigen::VectorXd &hpars_guess);
-    void opti_allgps(Eigen::VectorXd const &hpars_guess);
-    //version où on donne les hpars
-    void update_hGPs_noPCA(std::vector<Eigen::VectorXd> const &new_thetas, std::vector<Eigen::VectorXd> const &new_hpars, double (*Kernel_GP)(Eigen::VectorXd const &, Eigen::VectorXd const &, Eigen::VectorXd const &), Eigen::MatrixXd const &Bounds_hpars_GPs, Eigen::VectorXd const &Hpars_guess_GPs);
-    //version où on calcule les hpars. et on les rend aussi.
-    std::vector<Eigen::VectorXd> update_hGPs_noPCA(std::vector<Eigen::VectorXd> const &new_thetas, double (*Kernel_GP)(Eigen::VectorXd const &, Eigen::VectorXd const &, Eigen::VectorXd const &), Eigen::MatrixXd const &Bounds_hpars_GPs, Eigen::VectorXd const &Hpars_guess_GPs, double max_time);
+    //Construction des hGPs. faisons sans normalisation pour le moment.
+    void BuildHGPs(std::vector<Eigen::VectorXd> const & thetas,std::vector<Eigen::VectorXd> const & hpars_optimaux,
+    double (*Kernel_GP)(Eigen::VectorXd const &, Eigen::VectorXd const &, Eigen::VectorXd const &));
+    void OptimizeHGPs(Eigen::MatrixXd Bounds_hpars_GPs, Eigen::VectorXd Hpars_guess_GPs);
 
     Eigen::VectorXd EvaluateVarHparOpt(Eigen::VectorXd const &theta) const;
     double EstimatePredError(Eigen::VectorXd const &theta) const;
 
-    //sauvegarde des hpars des gps.
-    void WritehGPs(std::string const &filename) const;
-    void ReadhGPs(std::string const &filename);
 
 protected:
-    std::vector<AUGDATA> m_hpars_opti;
-    std::vector<GP> m_vgp_hpars_opti;
-    std::vector<Eigen::VectorXd> m_vhpars_pour_gp;
-
-    Eigen::MatrixXd m_Bounds_hpars_GPs; //des mêmes bornes d'optimisation pour tous les GPs.
-
-    //quantités pour HGPs
-    Eigen::MatrixXd m_VP;
-    Eigen::MatrixXd m_Acoefs;
-    Eigen::VectorXd m_featureMeans;
-
-    //quantités pour le test_HGPs.
-    std::vector<Eigen::VectorXd> m_newgrid;
-    Eigen::MatrixXd m_Hopt_newgrid;
+    std::vector<GP> m_hGPs;
+    Eigen::VectorXd m_means_hGPs;
+    Eigen::VectorXd m_scales_hGPs;
 };
 
 #endif /*DENSITIES_H*/

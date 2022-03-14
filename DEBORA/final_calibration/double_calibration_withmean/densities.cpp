@@ -189,7 +189,7 @@ double Density::loglikelihood_fast(VectorXd const &obs,LDLT<MatrixXd> const &ldl
     //calcul de la LL à la dernière étape.
     VectorXd Alpha=ldlt.solve(obs);
     int nd=obs.size();
-    return -0.5*obs.dot(Alpha)-0.5*(ldlt.vectorD().array().log()).sum()-0.5*nd*log(2*3.1415);
+    return -0.5*obs.dot(Alpha)-0.5*(ldlt.vectorD().array().log()).sum();
 }
 
 double Density::loglikelihood_theta_fast(Eigen::VectorXd const &theta,Eigen::VectorXd const &hpars, Eigen::LDLT<Eigen::MatrixXd> const &ldlt)const{

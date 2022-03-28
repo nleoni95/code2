@@ -994,8 +994,8 @@ int main(int argc, char **argv)
 
   /*Paramètres de simulation*/
   //pour la MCMC
-  int nombre_steps_mcmc = 1e5;
-  int nombre_samples_collected = 1000; //1 sample tous les 100.
+  int nombre_steps_mcmc = 1e6;
+  int nombre_samples_collected = 3000; //1 sample tous les 333.
   int nautocor = 2000;
 
   int time_opt_opti = 10;      // 10 secondes par optimisation opti
@@ -1139,6 +1139,255 @@ int main(int argc, char **argv)
   }
 
 */
+
+  /*expensive FMP calibration*/
+  {
+    DensityOpt Doalpha(Dalpha);
+    DensityOpt Dodiam(Ddiam);
+    Doalpha.SetKernelGrads(gradKernel_Z_Matern52);
+    Dodiam.SetKernelGrads(gradKernel_Z_Matern52);
+    Doalpha.SetLogpriorGrads(gradlogprior_hpars);
+    Dodiam.SetLogpriorGrads(gradlogprior_hpars);
+    auto in_bounds = [&Doalpha](VectorXd const &X)
+    {
+      return Doalpha.in_bounds_pars(X);
+    };
+    auto get_hpars_opti = [&Doalpha, &Dodiam, &hpars_z_guess_alpha, &hpars_z_guess_diam](VectorXd const &X)
+    {
+      vector<VectorXd> p(2);
+      p[0] = Doalpha.HparsOpt_withgrad(X, hpars_z_guess_alpha, 1e-3);
+      p[1] = Dodiam.HparsOpt_withgrad(X, hpars_z_guess_diam, 1e-3);
+      return p;
+    };
+    auto compute_score_opti = [&Doalpha, &Dodiam](vector<VectorXd> const &p, VectorXd const &X)
+    {
+      double d = Doalpha.loglikelihood_theta(X, p[0]);
+      double d2 = Dodiam.loglikelihood_theta(X, p[1]);
+      return d + d2 + Doalpha.EvaluateLogPPars(X);
+    };
+    cout << "Beginning FMP calibration..." << endl;
+    vector<VectorXd> visited_steps = Run_MCMC(nombre_steps_mcmc, X_init_mcmc, COV_init, compute_score_opti, get_hpars_opti, in_bounds, generator);
+    vector<VectorXd> samples(nombre_samples_collected);
+    vector<VectorXd> hparsalphaofsamples(nombre_samples_collected);
+    vector<VectorXd> hparsdiamofsamples(nombre_samples_collected);
+    for (int i = 0; i < samples.size(); i++)
+    {
+      samples[i] = visited_steps[i * (visited_steps.size() / samples.size())];
+      hparsalphaofsamples[i] = get_hpars_opti(samples[i])[0];
+      hparsdiamofsamples[i] = get_hpars_opti(samples[i])[1];
+    }
+    //diagnostic
+    Selfcor_diagnosis(visited_steps, nautocor, 1, "results/fmp/autocor.gnu");
+
+    //write samples
+    string fnamesamp = "results/fmp/sampnew.gnu";
+    string fnameallsamp = "results/fmp/allsteps.gnu";
+    WriteVectors(samples, hparsalphaofsamples, hparsdiamofsamples, fnamesamp);
+    WriteVector(visited_steps, fnameallsamp);
+
+    //predictions
+    Doalpha.SetNewSamples(samples);
+    Doalpha.SetNewHparsOfSamples(hparsalphaofsamples);
+    Dodiam.SetNewSamples(samples);
+    Dodiam.SetNewHparsOfSamples(hparsdiamofsamples);
+    string fnamepred = "results/fmp/predsalpha.gnu";
+    string fnamesF = "results/fmp/sampsFalpha.gnu";
+    string fnamesZ = "results/fmp/sampsZalpha.gnu";
+    string fnamepred2 = "results/fmp/predsdiam.gnu";
+    string fnamesF2 = "results/fmp/sampsFdiam.gnu";
+    string fnamesZ2 = "results/fmp/sampsZdiam.gnu";
+    Doalpha.WritePredictions(location_points, fnamepred); //on doit utiliser les points d'observation pour prédire.
+    Doalpha.WriteSamplesFandZ(location_points, fnamesF, fnamesZ);
+    Dodiam.WritePredictions(location_points, fnamepred2); //on doit utiliser les points d'observation pour prédire.
+    Dodiam.WriteSamplesFandZ(location_points, fnamesF2, fnamesZ2);
+  }
+
+exit(0);
+  /*Test : je rajoute progressivment des points du true sample dans le training set. Attention. Je ne dois aps rajouter les mêmes points mais plutôt des points tirés de la même densité... subtil...*/
+  {
+    double time_opti_hgps = 2;
+    int npts_per_iter = 50;
+    //Construction d'un DoE initial et calcul des hpars optimaux dessus.
+    DensityOpt Doalpha(Dalpha);
+    DensityOpt Dodiam(Ddiam);
+    Doalpha.SetKernelGrads(gradKernel_Z_Matern52);
+    Dodiam.SetKernelGrads(gradKernel_Z_Matern52);
+    Doalpha.SetLogpriorGrads(gradlogprior_hpars);
+    Dodiam.SetLogpriorGrads(gradlogprior_hpars);
+    vector<VectorXd> thetas_training;
+    vector<VectorXd> halpha_training;
+    vector<VectorXd> hdiam_training;
+    vector<VectorXd> thetas_training_reserve;
+    vector<VectorXd> halpha_training_reserve;
+    vector<VectorXd> hdiam_training_reserve;
+    //read the true FMP sample
+    vector<VectorXd> thetas_true;
+    vector<VectorXd> halpha_true;
+    vector<VectorXd> hdiam_true;
+    string gname = "results/fmp/samp.gnu"; // pour test
+    string gnamenew = "results/fmp/sampnews.gnu"; // pour train. version sans duplicates.
+    vector<VectorXd> vals = ReadVector(gname);
+    vector<VectorXd> valsnew = ReadVector(gnamenew);
+    for (auto const &v : vals)
+    {
+      auto theta = v.head(5);
+      auto hdiam = v.tail(3);
+      VectorXd halpha(3);
+      halpha << v(5), v(6), v(7);
+      thetas_true.push_back(theta);
+      hdiam_true.push_back(hdiam);
+      halpha_true.push_back(halpha);
+    }
+    for (auto const &v : valsnew)
+    {
+      auto theta = v.head(5);
+      auto hdiam = v.tail(3);
+      VectorXd halpha(3);
+      halpha << v(5), v(6), v(7);
+      thetas_training_reserve.push_back(theta);
+      hdiam_training_reserve.push_back(hdiam);
+      halpha_training_reserve.push_back(halpha);
+    }
+    //compute scores for the true FMP sample
+    vector<double> scores_true_alpha;
+    vector<double> scores_true_diam;
+    for (int i = 0; i < thetas_true.size(); i++)
+    {
+      scores_true_alpha.push_back(Doalpha.loglikelihood_theta(thetas_true[i], halpha_true[i]) + logprior_hpars(halpha_true[i]));
+      scores_true_diam.push_back(Dodiam.loglikelihood_theta(thetas_true[i], hdiam_true[i]) + logprior_hpars(hdiam_true[i]));
+    }
+
+    //lambda fcts pour l'évaluation de la qualité des surrogates.
+    auto get_score_alpha = [&Doalpha](VectorXd const &theta, VectorXd const &hpars)
+    {
+      return Doalpha.loglikelihood_theta(theta, hpars) + logprior_hpars(hpars);
+    };
+    auto get_score_diam = [&Dodiam](VectorXd const &theta, VectorXd const &hpars)
+    {
+      return Dodiam.loglikelihood_theta(theta, hpars) + logprior_hpars(hpars);
+    };
+    auto get_hpars_and_var_alpha = [&Doalpha](VectorXd const &X)
+    {
+      VectorXd h = Doalpha.EvaluateHparOpt(X);
+      VectorXd v = Doalpha.EvaluateVarHparOpt(X);
+      return make_pair(h, v);
+    };
+    auto get_hpars_and_var_diam = [&Dodiam](VectorXd const &X)
+    {
+      VectorXd h = Dodiam.EvaluateHparOpt(X);
+      VectorXd v = Dodiam.EvaluateVarHparOpt(X);
+      return make_pair(h, v);
+    };
+
+    //lambda fonction pour rajouter un certain nombre de points et calculer les hpars optimaux.
+    auto add_points = [&Doalpha, &Dodiam, npts_per_iter, &thetas_training_reserve, &halpha_training_reserve, &hdiam_training_reserve, &thetas_training, &halpha_training, &hdiam_training]()
+    {
+      //juste rajouter npts_per_iter points depuis le thetas_training_reserve
+      int npts = thetas_training.size();
+      for (int i = 0; i < npts_per_iter; i++)
+      {
+        if (npts + i >= thetas_training_reserve.size())
+        {
+          break;
+        }
+        thetas_training.push_back(thetas_training_reserve[npts + i]);
+        halpha_training.push_back(halpha_training_reserve[npts + i]);
+        hdiam_training.push_back(hdiam_training_reserve[npts + i]);
+      }
+    };
+
+    auto write_performance_hgps = [&thetas_true, &halpha_true, &hdiam_true, &get_hpars_and_var_alpha, &get_hpars_and_var_diam, &thetas_training, &Doalpha, &Dodiam, &halpha_training, &hdiam_training, &get_score_alpha, &get_score_diam, &scores_true_alpha, &scores_true_diam](ofstream &ofile_alpha, ofstream &ofile_diam)
+    {
+      //évaluer les scores des surrogates et mettre leur performance dans un fichier, ainsi que le nb de pts de construction.
+      VectorXd scorealpha = evaluate_surrogate_bofplusscores(thetas_true, halpha_true, scores_true_alpha, get_hpars_and_var_alpha, get_score_alpha);
+      VectorXd scorediam = evaluate_surrogate_bofplusscores(thetas_true, hdiam_true, scores_true_diam, get_hpars_and_var_diam, get_score_diam);
+      ofile_alpha << thetas_training.size() << " ";
+      ofile_diam << thetas_training.size() << " ";
+      for (int i = 0; i < scorealpha.size(); i++)
+      {
+        ofile_alpha << scorealpha(i) << " ";
+      }
+      ofile_alpha << endl;
+      for (int i = 0; i < scorediam.size(); i++)
+      {
+        ofile_diam << scorediam(i) << " ";
+      }
+      ofile_diam << endl;
+    };
+
+    //début de l'algorithme
+    ofstream ofstream_alpha("results/bestscore_alpha.gnu");
+    ofstream ofstream_diam("results/bestscore_diam.gnu");
+    vector<VectorXd> hpars_opt_hgps_alpha;
+    vector<VectorXd> hpars_opt_hgps_diam;
+    for (int i = 0; i < hpars_z_guess_alpha.size(); i++)
+    {
+      hpars_opt_hgps_alpha.push_back(hpars_hgp_guess);
+    }
+    for (int i = 0; i < hpars_z_guess_diam.size(); i++)
+    {
+      hpars_opt_hgps_diam.push_back(hpars_hgp_guess);
+    }
+    for (int i = 0; i < 20; i++)
+    {
+
+      if (thetas_training.size() >2000)
+      {
+        break;
+      }
+      //ajout de nouveaux points
+      add_points();
+
+      vector<VectorXd> dup = thetas_training;
+      vector<int> dups;
+      for (int i = 0; i < thetas_training.size(); i++)
+      {
+        for (int j = i + 1; j < thetas_training.size(); j++)
+        {
+          if (thetas_training[i] == thetas_training[j])
+          {
+            dups.push_back(j);
+          }
+        }
+      }
+      sort(dups.begin(), dups.end());
+      for (int i = dups.size() - 1; i >= 0; i--)
+      {
+        cout << "duplicate found !" << endl;
+        thetas_training.erase(thetas_training.begin() + dups[i]);
+        halpha_training.erase(halpha_training.begin() + dups[i]);
+        hdiam_training.erase(hdiam_training.begin() + dups[i]);
+      }
+
+      //construction hGPs
+      cout << "construction hGPs avec " << thetas_training.size() << " points..." << endl;
+      Doalpha.BuildHGPs(thetas_training, halpha_training, Kernel_GP_Matern32);
+      Dodiam.BuildHGPs(thetas_training, hdiam_training, Kernel_GP_Matern32);
+      Doalpha.OptimizeHGPs(Bounds_hpars_hgps, hpars_opt_hgps_alpha, time_opti_hgps);
+      Dodiam.OptimizeHGPs(Bounds_hpars_hgps, hpars_opt_hgps_diam, time_opti_hgps);
+      hpars_opt_hgps_alpha = Doalpha.GetHparsHGPs();
+      hpars_opt_hgps_diam = Dodiam.GetHparsHGPs();
+      cout << "hpars de hgps : " << endl;
+      for (int i = 0; i < hpars_opt_hgps_alpha.size(); i++)
+      {
+        cout << hpars_opt_hgps_alpha[i].transpose() << endl;
+        cout << hpars_opt_hgps_diam[i].transpose() << endl;
+      }
+
+      //évaluation de leur score
+      write_performance_hgps(ofstream_alpha, ofstream_diam);
+
+      //écriture des points d'apprentissage dans un fichier
+      string o1("results/trainingalpha.gnu");
+      string o2("results/trainingdiam.gnu");
+      WriteVectors(thetas_training, halpha_training, o1);
+      WriteVectors(thetas_training, hdiam_training, o2);
+    }
+  }
+  exit(0);
+
+
+
 
   /*Algorithme de sélection automatique de points*/
   {
@@ -1537,173 +1786,6 @@ int main(int argc, char **argv)
   }
   exit(0);
 
-  /*Test : je rajoute progressivment des points du true sample dans le training set.*/
-  {
-    double time_opti_hgps = 2;
-    int npts_per_iter = 50;
-    //Construction d'un DoE initial et calcul des hpars optimaux dessus.
-    DensityOpt Doalpha(Dalpha);
-    DensityOpt Dodiam(Ddiam);
-    Doalpha.SetKernelGrads(gradKernel_Z_Matern52);
-    Dodiam.SetKernelGrads(gradKernel_Z_Matern52);
-    Doalpha.SetLogpriorGrads(gradlogprior_hpars);
-    Dodiam.SetLogpriorGrads(gradlogprior_hpars);
-    vector<VectorXd> thetas_training;
-    vector<VectorXd> halpha_training;
-    vector<VectorXd> hdiam_training;
-    //read the true FMP sample
-    vector<VectorXd> thetas_true;
-    vector<VectorXd> halpha_true;
-    vector<VectorXd> hdiam_true;
-    string gname = "results/fmp/samp.gnu";
-    vector<VectorXd> vals = ReadVector(gname);
-    for (auto const &v : vals)
-    {
-      auto theta = v.head(5);
-      auto hdiam = v.tail(3);
-      VectorXd halpha(3);
-      halpha << v(5), v(6), v(7);
-      thetas_true.push_back(theta);
-      hdiam_true.push_back(hdiam);
-      halpha_true.push_back(halpha);
-    }
-    //compute scores for the true FMP sample
-    vector<double> scores_true_alpha;
-    vector<double> scores_true_diam;
-    for (int i = 0; i < thetas_true.size(); i++)
-    {
-      scores_true_alpha.push_back(Doalpha.loglikelihood_theta(thetas_true[i], halpha_true[i]) + logprior_hpars(halpha_true[i]));
-      scores_true_diam.push_back(Dodiam.loglikelihood_theta(thetas_true[i], hdiam_true[i]) + logprior_hpars(hdiam_true[i]));
-    }
-
-    //lambda fcts pour l'évaluation de la qualité des surrogates.
-    auto get_score_alpha = [&Doalpha](VectorXd const &theta, VectorXd const &hpars)
-    {
-      return Doalpha.loglikelihood_theta(theta, hpars) + logprior_hpars(hpars);
-    };
-    auto get_score_diam = [&Dodiam](VectorXd const &theta, VectorXd const &hpars)
-    {
-      return Dodiam.loglikelihood_theta(theta, hpars) + logprior_hpars(hpars);
-    };
-    auto get_hpars_and_var_alpha = [&Doalpha](VectorXd const &X)
-    {
-      VectorXd h = Doalpha.EvaluateHparOpt(X);
-      VectorXd v = Doalpha.EvaluateVarHparOpt(X);
-      return make_pair(h, v);
-    };
-    auto get_hpars_and_var_diam = [&Dodiam](VectorXd const &X)
-    {
-      VectorXd h = Dodiam.EvaluateHparOpt(X);
-      VectorXd v = Dodiam.EvaluateVarHparOpt(X);
-      return make_pair(h, v);
-    };
-
-    //lambda fonction pour rajouter un certain nombre de points et calculer les hpars optimaux.
-    auto add_points = [&Doalpha, &Dodiam, npts_per_iter, &thetas_true, &halpha_true, &hdiam_true, &thetas_training, &halpha_training, &hdiam_training]()
-    {
-      //juste rajouter npts_per_iter points depuis le thetas_true.
-      int npts = thetas_training.size();
-      for (int i = 0; i < npts_per_iter; i++)
-      {
-        if (npts + i >= thetas_true.size())
-        {
-          break;
-        }
-        thetas_training.push_back(thetas_true[npts + i]);
-        halpha_training.push_back(halpha_true[npts + i]);
-        hdiam_training.push_back(hdiam_true[npts + i]);
-      }
-    };
-
-    auto write_performance_hgps = [&thetas_true, &halpha_true, &hdiam_true, &get_hpars_and_var_alpha, &get_hpars_and_var_diam, &thetas_training, &Doalpha, &Dodiam, &halpha_training, &hdiam_training, &get_score_alpha, &get_score_diam, &scores_true_alpha, &scores_true_diam](ofstream &ofile_alpha, ofstream &ofile_diam)
-    {
-      //évaluer les scores des surrogates et mettre leur performance dans un fichier, ainsi que le nb de pts de construction.
-      VectorXd scorealpha = evaluate_surrogate_bofplusscores(thetas_true, halpha_true, scores_true_alpha, get_hpars_and_var_alpha, get_score_alpha);
-      VectorXd scorediam = evaluate_surrogate_bofplusscores(thetas_true, hdiam_true, scores_true_diam, get_hpars_and_var_diam, get_score_diam);
-      ofile_alpha << thetas_training.size() << " ";
-      ofile_diam << thetas_training.size() << " ";
-      for (int i = 0; i < scorealpha.size(); i++)
-      {
-        ofile_alpha << scorealpha(i) << " ";
-      }
-      ofile_alpha << endl;
-      for (int i = 0; i < scorediam.size(); i++)
-      {
-        ofile_diam << scorediam(i) << " ";
-      }
-      ofile_diam << endl;
-    };
-
-    //début de l'algorithme
-    ofstream ofstream_alpha("results/bestscore_alpha.gnu");
-    ofstream ofstream_diam("results/bestscore_diam.gnu");
-    vector<VectorXd> hpars_opt_hgps_alpha;
-    vector<VectorXd> hpars_opt_hgps_diam;
-    for (int i = 0; i < hpars_z_guess_alpha.size(); i++)
-    {
-      hpars_opt_hgps_alpha.push_back(hpars_hgp_guess);
-    }
-    for (int i = 0; i < hpars_z_guess_diam.size(); i++)
-    {
-      hpars_opt_hgps_diam.push_back(hpars_hgp_guess);
-    }
-    for (int i = 0; i < 20; i++)
-    {
-
-      if (thetas_training.size() == thetas_true.size())
-      {
-        break;
-      }
-      //ajout de nouveaux points
-      add_points();
-
-      vector<VectorXd> dup = thetas_training;
-      vector<int> dups;
-      for (int i = 0; i < thetas_training.size(); i++)
-      {
-        for (int j = i + 1; j < thetas_training.size(); j++)
-        {
-          if (thetas_training[i] == thetas_training[j])
-          {
-            dups.push_back(j);
-          }
-        }
-      }
-      sort(dups.begin(), dups.end());
-      for (int i = dups.size() - 1; i >= 0; i--)
-      {
-        cout << "duplicate found !" << endl;
-        thetas_training.erase(thetas_training.begin() + dups[i]);
-        halpha_training.erase(halpha_training.begin() + dups[i]);
-        hdiam_training.erase(hdiam_training.begin() + dups[i]);
-      }
-
-      //construction hGPs
-      cout << "construction hGPs avec " << thetas_training.size() << " points..." << endl;
-      Doalpha.BuildHGPs(thetas_training, halpha_training, Kernel_GP_Matern32);
-      Dodiam.BuildHGPs(thetas_training, hdiam_training, Kernel_GP_Matern32);
-      Doalpha.OptimizeHGPs(Bounds_hpars_hgps, hpars_opt_hgps_alpha, time_opti_hgps);
-      Dodiam.OptimizeHGPs(Bounds_hpars_hgps, hpars_opt_hgps_diam, time_opti_hgps);
-      hpars_opt_hgps_alpha = Doalpha.GetHparsHGPs();
-      hpars_opt_hgps_diam = Dodiam.GetHparsHGPs();
-      cout << "hpars de hgps : " << endl;
-      for (int i = 0; i < hpars_opt_hgps_alpha.size(); i++)
-      {
-        cout << hpars_opt_hgps_alpha[i].transpose() << endl;
-        cout << hpars_opt_hgps_diam[i].transpose() << endl;
-      }
-
-      //évaluation de leur score
-      write_performance_hgps(ofstream_alpha, ofstream_diam);
-
-      //écriture des points d'apprentissage dans un fichier
-      string o1("results/trainingalpha.gnu");
-      string o2("results/trainingdiam.gnu");
-      WriteVectors(thetas_training, halpha_training, o1);
-      WriteVectors(thetas_training, hdiam_training, o2);
-    }
-  }
-  exit(0);
 
   /*Build surrogates on hGPs, and test their precision. IN LOG SCALE*/
   {
@@ -1893,67 +1975,6 @@ int main(int argc, char **argv)
 
   exit(0);
 
-  /*expensive FMP calibration*/
-  {
-    DensityOpt Doalpha(Dalpha);
-    DensityOpt Dodiam(Ddiam);
-    Doalpha.SetKernelGrads(gradKernel_Z_Matern52);
-    Dodiam.SetKernelGrads(gradKernel_Z_Matern52);
-    Doalpha.SetLogpriorGrads(gradlogprior_hpars);
-    Dodiam.SetLogpriorGrads(gradlogprior_hpars);
-    auto in_bounds = [&Doalpha](VectorXd const &X)
-    {
-      return Doalpha.in_bounds_pars(X);
-    };
-    auto get_hpars_opti = [&Doalpha, &Dodiam, &hpars_z_guess_alpha, &hpars_z_guess_diam](VectorXd const &X)
-    {
-      vector<VectorXd> p(2);
-      p[0] = Doalpha.HparsOpt_withgrad(X, hpars_z_guess_alpha, 1e-3);
-      p[1] = Dodiam.HparsOpt_withgrad(X, hpars_z_guess_diam, 1e-3);
-      return p;
-    };
-    auto compute_score_opti = [&Doalpha, &Dodiam](vector<VectorXd> const &p, VectorXd const &X)
-    {
-      double d = Doalpha.loglikelihood_theta(X, p[0]);
-      double d2 = Dodiam.loglikelihood_theta(X, p[1]);
-      return d + d2 + Doalpha.EvaluateLogPPars(X);
-    };
-    cout << "Beginning FMP calibration..." << endl;
-    vector<VectorXd> visited_steps = Run_MCMC(nombre_steps_mcmc, X_init_mcmc, COV_init, compute_score_opti, get_hpars_opti, in_bounds, generator);
-    vector<VectorXd> samples(nombre_samples_collected);
-    vector<VectorXd> hparsalphaofsamples(nombre_samples_collected);
-    vector<VectorXd> hparsdiamofsamples(nombre_samples_collected);
-    for (int i = 0; i < samples.size(); i++)
-    {
-      samples[i] = visited_steps[i * (visited_steps.size() / samples.size())];
-      hparsalphaofsamples[i] = get_hpars_opti(samples[i])[0];
-      hparsdiamofsamples[i] = get_hpars_opti(samples[i])[1];
-    }
-    //diagnostic
-    Selfcor_diagnosis(visited_steps, nautocor, 1, "results/fmp/autocor.gnu");
-
-    //write samples
-    string fnamesamp = "results/fmp/samp.gnu";
-    string fnameallsamp = "results/fmp/allsteps.gnu";
-    WriteVectors(samples, hparsalphaofsamples, hparsdiamofsamples, fnamesamp);
-    WriteVector(visited_steps, fnameallsamp);
-
-    //predictions
-    Doalpha.SetNewSamples(samples);
-    Doalpha.SetNewHparsOfSamples(hparsalphaofsamples);
-    Dodiam.SetNewSamples(samples);
-    Dodiam.SetNewHparsOfSamples(hparsdiamofsamples);
-    string fnamepred = "results/fmp/predsalpha.gnu";
-    string fnamesF = "results/fmp/sampsFalpha.gnu";
-    string fnamesZ = "results/fmp/sampsZalpha.gnu";
-    string fnamepred2 = "results/fmp/predsdiam.gnu";
-    string fnamesF2 = "results/fmp/sampsFdiam.gnu";
-    string fnamesZ2 = "results/fmp/sampsZdiam.gnu";
-    Doalpha.WritePredictions(location_points, fnamepred); //on doit utiliser les points d'observation pour prédire.
-    Doalpha.WriteSamplesFandZ(location_points, fnamesF, fnamesZ);
-    Dodiam.WritePredictions(location_points, fnamepred2); //on doit utiliser les points d'observation pour prédire.
-    Dodiam.WriteSamplesFandZ(location_points, fnamesF2, fnamesZ2);
-  }
 
   exit(0);
 }

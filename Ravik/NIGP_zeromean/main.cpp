@@ -1241,7 +1241,7 @@ int main(int argc, char **argv){
   }
   
 
-          //MCMC opt avec toutes les densités en même temps. on retente. 
+  //MCMC opt avec toutes les densités en même temps. on retente. 
   MatrixXd COV_init_from_FMP=MatrixXd::Zero(3+vsize*lb_hpars.size(),3+vsize*lb_hpars.size());
   VectorXd X_init_from_FMP=VectorXd(3+vsize*lb_hpars.size());
 

@@ -282,6 +282,49 @@ void PrintVector(vector<VectorXd> &X, VectorXd &values,const char* file_name){
   fclose(out);
 }
 
+std::vector<std::string> getNextLineAndSplitIntoTokens(std::istream& str)
+{
+    std::vector<std::string>   result;
+    std::string                line;
+    std::getline(str,line);
+
+    std::stringstream          lineStream(line);
+    std::string                cell;
+
+    while(std::getline(lineStream,cell, ','))
+    {
+        result.push_back(cell);
+    }
+    return result;
+}
+
+vector<DATA> read_csv(const string & filename){
+  //lit les data d'un csv.
+  ifstream ifile(filename);
+  string line;
+  vector<string> res;
+  getline(ifile,line); //skipper première ligne.
+  while(getline(ifile,line)){
+    std::stringstream lineStream(line);
+    std::string cell;
+    while(std::getline(lineStream,cell, ','))
+    {
+        res.push_back(cell);
+    }
+  }
+  vector<DATA> t;
+  for(int i=0;i<res.size()/2;i++){
+    DATA dat;
+    VectorXd x(1); x << stod(res[2*i]);
+    dat.SetX(x); dat.SetValue(stod(res[2*i+1]));
+    t.push_back(dat);
+  }
+  cout << "filename : " << filename << endl;
+  cout << "obs loaded : " << t.size() << endl;
+  return t;
+}
+
+
 vector<DATA> GetObs(PyObject *pFunc_exp,int cas){
   //setup la variable globale au cas.
   //renvoie les observations du cas numéro cas.
@@ -1104,9 +1147,9 @@ int main(int argc, char **argv){
   
 
 
-  vector<int> cases={3,4,5,6,8,14,15,16,18,20,21,22,23}; // total
+  //vector<int> cases={3,4,5,6,8,14,15,16,18,20,21,22,23}; // total
   //vector<int> cases={3,4,5,6,15,16,18,20,21}; // cases cool sans ceux qui plantent .
-  //vector<int> cases={3};
+  vector<int> cases={6};
   //vector<int> cases={4,5,6,15,18,20,21,22}; //tous les bons
   //vector<int> cases={3,6,14}; //que quelque cas cette nuit
   //hyperparamètres optimaux pour les GPs des surrogates.
@@ -1161,8 +1204,8 @@ int main(int argc, char **argv){
         }
         return pred;
       };
-
-    auto data=GetObs(pFunc_exp,cases[i]);
+    string intro="/home/catB/nl255551/Documents/Code/Ravik/courbes_ravik/";
+    auto data=read_csv(intro+"Kennel"+to_string(cases[i])+".csv");
     auto data_exp=Conversion(data);
     vector<VectorXd> XOBS(data_exp[0].GetX().size());
     for (int j=0;j<XOBS.size();j++){
@@ -1194,6 +1237,16 @@ int main(int argc, char **argv){
     MainDensity.WriteObsWithUncertainty(filename);
     vDens.push_back(MainDensity);
   }
+
+  //test: calcul des hpars optimaux pour le vecteur 0,0,0. Il faut que ça donne le même que dans le cas simple.
+  DensityOpt Do(vDens[0]);
+  VectorXd ttest(3); ttest <<0,0,0;
+  VectorXd htest=Do.HparsOpt(ttest,hpars_z_guess,10);
+  cout << "hopt : " << htest.transpose() << endl;
+  cout << "score : " << Do.loglikelihood_theta(ttest,htest) << endl;
+  exit(0);
+
+
 
   //écriture des prior predictions
   {

@@ -1,0 +1,63 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "type": "cppbuild",
+            "label": "Tache de build",
+            "command": "/usr/bin/g++",
+            "args": [
+                "-O3",
+                "-g",
+                "-std=c++11",
+                "-I",
+                "/home/catB/nl255551/lib/eigen-3.3.7",
+                "-I",
+                "/home/catB/nl255551/lib/StochTk++/includes",
+                "-I",
+                "/home/catB/nl255551/include",
+                "${fileDirname}/main.cpp",
+                "${fileDirname}/densities.cpp",
+                "-L/home/catB/nl255551/lib/StochTk++/lib",
+                "-lgp++",
+                "-lnlopt",
+                "-pthread",
+                 "-ldl", 
+                 "-lutil", 
+                 "-lrt",
+                "-o",
+                "${fileDirname}/main.exe"
+            ],
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "detail": "compiler: /usr/bin/g++"
+        },
+        {
+            "label": "Build dbc from Makefile",
+            "type": "shell",
+            "command": "make",
+            "group": "build",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        },
+        {
+            "label": "Run make clean on folder",
+            "type": "shell",
+            "command": "make clean",
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "problemMatcher": []
+        }
+    ]
+}

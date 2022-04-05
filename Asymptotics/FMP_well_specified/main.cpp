@@ -47,33 +47,37 @@ double Kernel_Z_Matern32(VectorXd const &x, VectorXd const &y, VectorXd const &h
 double Kernel_Z_SE(VectorXd const &x, VectorXd const &y, VectorXd const &hpar)
 {
   //kernel squared exponential. hpars : sigma2/l, sigma.
-  double s = pow(10,hpar(0));
-  double l = pow(10,hpar(1));
+  double s = pow(10, hpar(0));
+  double l = pow(10, hpar(1));
   double d = abs(x(0) - y(0));
   return pow(s, 2) * exp(-0.5 * pow(d / l, 2)); //3SE
 }
 
-double GradKernel_Z_SE(VectorXd const &x, VectorXd const &y, VectorXd const &hpar,int index){
+double GradKernel_Z_SE(VectorXd const &x, VectorXd const &y, VectorXd const &hpar, int index)
+{
   //gradients du kernel SE. attention on dérive // aux logs des paramètres. d'où la multiplication par s et l supplémentaire.
-  double s = pow(10,hpar(0));
-  double l= pow(10,hpar(1));
+  double s = pow(10, hpar(0));
+  double l = pow(10, hpar(1));
   double d = abs(x(0) - y(0));
-  if(index==0){
-    return 2*s * exp(-0.5 * pow(d / l, 2))*s/log(10);
+  if (index == 0)
+  {
+    return 2 * s * exp(-0.5 * pow(d / l, 2)) * s / log(10);
   }
-  else if(index==1){
-    return pow(s, 2)*pow(d,2)*pow(l,-3)*exp(-0.5 * pow(d / l, 2))*l/log(10);
+  else if (index == 1)
+  {
+    return pow(s, 2) * pow(d, 2) * pow(l, -3) * exp(-0.5 * pow(d / l, 2)) * l / log(10);
   }
-  else{
+  else
+  {
     cerr << "erreur calcul gradients kernel" << endl;
     return 0;
   }
 }
 
-double GradLogprior(VectorXd const &hpar,int index){
+double GradLogprior(VectorXd const &hpar, int index)
+{
   return 0;
 }
-
 
 double Kernel_GP_Matern12(VectorXd const &x, VectorXd const &y, VectorXd const &hpar)
 {
@@ -82,6 +86,12 @@ double Kernel_GP_Matern12(VectorXd const &x, VectorXd const &y, VectorXd const &
   return pow(hpar(0), 2) * exp(-d1);
 }
 
+double Kernel_GP_Matern32(VectorXd const &x, VectorXd const &y, VectorXd const &hpar)
+{
+  //noyau pour le GP. 0:intensity, 2:noise, 1:lcor
+  double d1 = abs(x(0) - y(0)) / hpar(1);
+  return pow(hpar(0), 2) * exp(-d1) * (1 + d1);
+}
 
 tuple<VectorXd, MatrixXd> GaussFit(vector<VectorXd> const &samples)
 {
@@ -186,6 +196,7 @@ void WriteObs(vector<VectorXd> const &X, VectorXd const &obs, string filename)
   }
   ofile.close();
 }
+
 const double Big = -1.e16;
 
 int main(int argc, char **argv)
@@ -204,11 +215,12 @@ int main(int argc, char **argv)
   ub_t(0) = 0;
 
   VectorXd lb_hpars(dim_hpars);
-  lb_hpars(0) = -4;
+  lb_hpars(0) = -5;
   lb_hpars(1) = -3;
   VectorXd ub_hpars(dim_hpars);
   ub_hpars(0) = 1;
   ub_hpars(1) = 0.5;
+  
 
   MatrixXd Bounds_hpars_gp(2, 3); //3 hpars GP.
   Bounds_hpars_gp(0, 0) = 1E-3;
@@ -216,8 +228,8 @@ int main(int argc, char **argv)
   Bounds_hpars_gp(0, 1) = 1e-5;
   Bounds_hpars_gp(1, 1) = 5; //lcor en theta
   Bounds_hpars_gp(0, 2) = 1E-3;
-  Bounds_hpars_gp(1, 2) = 2E-3; //sigma obs. Normalement zéro.
-  VectorXd hpars_gp_guess=0.5*(Bounds_hpars_gp.row(0)+Bounds_hpars_gp.row(1)); //pas transpose ?
+  Bounds_hpars_gp(1, 2) = 2E-3;                                                      //sigma obs. Normalement zéro.
+  VectorXd hpars_gp_guess = 0.5 * (Bounds_hpars_gp.row(0) + Bounds_hpars_gp.row(1)); //pas transpose ?
 
   VectorXd hpars_z_guess = lb_hpars;
 
@@ -254,10 +266,10 @@ int main(int argc, char **argv)
     initgrid(i) = x;
   }
   //on tire les observations sur le grid increasing max, déjà.
-  int seed = 123456; //seed pour les observations
+  int seed = 85758; //seed pour les observations
   default_random_engine generator(seed);
 
-  auto run_analysis = [noise, &generator, nombre_steps_mcmc, nombre_samples_collected,Bounds_hpars_gp,hpars_gp_guess, lb_t, ub_t, lb_hpars, ub_hpars, dim_theta, dim_hpars, lambda_model, X_init, COV_init, hpars_z_guess](string foldname, VectorXd const &Xobs, VectorXd const &Yobs)
+  auto run_analysis = [noise, &generator, nombre_steps_mcmc, nombre_samples_collected, Bounds_hpars_gp, hpars_gp_guess, lb_t, ub_t, lb_hpars, ub_hpars, dim_theta, dim_hpars, lambda_model, X_init, COV_init, hpars_z_guess](string foldname, VectorXd const &Xobs, VectorXd const &Yobs)
   {
     //fonction qui trouve un échantillon de la postérieure à partir du grid, des observations, et écrit tout dans un dossier.
     //compute moyenne theta, std, moyenne sigma, std, et renvoie tout ça.
@@ -300,7 +312,7 @@ int main(int argc, char **argv)
     };
 
     //calcul des samples bayes et de l'approximation gaussienne/
-    DoE doe_init(lb_t, ub_t, 100, 100); // DoE Halton
+    DoE doe_init(lb_t, ub_t, 100, 100);  // DoE Halton
     DoE doe_rand(lb_t, ub_t, 50, 10000); // DoE Halton
     string fname_data = foldname + "obs" + endname;
     WriteObs(Xobsvec, Yobs, fname_data);
@@ -316,96 +328,93 @@ int main(int argc, char **argv)
     Dens.SetOutputerr(false, noise, 0);
 
     DensityOpt Do(Dens);
-    Do.SetKernelGrads(GradKernel_Z_SE);
-    Do.SetLogpriorGrads(GradLogprior);
 
-    double timeopt=1; //secondes par optimisation. devrait dépendre du nombre d'observations.
+    double timeopt = 0.1; //secondes par optimisation. devrait dépendre du nombre d'observations.
     //il me faut une étape de choix pour timeopt.
 
-    auto get_hpars = [&Do,&hpars_z_guess,&timeopt](VectorXd const &theta)
+    auto get_hpars = [&Do, &hpars_z_guess, &timeopt](VectorXd const &theta)
     {
       vector<VectorXd> p(1);
-      p[0]=Do.EvaluateHparOpt(theta);
+      p[0] = Do.EvaluateHparOpt(theta);
       return p;
     };
 
     auto compute_score = [&Do, &logprior_hpars](vector<VectorXd> const &p, VectorXd const &X)
     {
       //pas de logprior_hpars pour opt ^^
-      VectorXd hpars=p[0];
+      VectorXd hpars = p[0];
       return Do.loglikelihood_theta(X, hpars);
     };
 
     //test de time_opt.
-    VectorXd tmol(1); tmol << -1;
+    VectorXd tmol(1);
+    tmol << -1;
 
-    VectorXd hpmol=Do.HparsOpt(tmol,hpars_z_guess,1);
+    VectorXd hpmol = Do.HparsOpt(tmol, hpars_z_guess, timeopt);
     cout << "hpmol : " << hpmol.transpose() << endl;
     //return hpmol;
-
-
-    VectorXd hpcur=hpmol;
-    bool pass=false;
-    while(!pass){
-      timeopt*=10;
-      VectorXd hptry=Do.HparsOpt(tmol,hpars_z_guess,timeopt);
-      if(hpcur==hptry){
-        pass=true;
+/*
+    VectorXd hpcur = hpmol;
+    bool pass = false;
+    while (!pass)
+    {
+      timeopt *= 10;
+      VectorXd hptry = Do.HparsOpt(tmol, hpars_z_guess, timeopt);
+      if (hpcur.isApprox(hptry))
+      {
+        pass = true;
         cout << hpcur.transpose() << endl;
         cout << hptry.transpose() << endl;
-        timeopt/=10;
-        cout << "time opt = " <<timeopt << endl;
+        timeopt /= 10;
+        cout << "time opt = " << timeopt << endl;
       }
-      else{
-        timeopt/=5;
-        hpcur=Do.HparsOpt(tmol,hpars_z_guess,timeopt);
+      else
+      {
+        timeopt /= 5;
+        hpcur = Do.HparsOpt(tmol, hpars_z_guess, timeopt);
       }
-      if(timeopt>5){
-        pass=true;
-        timeopt=2;
+      if (timeopt > 5)
+      {
+        pass = true;
+        timeopt = 2;
         cout << "pass. " << timeopt << endl;
         cout << hpcur.transpose() << endl;
         cout << hptry.transpose() << endl;
       }
     }
+    */
 
     //construction des hpars optimaux
 
-
-
-    double timeopthgps=10; //secondes par optimisation de hGPs
-    vector<VectorXd> thetas_ref=doe_init.GetGrid();
+    double timeopthgps = 10; //secondes par optimisation de hGPs
+    vector<VectorXd> thetas_ref = doe_init.GetGrid();
     vector<VectorXd> hpars_ref;
-    for(int i=0;i<thetas_ref.size();i++){
-      VectorXd h=Do.HparsOpt(thetas_ref[i],hpars_z_guess,timeopt);
+    for (int i = 0; i < thetas_ref.size(); i++)
+    {
+      VectorXd h = Do.HparsOpt(thetas_ref[i], hpars_z_guess, timeopt);
       hpars_ref.push_back(h);
     }
     //on rajoute theta = -1 pour être sûr qu'il le connaît
     thetas_ref.push_back(tmol);
-    hpars_ref.push_back(Do.HparsOpt(tmol,hpars_z_guess,timeopt));
-    Do.BuildHGPs(thetas_ref,hpars_ref,Kernel_GP_Matern12);
-    Do.OptimizeHGPs(Bounds_hpars_gp,hpars_gp_guess,timeopthgps);
+    hpars_ref.push_back(Do.HparsOpt(tmol, hpars_z_guess, timeopt));
+    Do.BuildHGPs(thetas_ref, hpars_ref, Kernel_GP_Matern32);
+    Do.OptimizeHGPs(Bounds_hpars_gp, hpars_gp_guess, timeopthgps);
 
-    cout << "pred hgps : "<< endl;
+    cout << "pred hgps : " << endl;
     cout << get_hpars(tmol)[0].transpose() << endl;
     cout << Do.EvaluateHparOpt(tmol).transpose() << endl;
 
-    
     //TEST CONTROLE DES HGPS
-    ofstream ofile("results/hgps"+to_string(Xobs.size())+".gnu");
-    vector<VectorXd> thetatest=doe_rand.GetGrid();
-    for(int i=0;i<thetatest.size();i++){
-      VectorXd theta=thetatest[i];
-      VectorXd hparstrue=Do.HparsOpt(theta,hpars_z_guess,timeopt);
-      VectorXd hparsest=Do.EvaluateHparOpt(theta);
-      ofile << theta(0) << " " << hparstrue(0) << " "<< hparsest(0) << " " << hparstrue(1) << " " << hparsest(1) << endl;
+    ofstream ofile("results/hgps" + to_string(Xobs.size()) + ".gnu");
+    vector<VectorXd> thetatest = doe_rand.GetGrid();
+    for (int i = 0; i < thetatest.size(); i++)
+    {
+      VectorXd theta = thetatest[i];
+      VectorXd hparstrue = Do.HparsOpt(theta, hpars_z_guess, timeopt);
+      VectorXd hparsest = Do.EvaluateHparOpt(theta);
+      ofile << theta(0) << " " << hparstrue(0) << " " << hparsest(0) << " " << hparstrue(1) << " " << hparsest(1) << endl;
     }
     ofile.close();
-
-    
-    
-
-
 
     auto in_bounds = [&Dens](VectorXd const &X)
     {
@@ -418,7 +427,8 @@ int main(int argc, char **argv)
     vector<VectorXd> visited_hpars;
     vector<VectorXd> selected_thetas;
     vector<VectorXd> selected_hpars;
-    for(int i=0;i<visited_steps.size();i++){
+    for (int i = 0; i < visited_steps.size(); i++)
+    {
       visited_hpars.push_back(get_hpars(visited_steps[i])[0]);
     }
 
@@ -426,7 +436,7 @@ int main(int argc, char **argv)
 
     string fname = foldname + "autocor" + endname;
     Selfcor_diagnosis(visited_steps, nautocor, 1, fname);
-    WriteVectors(visited_steps,visited_hpars, foldname + "samples" + to_string(Yobs.size()) +endname);
+    WriteVectors(visited_steps, visited_hpars, foldname + "samples" + to_string(Yobs.size()) + endname);
     //calcul moyenne theta, std, moyenne sigma, std.
     //attention au scale de s. sert à rien de faire cv l à priori puisque il n'a pas d'influence.
 
@@ -436,31 +446,42 @@ int main(int argc, char **argv)
     double smean = 0;
     double sstd = 0;
     double smedian = 0;
+    double lmean = 0;
+        double lstd = 0;
+    double lmedian = 0;
     vector<double> vec_s;
+    vector<double> vec_l;
 
     for (int i = 0; i < chainsize; i++)
     {
       tmean += visited_steps[i](0);
       smean += pow(10,visited_hpars[i](0));
+      lmean += pow(10,visited_hpars[i](1));
       vec_s.push_back(pow(10,visited_hpars[i](0)));
+      vec_l.push_back(pow(10,visited_hpars[i](1)));
     }
 
     tmean /= chainsize;
     smean /= chainsize;
+    lmean /= chainsize;
     for (int i = 0; i < chainsize; i++)
     {
       tstd += pow(visited_steps[i](0) - tmean, 2);
-      sstd += pow(pow(10,visited_hpars[i](0)) - smean, 2);
+      sstd += pow(pow(10, visited_hpars[i](0)) - smean, 2);
+      lstd += pow(pow(10,visited_hpars[i](1)) - lmean, 2);
     }
     tstd = sqrt(tstd / chainsize);
     sstd = sqrt(sstd / chainsize);
+    lstd = sqrt(lstd / chainsize);
     //trouver la médiane
     size_t n = vec_s.size() / 2;
     nth_element(vec_s.begin(), vec_s.begin() + n, vec_s.end());
     smedian = vec_s[n];
+        nth_element(vec_l.begin(), vec_l.begin() + n, vec_l.end());
+    lmedian = vec_l[n];
     //on met tout ds un vectorXd
-    VectorXd res(5);
-    res << tmean, tstd, smean, sstd, smedian;
+    VectorXd res(8);
+    res << tmean, tstd, smean, sstd, smedian,lmean,lstd,lmedian;
     return res; //renvoie les params du fit gaussien sur les samples.
   };
 
@@ -601,22 +622,25 @@ int main(int argc, char **argv)
   indexes.push_back(35);
   */
   //indexes.push_back(150);
-  
-  for(int j=1000;j>100;j-=50){
+
+  for (int j = 1000; j > 100; j -= 50)
+  {
     indexes.push_back(j);
   }
-  for(int j=100;j>5;j-=5){
+  for (int j = 100; j > 5; j -= 5)
+  {
     indexes.push_back(j);
   }
-  
-  for (int i:indexes){
-  //for (int i = 100; i > 5; i -= 5)
-  
+
+  for (int i : indexes)
+  {
+    //for (int i = 100; i > 5; i -= 5)
+
     cout << "nobs : " << i << endl;
     gridcurrent = extract_FD_grid(gridcurrent.first, gridcurrent.second, i);
     VectorXd v = run_analysis(fnamef, gridcurrent.first, gridcurrent.second);
     //ofile << i << " " << v(0) << " " << v(1) << endl;
-    ofile << i << " " << v(0) << " " << v(1) << " " << v(2) << " " << v(3) << " " << v(4) << endl;
+    ofile << i << " " << v(0) << " " << v(1) << " " << v(2) << " " << v(3) << " " << v(4)<< " " << v(5)<< " " << v(6)<< " " << v(7) << endl;
   }
   exit(0);
 

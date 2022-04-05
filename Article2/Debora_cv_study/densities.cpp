@@ -402,7 +402,7 @@ void Run_Burn_Phase_MCMC(int nburn, MatrixXd &COV_init, VectorXd &Xcurrento, fun
   COV_init = CovProp;
 }
 
-vector<VectorXd> Run_MCMC(int nsteps, VectorXd &Xinit, MatrixXd &COV_init, function<double(vector<VectorXd>, VectorXd const &)> const &compute_score, function<vector<VectorXd>(VectorXd const &)> const &get_hpars, function<bool(VectorXd)> const &in_bounds, default_random_engine &generator)
+vector<VectorXd> Run_MCMC(int nsteps, VectorXd &Xinit, MatrixXd COV_init, function<double(vector<VectorXd>, VectorXd const &)> const &compute_score, function<vector<VectorXd>(VectorXd const &)> const &get_hpars, function<bool(VectorXd)> const &in_bounds, default_random_engine &generator)
 {
   //Metropolis-Hastings algorithm with burn phase. Returns all visited steps (not including the burn phase).
   cout << "starting MCMC with " << nsteps << " steps." << endl;
@@ -418,6 +418,7 @@ vector<VectorXd> Run_MCMC(int nsteps, VectorXd &Xinit, MatrixXd &COV_init, funct
   double fcurrent = finit;
   vector<VectorXd> hparscurrent = hparsstart;
   int naccept = 0;
+  int noob=0;
   auto begin = chrono::steady_clock::now();
   for (int i = 0; i < nsteps; i++)
   {
@@ -439,11 +440,15 @@ vector<VectorXd> Run_MCMC(int nsteps, VectorXd &Xinit, MatrixXd &COV_init, funct
         hparscurrent = hparscandidate;
       }
     }
+        else{
+      noob++;
+    }
     allsamples.push_back(Xcurrent);
   }
   auto end = chrono::steady_clock::now();
   double acc_rate = (double)(naccept) / (double)(nsteps);
-  cout << "MCMC phase over. time : " << chrono::duration_cast<chrono::seconds>(end - begin).count() << " s, accept rate : " << 100 * acc_rate << " pct. " << endl;
+  double oob_rate = (double)(noob) / (double)(nsteps);
+  cout << "MCMC phase over. time : " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << " ms, accept rate : " << 100 * acc_rate << " pct, oob rate :" << 100*oob_rate << endl;
   return allsamples;
 }
 

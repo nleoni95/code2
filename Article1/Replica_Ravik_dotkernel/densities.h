@@ -39,9 +39,9 @@ double myoptfunc_gp(const std::vector<double> &x, std::vector<double> &grad, voi
 /*MCMC-related functions*/
 void Run_Burn_Phase_MCMC(int nburn, Eigen::MatrixXd &COV_init, Eigen::VectorXd &Xcurrento, std::function<double(std::vector<Eigen::VectorXd>, Eigen::VectorXd const &)> const &compute_score, std::function<std::vector<Eigen::VectorXd>(Eigen::VectorXd const &)> const &get_hpars, std::function<bool(Eigen::VectorXd)> const &in_bounds, std::default_random_engine &generator);
 
-std::vector<Eigen::VectorXd> Run_MCMC(int nsteps, Eigen::VectorXd  &Xinit, Eigen::MatrixXd &COV_init, std::function<double(std::vector<Eigen::VectorXd>, Eigen::VectorXd const &)> const &compute_score, std::function<std::vector<Eigen::VectorXd>(Eigen::VectorXd const &)> const &get_hpars, std::function<bool(Eigen::VectorXd)> const &in_bounds, std::default_random_engine &generator);
+std::vector<Eigen::VectorXd> Run_MCMC(int nsteps, Eigen::VectorXd  &Xinit, Eigen::MatrixXd const &COV_init, std::function<double(std::vector<Eigen::VectorXd>, Eigen::VectorXd const &)> const &compute_score, std::function<std::vector<Eigen::VectorXd>(Eigen::VectorXd const &)> const &get_hpars, std::function<bool(Eigen::VectorXd)> const &in_bounds, std::default_random_engine &generator);
 
-std::vector<Eigen::VectorXd> Run_MCMC_hundred(int nsteps, Eigen::VectorXd  &Xinit, Eigen::MatrixXd &COV_init, std::function<double(std::vector<Eigen::VectorXd>, Eigen::VectorXd const &)> const &compute_score, std::function<std::vector<Eigen::VectorXd>(Eigen::VectorXd const &)> const &get_hpars, std::function<bool(Eigen::VectorXd)> const &in_bounds, std::default_random_engine &generator);
+std::vector<Eigen::VectorXd> Run_MCMC_hundred(int nsteps, Eigen::VectorXd  &Xinit, Eigen::MatrixXd const &COV_init, std::function<double(std::vector<Eigen::VectorXd>, Eigen::VectorXd const &)> const &compute_score, std::function<std::vector<Eigen::VectorXd>(Eigen::VectorXd const &)> const &get_hpars, std::function<bool(Eigen::VectorXd)> const &in_bounds, std::default_random_engine &generator);
 
 //diagnosis functions
 Eigen::VectorXd Lagged_mean(std::vector<Eigen::VectorXd> const &v, int n);
@@ -91,6 +91,8 @@ public:
         m_ub_hpars = ub_hpars;
     };
     void SetObservations(std::vector<Eigen::VectorXd> const &Xlocations, Eigen::VectorXd const &observations);
+
+    void WriteObservations(double inputerr, double outputerr,std::string const &filename) const;
 
     //necessary calls to include input and output Gaussian error, with fixed value or learned.
     void SetOutputerr(bool learned, double value, int index);

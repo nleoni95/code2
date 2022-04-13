@@ -362,7 +362,7 @@ void Run_Burn_Phase_MCMC(int nburn, MatrixXd &COV_init, VectorXd &Xcurrento, fun
   VectorXd Xcurrent = Xinit;
   double fcurrent = finit;
   int naccept = 0;
-  int noob=0;
+  int noob = 0;
   VectorXd acc_means = VectorXd::Zero(dim_mcmc);
   MatrixXd acc_var = MatrixXd::Zero(dim_mcmc, dim_mcmc);
   auto begin = chrono::steady_clock::now();
@@ -392,7 +392,8 @@ void Run_Burn_Phase_MCMC(int nburn, MatrixXd &COV_init, VectorXd &Xcurrento, fun
       }
       //cout << endl;
     }
-    else{
+    else
+    {
       noob++;
     }
     acc_means += Xcurrent;
@@ -403,14 +404,14 @@ void Run_Burn_Phase_MCMC(int nburn, MatrixXd &COV_init, VectorXd &Xcurrento, fun
   MatrixXd CovProp = (pow(2.38, 2) / (double)(dim_mcmc)) * (acc_var / (nburn - 1) - acc_means * acc_means.transpose() / pow(1.0 * nburn, 2));
   auto end = chrono::steady_clock::now();
   cout << "burn phase over. "
-       << " time : " << chrono::duration_cast<chrono::seconds>(end - begin).count() << " s, accept rate : " << 100 * acc_rate << " pct, oob rate :" << 100*oob_rate << endl;
+       << " time : " << chrono::duration_cast<chrono::seconds>(end - begin).count() << " s, accept rate : " << 100 * acc_rate << " pct, oob rate :" << 100 * oob_rate << endl;
   cout << "new cov matrix : " << endl
        << CovProp << endl;
   Xcurrento = Xcurrent;
   COV_init = CovProp;
 }
 
-vector<VectorXd> Run_MCMC(int nsteps, VectorXd &Xinit, MatrixXd &COV_init, function<double(vector<VectorXd>, VectorXd const &)> const &compute_score, function<vector<VectorXd>(VectorXd const &)> const &get_hpars, function<bool(VectorXd)> const &in_bounds, default_random_engine &generator)
+vector<VectorXd> Run_MCMC(int nsteps, VectorXd &Xinit, MatrixXd const &COV_init, function<double(vector<VectorXd>, VectorXd const &)> const &compute_score, function<vector<VectorXd>(VectorXd const &)> const &get_hpars, function<bool(VectorXd)> const &in_bounds, default_random_engine &generator)
 {
   //Metropolis-Hastings algorithm with burn phase. Returns all visited steps (not including the burn phase).
   cout << "starting MCMC with " << nsteps << " steps." << endl;
@@ -418,8 +419,9 @@ vector<VectorXd> Run_MCMC(int nsteps, VectorXd &Xinit, MatrixXd &COV_init, funct
   vector<VectorXd> allsamples;
   uniform_real_distribution<double> distU(0, 1);
   normal_distribution<double> distN(0, 1);
-  Run_Burn_Phase_MCMC(0.1 * nsteps, COV_init, Xinit, compute_score, get_hpars, in_bounds, generator);
-  MatrixXd sqrtCOV = COV_init.llt().matrixL();
+  MatrixXd C = COV_init;
+  Run_Burn_Phase_MCMC(0.1 * nsteps, C, Xinit, compute_score, get_hpars, in_bounds, generator);
+  MatrixXd sqrtCOV = C.llt().matrixL();
   vector<VectorXd> hparsstart = get_hpars(Xinit);
   double finit = compute_score(hparsstart, Xinit);
   VectorXd Xcurrent = Xinit;
@@ -448,7 +450,8 @@ vector<VectorXd> Run_MCMC(int nsteps, VectorXd &Xinit, MatrixXd &COV_init, funct
         hparscurrent = hparscandidate;
       }
     }
-    else{
+    else
+    {
       noob++;
     }
     allsamples.push_back(Xcurrent);
@@ -456,11 +459,11 @@ vector<VectorXd> Run_MCMC(int nsteps, VectorXd &Xinit, MatrixXd &COV_init, funct
   auto end = chrono::steady_clock::now();
   double acc_rate = (double)(naccept) / (double)(nsteps);
   double oob_rate = (double)(noob) / (double)(nsteps);
-  cout << "MCMC phase over. time : " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << " ms, accept rate : " << 100 * acc_rate << " pct, oob rate :" << 100*oob_rate << endl;
+  cout << "MCMC phase over. time : " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << " ms, accept rate : " << 100 * acc_rate << " pct, oob rate :" << 100 * oob_rate << endl;
   return allsamples;
 }
 
-vector<VectorXd> Run_MCMC_hundred(int nsteps, VectorXd &Xinit, MatrixXd &COV_init, function<double(vector<VectorXd>, VectorXd const &)> const &compute_score, function<vector<VectorXd>(VectorXd const &)> const &get_hpars, function<bool(VectorXd)> const &in_bounds, default_random_engine &generator)
+vector<VectorXd> Run_MCMC_hundred(int nsteps, VectorXd &Xinit, MatrixXd const &COV_init, function<double(vector<VectorXd>, VectorXd const &)> const &compute_score, function<vector<VectorXd>(VectorXd const &)> const &get_hpars, function<bool(VectorXd)> const &in_bounds, default_random_engine &generator)
 {
   //Metropolis-Hastings algorithm with burn phase. ne sauvegarde qu'un step sur 100.
   cout << "starting MCMC with " << nsteps << " steps. Only 1/100 is saved." << endl;
@@ -468,15 +471,16 @@ vector<VectorXd> Run_MCMC_hundred(int nsteps, VectorXd &Xinit, MatrixXd &COV_ini
   vector<VectorXd> allsamples;
   uniform_real_distribution<double> distU(0, 1);
   normal_distribution<double> distN(0, 1);
-  Run_Burn_Phase_MCMC(0.1 * nsteps, COV_init, Xinit, compute_score, get_hpars, in_bounds, generator);
-  MatrixXd sqrtCOV = COV_init.llt().matrixL();
+  MatrixXd C = COV_init;
+  Run_Burn_Phase_MCMC(0.1 * nsteps, C, Xinit, compute_score, get_hpars, in_bounds, generator);
+  MatrixXd sqrtCOV = C.llt().matrixL();
   vector<VectorXd> hparsstart = get_hpars(Xinit);
   double finit = compute_score(hparsstart, Xinit);
   VectorXd Xcurrent = Xinit;
   double fcurrent = finit;
   vector<VectorXd> hparscurrent = hparsstart;
   int naccept = 0;
-  int noob=0;
+  int noob = 0;
   auto begin = chrono::steady_clock::now();
   for (int i = 0; i < nsteps; i++)
   {
@@ -498,7 +502,8 @@ vector<VectorXd> Run_MCMC_hundred(int nsteps, VectorXd &Xinit, MatrixXd &COV_ini
         hparscurrent = hparscandidate;
       }
     }
-    else{
+    else
+    {
       noob++;
     }
     if (i % 100 == 0)
@@ -509,7 +514,7 @@ vector<VectorXd> Run_MCMC_hundred(int nsteps, VectorXd &Xinit, MatrixXd &COV_ini
   auto end = chrono::steady_clock::now();
   double acc_rate = (double)(naccept) / (double)(nsteps);
   double oob_rate = (double)(noob) / (double)(nsteps);
-  cout << "MCMC phase over. time : " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << " ms, accept rate : " << 100 * acc_rate << " pct, oob rate :" << 100*oob_rate << endl;
+  cout << "MCMC phase over. time : " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << " ms, accept rate : " << 100 * acc_rate << " pct, oob rate :" << 100 * oob_rate << endl;
   return allsamples;
 }
 
@@ -763,6 +768,20 @@ void Density::SetInputerr(bool b, double value, int index, VectorXd derivatives_
     derivativessquared = derivatives_at_preds.array().square();
     m_derivatives_preds = derivativessquared.asDiagonal();
   }
+}
+
+void Density::WriteObservations(double inputerr, double outputerr,std::string const &filename) const{
+  //écrire les observations et leur inputerr, outputerr.
+  ofstream ofile(filename);
+  int nobs=m_observations.size();
+  int xsize=m_Xlocations[0].size();
+  for(int i=0;i<nobs;i++){
+    for(int j=0;j<xsize;j++){
+      ofile << m_Xlocations[i](j) << " ";
+    }
+    ofile << m_observations(i) << " " << inputerr << outputerr << endl;
+  }  
+  ofile.close();
 }
 
 void Density::SetOutputerr(bool b, double value, int index)

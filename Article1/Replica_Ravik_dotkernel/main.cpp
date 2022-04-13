@@ -143,6 +143,34 @@ double gaussprob(double x, double mu, double sigma)
   return 1. / (sqrt(2 * 3.14 * pow(sigma, 2))) * exp(-0.5 * pow((x - mu) / sigma, 2));
 }
 
+VectorXd factorial(int n)
+{
+  //on enregistre toutes les valeurs des factorielles. Cela réduit le nombre d'opérations inutiles.
+  VectorXd f(n);
+  f(0) = 1;
+  for (int i = 1; i < n; i++)
+  {
+    f(i) = i * f(i - 1);
+  }
+  return f;
+}
+
+double Kernel_Matern_General(VectorXd const &x, VectorXd const &y, VectorXd const &hpar)
+{
+  //squared exponential * linear. log scale pour FMP.. + facile d'apprendre avec un surrogate pour sigma qui est sur plusieurs ODG...
+  double s = exp(hpar(0));
+  double l = exp(hpar(1));
+  int p = floor(hpar(2));                   //régularité du noyau, moins 1/2. nu=p+0.5;
+  VectorXd f = factorial(2 * p + 1); // i! = f(i)
+  double d = abs(x(0) - y(0));
+  double c = 0;
+  for (int i = 0; i <= p; i++)
+  {
+    c += pow((2 * d * sqrt(2 * p + 1)) / l, p - i) * f(p + i) / (f(i) * f(p - i));
+  }
+  return pow(s, 2) * c * (f(p) / f(2 * p)) * exp(-(d * sqrt(2 * p + 1)) / l);
+}
+
 double Kernel_Z_SE_lin(VectorXd const &x, VectorXd const &y, VectorXd const &hpar)
 {
   //squared exponential * linear. log scale pour FMP.. + facile d'apprendre avec un surrogate pour sigma qui est sur plusieurs ODG...
@@ -152,13 +180,31 @@ double Kernel_Z_SE_lin(VectorXd const &x, VectorXd const &y, VectorXd const &hpa
   return pow(s, 2) * exp(-0.5 * pow(d / l, 2)) * x(0) * y(0); //3/2
 }
 
+double Kernel_Z_Matern12(VectorXd const &x, VectorXd const &y, VectorXd const &hpar)
+{
+  //squared exponential
+  double s = exp(hpar(0));
+  double l = exp(hpar(1));
+  double d = abs(x(0) - y(0));
+  return pow(s, 2) * exp(-d / l); //5/2
+}
+
+double Kernel_Z_Matern32(VectorXd const &x, VectorXd const &y, VectorXd const &hpar)
+{
+  //squared exponential
+  double s = exp(hpar(0));
+  double l = exp(hpar(1));
+  double d = abs(x(0) - y(0));
+  return pow(s, 2) * (1 + (sqrt(3) * d / l)) * exp(-sqrt(3) * d / l); //5/2
+}
+
 double Kernel_Z_Matern52(VectorXd const &x, VectorXd const &y, VectorXd const &hpar)
 {
   //squared exponential
   double s = exp(hpar(0));
   double l = exp(hpar(1));
   double d = abs(x(0) - y(0));
-  return pow(s, 2) * (1 + (d / l) + (1. / 3) * pow(d / l, 2)) * exp(-d / l); //5/2
+  return pow(s, 2) * (1 + (sqrt(5) * d / l) + (5. / 3) * pow(d / l, 2)) * exp(-sqrt(5) * d / l); //5/2
 }
 
 double Kernel_Z_Matern52_noexp(VectorXd const &x, VectorXd const &y, VectorXd const &hpar)
@@ -865,7 +911,7 @@ double optfuncKOH_pooled(const std::vector<double> &x, std::vector<double> &grad
     }
     prob[i] = g;
   }
-  double logvstyp = -200;
+  double logvstyp = -800;
   //normalisation et passage à l'exponentielle.
   //le max doit être le même sur toutes les itérations... d'où la nécessité de le définir à l'extérieur !!!
   for (int i = 0; i < prob.size(); i++)
@@ -887,12 +933,14 @@ double optfuncKOH_pooled(const std::vector<double> &x, std::vector<double> &grad
   //multiplication des priors pour chaques hyperparamètres !
   double res = accumulate(prob.begin(), prob.end(), 0.0);
   res /= prob.size();
+  /*
   if(res==0.0){cerr << "erreur hparskohpooled. logvstyp trop grande. valeurs typ :" << endl;
     for(int i=0;i<10;i++){
       cout << prob[i] << endl;
     }
     exit(0);
   }
+  */
   return res;
 };
 
@@ -950,6 +998,52 @@ vector<VectorXd> HparsKOH_pooled(vector<Density> &vDens, VectorXd const &hpars_g
   return ret;
 }
 
+void TestHparsKOH_pooled(vector<Density> &vDens, vector<VectorXd> const &hpars_guess)
+{
+  //renvoie la valeur du critère HparsKOH.
+  auto begin = chrono::steady_clock::now();
+  int dim = vDens.size();
+  vector<MatrixXd> residus_v(dim);
+  for (int i = 0; i < dim; i++)
+  {
+    VectorXd expvalues = vDens[i].GetYobs();
+    const vector<VectorXd> xobsvec = vDens[i].GetXlocs();
+    MatrixXd Residustheta(expvalues.size(), vDens[i].GetGrid()->size());
+    for (int j = 0; j < Residustheta.cols(); j++)
+    {
+      VectorXd theta = vDens[i].GetGrid()->at(j);
+      Residustheta.col(j) = expvalues - vDens[i].EvaluateModel(xobsvec, theta);
+    }
+    residus_v[i] = Residustheta;
+  }
+  auto tp = make_tuple(&residus_v, &vDens);
+  //création des bornes des hpars et du guess. tout est fait en vector pour pouvoir gérer les tailles sans s'embêter.
+  vector<double> guess;
+  for (int i = 0; i < hpars_guess.size(); i++)
+  {
+    for (int j = 0; j < hpars_guess[i].size(); j++)
+    {
+      guess.push_back(hpars_guess[i](j));
+    }
+  }
+  vector<double> grad; //vide
+  cout << "hparskoh testé : " << endl
+       << hpars_guess[0].transpose() << endl
+       << hpars_guess[1].transpose() << endl;
+  cout << "critère :" << optfuncKOH_pooled(guess, grad, &tp) << endl;
+}
+
+void Nodups(std::vector<VectorXd> &v)
+{
+  auto end = v.end();
+  for (auto it = v.begin(); it != end; ++it)
+  {
+    end = std::remove(it + 1, end, *it);
+  }
+
+  v.erase(end, v.end());
+}
+
 const double Big = -1.e16;
 
 int main(int argc, char **argv)
@@ -961,6 +1055,76 @@ int main(int argc, char **argv)
     exit(0);
   }
 
+  //tests fonction matern
+  {
+    VectorXd x(1);
+    x << 1;
+    VectorXd y(1);
+    y << 1.5;
+    VectorXd h1(3);
+    h1 << 1, 0.5, 0;
+    VectorXd h2(3);
+    h2 << 1, 0.5, 1;
+    VectorXd h3(3);
+    h3 << 1, 0.5, 2;
+    //comparaison temps de calcul.
+    int neval = 1e7;
+    {
+      auto begin = chrono::steady_clock::now();
+      for (int i = 0; i < neval; i++)
+      {
+        Kernel_Z_Matern12(x, y, h1);
+      }
+      auto end = chrono::steady_clock::now();
+      cout << " time : " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << " ms " << endl;
+    }
+        {
+      auto begin = chrono::steady_clock::now();
+      for (int i = 0; i < neval; i++)
+      {
+        Kernel_Matern_General(x, y, h1);
+      }
+      auto end = chrono::steady_clock::now();
+      cout << " time : " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << " ms " << endl;
+    }
+        {
+      auto begin = chrono::steady_clock::now();
+      for (int i = 0; i < neval; i++)
+      {
+        Kernel_Z_Matern32(x, y, h2);
+      }
+      auto end = chrono::steady_clock::now();
+      cout << " time : " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << " ms " << endl;
+    }
+        {
+      auto begin = chrono::steady_clock::now();
+      for (int i = 0; i < neval; i++)
+      {
+        Kernel_Matern_General(x, y, h2);
+      }
+      auto end = chrono::steady_clock::now();
+      cout << " time : " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << " ms " << endl;
+    }
+        {
+      auto begin = chrono::steady_clock::now();
+      for (int i = 0; i < neval; i++)
+      {
+        Kernel_Z_Matern52(x, y, h3);
+      }
+      auto end = chrono::steady_clock::now();
+      cout << " time : " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << " ms " << endl;
+    }
+        {
+      auto begin = chrono::steady_clock::now();
+      for (int i = 0; i < neval; i++)
+      {
+        Kernel_Matern_General(x, y, h3);
+      }
+      auto end = chrono::steady_clock::now();
+      cout << " time : " << chrono::duration_cast<chrono::milliseconds>(end - begin).count() << " ms " << endl;
+    }
+  }
+  exit(0);
   VectorXd Xmin = 0.5 * VectorXd::Ones(3);
   Xmin << 0, 0.5 * 18.9E-6, 0.5 * 0.75;
   VectorXd Xmax = 0.5 * VectorXd::Ones(3);
@@ -998,7 +1162,7 @@ int main(int argc, char **argv)
   cout << "ub_t : " << ub_t.transpose() << endl;
 
   VectorXd lb_hpars(3);
-  lb_hpars(0) = 0.1;
+  lb_hpars(0) = 0.4;
   lb_hpars(1) = 0;
   lb_hpars(2) = 1; //lb_hpars(2)=0;
   VectorXd ub_hpars(3);
@@ -1115,15 +1279,189 @@ int main(int argc, char **argv)
 
   VectorXd X_init_mcmc = 0.5 * VectorXd::Ones(dim_theta);
   MatrixXd COV_init = MatrixXd::Identity(dim_theta, dim_theta);
-  COV_init(0, 0) = pow(0.04, 2);
-  COV_init(1, 1) = pow(0.17, 2);
-  COV_init(2, 2) = pow(0.07, 2);
+  COV_init(0, 0) = pow(0.2, 2);
+  COV_init(1, 1) = pow(0.2, 2);
+  COV_init(2, 2) = pow(0.2, 2);
   cout << "COV_init : " << endl
        << COV_init << endl;
 
   //début des calibrations. cool beans.
 
-    //calibration KOH pooled.
+  //Phase FMP
+
+  vector<DensityOpt> vDopt;
+  vector<VectorXd> thetas_train;
+  vector<vector<VectorXd>> hpars_train;
+
+  //étape 1 bis fmp: construction des vDopt, thetas,_train, hpars_train à partir de fichiers. ne doit pa être run en même temps que étape 1.
+  {
+    if (!vDopt.size() == 0)
+    {
+      cerr << "erreur !!!!!!!! vDopt déjà construit" << endl;
+      exit(0);
+    }
+    string foldname = "results/hparsopt/150/";
+    //build thetas_train
+    auto temp = ReadVector(foldname + "hopt3.gnu");
+    for (const auto v : temp)
+    {
+      VectorXd t = v.head(3);
+      thetas_train.push_back(t);
+    }
+    cout << "thetas_train loaded. size : " << thetas_train.size() << endl;
+    for (int i = 0; i < vsize; i++)
+    {
+      DensityOpt Dopt(vDens[i]);
+      temp = ReadVector(foldname + "hopt" + to_string(cases[i]) + ".gnu");
+      vector<VectorXd> hopt_train;
+      for (const auto v : temp)
+      {
+        VectorXd h = v.tail(lb_hpars.size());
+        hopt_train.push_back(h);
+      }
+      Dopt.BuildHGPs(thetas_train, hopt_train, Kernel_GP_Matern32);
+      Dopt.OptimizeHGPs(Bounds_hpars_gp, hpars_gp_guess, 1);
+      vDopt.push_back(Dopt);
+      hpars_train.push_back(hopt_train);
+      if (!hopt_train.size() == thetas_train.size())
+      {
+        cerr << "erreur taille" << endl;
+        exit(0);
+      }
+    }
+  }
+
+  // étape 3fmp: MCMC fmp sur l'ensemble des densités.
+  //on en profite pour construire la matrice de covariance, qui sera utilisée comme pt de départ pour Bayes.
+  {
+    //paramètres de la MCMC FMP.
+    int nsteps_mcmc = 5e5;
+    int nsamples_mcmc = 3000;
+
+    auto get_hpars = [&vDopt](VectorXd const &theta)
+    {
+      vector<VectorXd> h;
+      for (int i = 0; i < vDopt.size(); i++)
+      {
+        VectorXd ho = vDopt[i].EvaluateHparOpt(theta);
+        h.push_back(ho);
+      }
+      return h;
+    };
+
+    auto compute_score = [&vDopt](vector<VectorXd> const &h, VectorXd const &theta)
+    {
+      double res = 0;
+      for (int i = 0; i < vDopt.size(); i++)
+      {
+        res += vDopt[i].loglikelihood_theta(theta, h[i]);
+      }
+      res += logprior_pars(theta);
+      return res;
+    };
+
+    auto in_bounds = [&vDopt](VectorXd const &X)
+    {
+      return vDopt[0].in_bounds_pars(X);
+    };
+    //run mcmc et extraire échantillons.
+    vector<VectorXd> allsteps = Run_MCMC(nsteps_mcmc, X_init_mcmc, COV_init, compute_score, get_hpars, in_bounds, generator);
+    vector<VectorXd> selected_samples(nsamples_mcmc);
+    for (int j = 0; j < selected_samples.size(); j++)
+    {
+      selected_samples[j] = allsteps[j * (allsteps.size() / selected_samples.size())];
+    }
+    //diagnostic
+    Selfcor_diagnosis(allsteps, nautocor, 1, "results/fmp/autocor.gnu");
+    //je veux construire un vecteur avec tous les samples et l'écrire. ça sera + facile pour la covariance aussi.
+    vector<VectorXd> selected_samples_withhpars;
+    vector<vector<VectorXd>> selected_hpars_vec(vsize);
+    for (const auto &theta : selected_samples)
+    {
+      vector<VectorXd> h = get_hpars(theta);
+      VectorXd maxsample(3 + lb_hpars.size() * vsize);
+      maxsample.head(3) = theta;
+      for (int i = 0; i < vsize; i++)
+      {
+        for (int j = 0; j < lb_hpars.size(); j++)
+        {
+          maxsample(3 + lb_hpars.size() * i + j) = h[i](j);
+        }
+      }
+      selected_samples_withhpars.push_back(maxsample);
+      for (int i = 0; i < vsize; i++)
+      {
+        selected_hpars_vec[i].push_back(h[i]);
+      }
+    }
+    for (int i = 0; i < vDens.size(); i++)
+    {
+      vDopt[i].SetNewSamples(selected_samples);
+      vDopt[i].SetNewHparsOfSamples(selected_hpars_vec[i]);
+      string fn = "results/fmp/preds" + to_string(cases[i]) + ".gnu";
+      string f1 = "results/fmp/sampsf" + to_string(cases[i]) + ".gnu";
+      string f2 = "results/fmp/sampsz" + to_string(cases[i]) + ".gnu";
+      vDopt[i].WritePredictions(prediction_points, fn);
+      vDopt[i].WriteSamplesFandZ(prediction_points, f1, f2);
+    }
+    writeVector("results/fmp/sample.gnu", selected_samples_withhpars);
+
+    //estimation de la moyenne a posteriori de l'input error et écriture des observations avec.
+    for (int i = 0; i < vsize; i++)
+    {
+      double pmeaninputerr = 0;
+      for (int j = 0; j < selected_hpars_vec[i].size(); j++)
+      {
+        pmeaninputerr += selected_hpars_vec[i][j](0); //place de l'inputerr.
+      }
+      pmeaninputerr /= selected_hpars_vec[i].size();
+      string fname = "results/fmp/obs" + to_string(cases[i]) + ".gnu";
+      vDopt[i].WriteObservations(pmeaninputerr, 0, fname);
+    }
+
+    //calcul du fit LL. On cherche uniquement sur les points du sample car de tte façon, un point de graned likelihood sera sûrement dedans.
+    double best_logscore = -1e6;
+    for (int i = 0; i < selected_samples.size(); i++)
+    {
+      double logscore_try = compute_score(get_hpars(selected_samples[i]), selected_samples[i]);
+      if (logscore_try > best_logscore)
+      {
+        best_logscore = logscore_try;
+      }
+    }
+    ofstream fout("results/fmp/scorefit.gnu");
+    fout << best_logscore << endl;
+    fout.close();
+
+    //construction cov_init_from_fmp
+    MatrixXd COV_init_from_FMP = MatrixXd::Zero(selected_samples_withhpars[0].size(), selected_samples_withhpars[0].size());
+    VectorXd X_init_from_FMP = VectorXd::Zero(selected_samples_withhpars[0].size());
+    for (int j = 0; j < selected_samples_withhpars.size(); j++)
+    {
+      X_init_from_FMP += selected_samples_withhpars[j];
+    }
+    X_init_from_FMP /= selected_samples_withhpars.size();
+    for (int j = 0; j < selected_samples_withhpars.size(); j++)
+    {
+      VectorXd x = selected_samples_withhpars[j] - X_init_from_FMP;
+      COV_init_from_FMP += x * x.transpose();
+    }
+    cout << "COV_init_from_FMP : " << endl;
+    cout << COV_init_from_FMP << endl;
+    cout << "X_init_from_FMP : " << endl;
+    cout << X_init_from_FMP.transpose() << endl;
+    vector<VectorXd> xsave;
+    vector<VectorXd> Msave;
+    xsave.push_back(X_init_from_FMP);
+    for (int i = 0; i < COV_init_from_FMP.cols(); i++)
+    {
+      Msave.push_back(COV_init_from_FMP.col(i));
+    }
+    string f1 = "results/Xinit.gnu";
+    string f2 = "results/Minit.gnu";
+    writeVector(f1, xsave);
+    writeVector(f2, Msave);
+  }
 
   //MCMC KOH pooled.
   {
@@ -1131,12 +1469,30 @@ int main(int argc, char **argv)
     int dim_hpars = lb_hpars.size();
     vector<VectorXd> hparskoh_pooled;
     vector<double> times;
-    times.push_back(300);
-    times.push_back(600);
-    times.push_back(900);
-    for(double t:times){
-      hparskoh_pooled= HparsKOH_pooled(vDens, hpars_z_guess, t);
+    times.push_back(3600);
+    //times.push_back(600);
+    //times.push_back(900);
+    for (double t : times)
+    {
+      //hparskoh_pooled= HparsKOH_pooled(vDens, hpars_z_guess, t);
     }
+    //relecture de hparskoh_pooled depuis un fichier.
+    {
+      VectorXd hp = ReadVector("results/koh/sample.gnu")[0];
+      for (int i = 0; i < vsize; i++)
+      {
+        VectorXd h(lb_hpars.size());
+        for (int j = 0; j < h.size(); j++)
+        {
+          h(j) = hp(3 + j + i * h.size()); //car theta de dim 3.
+        }
+        hparskoh_pooled.push_back(h);
+      }
+    }
+
+    //juste un test pour voir la valeur du critère.
+    TestHparsKOH_pooled(vDens, hparskoh_pooled);
+
     int nsteps_mcmc = 5e5;
     int nsamples_mcmc = 3000;
 
@@ -1179,10 +1535,10 @@ int main(int argc, char **argv)
       maxsample.head(3) = theta;
       for (int i = 0; i < h.size(); i++)
       {
-        //ATTENTION A CHANGER MANUELLEMENT QD DIM HPARS VARIE
-        maxsample(3 + dim_hpars * i) = h[i](0);
-        maxsample(3 + dim_hpars * i + 1) = h[i](1);
-        maxsample(3 + dim_hpars * i + 2) = h[i](2);
+        for (int j = 0; j < dim_hpars; j++)
+        {
+          maxsample(3 + dim_hpars * i + j) = h[i](j);
+        }
       }
       selected_samples_withhpars.push_back(maxsample);
       for (int i = 0; i < vsize; i++)
@@ -1190,6 +1546,20 @@ int main(int argc, char **argv)
         selected_hpars_vec[i].push_back(h[i]);
       }
     }
+
+    //estimation de la moyenne a posteriori de l'input error et écriture des observations avec.
+    for (int i = 0; i < vsize; i++)
+    {
+      double pmeaninputerr = 0;
+      for (int j = 0; j < selected_hpars_vec[i].size(); j++)
+      {
+        pmeaninputerr += selected_hpars_vec[i][j](0); //place de l'inputerr.
+      }
+      pmeaninputerr /= selected_hpars_vec[i].size();
+      string fname = "results/koh/obs" + to_string(cases[i]) + ".gnu";
+      vDens[i].WriteObservations(pmeaninputerr, 0, fname);
+    }
+
     for (int i = 0; i < vDens.size(); i++)
     {
       vDens[i].SetNewSamples(selected_samples);
@@ -1201,204 +1571,65 @@ int main(int argc, char **argv)
       vDens[i].WriteSamplesFandZ(prediction_points, f1, f2);
     }
     writeVector("results/koh/sample.gnu", selected_samples_withhpars); //OK.
+
+    //calcul du fit LL. On cherche uniquement sur les points du sample car de tte façon, un point de graned likelihood sera sûrement dedans.
+    double best_logscore = -1e6;
+    for (int i = 0; i < selected_samples.size(); i++)
+    {
+      double logscore_try = compute_score(get_hpars(selected_samples[i]), selected_samples[i]);
+      if (logscore_try > best_logscore)
+      {
+        best_logscore = logscore_try;
+      }
+    }
+    ofstream fout("results/koh/scorefit.gnu");
+    fout << best_logscore << endl;
+    fout.close();
   }
 
-  exit(0);
-
-  //Phase FMP
-
-  vector<DensityOpt> vDopt;
-  vector<VectorXd> thetas_train;
-  vector<vector<VectorXd>> hpars_train;
-
-  //étape 1 fmp: construction de DoE QMC de 50 points. ne doti pas être run en même temps que étape 1bis.
+  //MCMC KOH2. Les hyperparamètres sont la post mean de FMP, juste pour voir.
   {
-    DoE doe_coarse(lb_t, ub_t, 50, 10); //doe halton. 300 points en dimension 3 (3 paramètres incertains).
-    thetas_train = doe_coarse.GetGrid();
-    if (!vDopt.size() == 0)
+    //test hpars KOH pooled.
+    int dim_hpars = lb_hpars.size();
+    vector<VectorXd> hparskoh2_pooled;
+    //relecture de hparskoh_pooled depuis un fichier.
     {
-      cerr << "erreur !!!!!!!! vDopt déjà construit" << endl;
-      exit(0);
-    }
-    for (int i = 0; i < vsize; i++)
-    {
-      DensityOpt Dopt(vDens[i]);
-      Dopt.SetDoE(doe_coarse);
-      string fname = "results/hparsopt/init/";
-      vector<VectorXd> hopt_train;
-      for (int j = 0; j < thetas_train.size(); j++)
+      VectorXd hp = ReadVector("results/Xinit.gnu")[0];
+      for (int i = 0; i < vsize; i++)
       {
-        VectorXd hopt = Dopt.HparsOpt(thetas_train[j], hpars_z_guess, 1e-2);
-        hopt_train.push_back(hopt);
-      }
-      hpars_train.push_back(hopt_train);
-      Dopt.BuildHGPs(thetas_train, hopt_train, Kernel_GP_Matern32);
-      Dopt.OptimizeHGPs(Bounds_hpars_gp, hpars_gp_guess, 1);
-      WriteVectors(thetas_train, hopt_train, fname + "hopt" + to_string(cases[i]) + ".gnu");
-      vDopt.push_back(Dopt);
-    }
-  }
-
-  //étape 2 fmp: iterative sampling.
-  { //paramètres de l'algorithme iterative sampling.
-    int npts_init = 50;
-    int npts_per_iter = 25;
-    int nsteps_mcmc = 1e5;
-    int nsamples_mcmc = 1000;
-    int niter = 4;
-    double time_opti_fine = 1e-2; //avec gradients.
-    double time_opti_hgps = 1;
-
-    auto get_hpars = [&vDopt](VectorXd const &theta)
-    {
-      vector<VectorXd> h;
-      for (int i = 0; i < vDopt.size(); i++)
-      {
-        VectorXd ho = vDopt[i].EvaluateHparOpt(theta);
-        h.push_back(ho);
-      }
-      return h;
-    };
-
-    auto compute_score = [&vDopt](vector<VectorXd> const &h, VectorXd const &theta)
-    {
-      double res = 0;
-      for (int i = 0; i < vDopt.size(); i++)
-      {
-        res += vDopt[i].loglikelihood_theta(theta, h[i]);
-      }
-      res += logprior_pars(theta);
-      return res;
-    };
-
-    auto in_bounds = [&vDopt](VectorXd const &X)
-    {
-      return vDopt[0].in_bounds_pars(X);
-    };
-
-    auto compute_weight = [&vDopt](VectorXd const &theta)
-    {
-      //compute le poids de resampling.
-      double weight = 0;
-      for (int i = 0; i < vDopt.size(); i++)
-      {
-        weight += vDopt[i].EstimatePredError(theta);
-      }
-      return weight;
-    };
-
-    auto resample = [&compute_weight, &generator](int npts, vector<VectorXd> const &candidate_set)
-    {
-      //première chose à faire: enlever les duplicates du candidate_set.
-      vector<VectorXd> nodups = candidate_set;
-      vector<int> dups;
-      for (int i = 0; i < candidate_set.size(); i++)
-      {
-        for (int j = i + 1; j < candidate_set.size(); j++)
+        VectorXd h(lb_hpars.size());
+        for (int j = 0; j < h.size(); j++)
         {
-          if (candidate_set[i] == candidate_set[j])
-          {
-            dups.push_back(j);
-          }
+          h(j) = hp(3 + j + i * h.size()); //car theta de dim 3.
         }
-      }
-      sort(dups.begin(), dups.end());
-      for (int i = dups.size() - 1; i >= 0; i--)
-      {
-        nodups.erase(nodups.begin() + dups[i]);
-      }
-      vector<double> weights(nodups.size());
-      for (int i = 0; i < weights.size(); i++)
-      {
-        weights[i] = compute_weight(nodups[i]);
-      }
-      //tirage sans remise pondéré par les poids.
-      vector<VectorXd> selected_set;
-      for (int i = 0; i < npts; i++)
-      {
-        std::discrete_distribution<int> distribution(weights.begin(), weights.end());
-        int drawn = distribution(generator);
-        weights[drawn] = 0;
-        selected_set.push_back(nodups[drawn]);
-      }
-      return selected_set;
-    };
-
-    //algorithme principal.
-
-    auto begin = chrono::steady_clock::now();
-    for (int i = 0; i < niter; i++)
-    {
-      //run MCMC
-      vector<VectorXd> allsteps = Run_MCMC(nsteps_mcmc, X_init_mcmc, COV_init, compute_score, get_hpars, in_bounds, generator);
-      vector<VectorXd> candidate_set(nsamples_mcmc);
-      for (int j = 0; j < candidate_set.size(); j++)
-      {
-        candidate_set[j] = allsteps[j * (allsteps.size() / candidate_set.size())];
-      }
-      //resample from the candidate set
-      vector<VectorXd> selected_set = resample(npts_per_iter, candidate_set);
-      //compute optimal hpars
-      for (const auto theta : selected_set)
-      {
-        for (int j = 0; j < vDopt.size(); j++)
-        {
-          VectorXd hopt = vDopt[j].HparsOpt(theta, hpars_z_guess, time_opti_fine);
-          hpars_train[j].push_back(hopt);
-        }
-        thetas_train.push_back(theta);
-      }
-      //write training points.
-      for (int j = 0; j < cases.size(); j++)
-      {
-        string sp = "results/hparsopt/" + to_string(thetas_train.size()) + "/hopt" + to_string(cases[j]) + ".gnu";
-        WriteVectors(thetas_train, hpars_train[j], sp);
-      }
-      //update hGPs. 10s par hgp.
-      for (int j = 0; j < cases.size(); j++)
-      {
-        vDopt[j].BuildHGPs(thetas_train, hpars_train[j], Kernel_GP_Matern32);
-        vDopt[j].OptimizeHGPs(Bounds_hpars_gp, hpars_gp_guess, time_opti_hgps);
+        hparskoh2_pooled.push_back(h);
       }
     }
+    //juste un test pour voir la valeur du critère.
+    TestHparsKOH_pooled(vDens, hparskoh2_pooled);
 
-    auto end = chrono::steady_clock::now();
-    cout << "temps pour algo : " << chrono::duration_cast<chrono::seconds>(end - begin).count() << " s" << endl;
-  }
-
-  // étape 3fmp: MCMC fmp sur l'ensemble des densités.
-  //on en profite pour construire la matrice de covariance, qui sera utilisée comme pt de départ pour Bayes.
-
-  {
-    //paramètres de la MCMC FMP.
     int nsteps_mcmc = 5e5;
     int nsamples_mcmc = 3000;
 
-    auto get_hpars = [&vDopt](VectorXd const &theta)
+    auto get_hpars = [&hparskoh2_pooled](VectorXd const &theta)
     {
-      vector<VectorXd> h;
-      for (int i = 0; i < vDopt.size(); i++)
-      {
-        VectorXd ho = vDopt[i].EvaluateHparOpt(theta);
-        h.push_back(ho);
-      }
-      return h;
+      return hparskoh2_pooled;
     };
 
-    auto compute_score = [&vDopt](vector<VectorXd> const &h, VectorXd const &theta)
+    auto compute_score = [&vDens](vector<VectorXd> const &h, VectorXd const &theta)
     {
       double res = 0;
-      for (int i = 0; i < vDopt.size(); i++)
+      for (int i = 0; i < vDens.size(); i++)
       {
-        res += vDopt[i].loglikelihood_theta(theta, h[i]);
+        res += vDens[i].loglikelihood_theta(theta, h[i]);
       }
       res += logprior_pars(theta);
       return res;
     };
 
-    auto in_bounds = [&vDopt](VectorXd const &X)
+    auto in_bounds = [&vDens](VectorXd const &X)
     {
-      return vDopt[0].in_bounds_pars(X);
+      return vDens[0].in_bounds_pars(X);
     };
     //run mcmc et extraire échantillons.
     vector<VectorXd> allsteps = Run_MCMC(nsteps_mcmc, X_init_mcmc, COV_init, compute_score, get_hpars, in_bounds, generator);
@@ -1408,19 +1639,21 @@ int main(int argc, char **argv)
       selected_samples[j] = allsteps[j * (allsteps.size() / selected_samples.size())];
     }
     //diagnostic
-    Selfcor_diagnosis(allsteps, nautocor, 1, "results/fmp/autocor.gnu");
+    Selfcor_diagnosis(allsteps, nautocor, 1, "results/koh2/autocor.gnu");
     //je veux construire un vecteur avec tous les samples et l'écrire. ça sera + facile pour la covariance aussi. les hpars sont passés en exponentielle.
     vector<VectorXd> selected_samples_withhpars;
     vector<vector<VectorXd>> selected_hpars_vec(vsize);
     for (const auto &theta : selected_samples)
     {
       vector<VectorXd> h = get_hpars(theta);
-      VectorXd maxsample(3 + 2 * h.size());
+      VectorXd maxsample(3 + dim_hpars * h.size());
       maxsample.head(3) = theta;
       for (int i = 0; i < h.size(); i++)
       {
-        maxsample(3 + 2 * i) = h[i](0);
-        maxsample(3 + 2 * i + 1) = h[i](1);
+        for (int j = 0; j < dim_hpars; j++)
+        {
+          maxsample(3 + dim_hpars * i + j) = h[i](j);
+        }
       }
       selected_samples_withhpars.push_back(maxsample);
       for (int i = 0; i < vsize; i++)
@@ -1428,90 +1661,49 @@ int main(int argc, char **argv)
         selected_hpars_vec[i].push_back(h[i]);
       }
     }
+
+    //estimation de la moyenne a posteriori de l'input error et écriture des observations avec.
+    for (int i = 0; i < vsize; i++)
+    {
+      double pmeaninputerr = 0;
+      for (int j = 0; j < selected_hpars_vec[i].size(); j++)
+      {
+        pmeaninputerr += selected_hpars_vec[i][j](0); //place de l'inputerr.
+      }
+      pmeaninputerr /= selected_hpars_vec[i].size();
+      string fname = "results/koh2/obs" + to_string(cases[i]) + ".gnu";
+      vDens[i].WriteObservations(pmeaninputerr, 0, fname);
+    }
+
     for (int i = 0; i < vDens.size(); i++)
     {
-      vDopt[i].SetNewSamples(selected_samples);
-      vDopt[i].SetNewHparsOfSamples(selected_hpars_vec[i]);
-      string fn = "results/fmp/preds" + to_string(cases[i]) + ".gnu";
-      string f1 = "results/fmp/sampsf" + to_string(cases[i]) + ".gnu";
-      string f2 = "results/fmp/sampsz" + to_string(cases[i]) + ".gnu";
-      vDopt[i].WritePredictions(prediction_points, fn);
-      vDopt[i].WriteSamplesFandZ(prediction_points, f1, f2);
+      vDens[i].SetNewSamples(selected_samples);
+      vDens[i].SetNewHparsOfSamples(selected_hpars_vec[i]);
+      string fn = "results/koh2/preds" + to_string(cases[i]) + ".gnu";
+      string f1 = "results/koh2/sampsf" + to_string(cases[i]) + ".gnu";
+      string f2 = "results/koh2/sampsz" + to_string(cases[i]) + ".gnu";
+      vDens[i].WritePredictions(prediction_points, fn);
+      vDens[i].WriteSamplesFandZ(prediction_points, f1, f2);
     }
-    writeVector("results/fmp/sample.gnu", selected_samples_withhpars);
+    writeVector("results/koh2/sample.gnu", selected_samples_withhpars); //OK.
 
-    //construction cov_init_from_fmp
-    MatrixXd COV_init_from_FMP = MatrixXd::Zero(selected_samples_withhpars[0].size(), selected_samples_withhpars[0].size());
-    VectorXd X_init_from_FMP = VectorXd::Zero(selected_samples_withhpars[0].size());
-    for (int j = 0; j < selected_samples_withhpars.size(); j++)
+    //calcul du fit LL. On cherche uniquement sur les points du sample car de tte façon, un point de graned likelihood sera sûrement dedans.
+    double best_logscore = -1e6;
+    for (int i = 0; i < selected_samples.size(); i++)
     {
-      X_init_from_FMP += selected_samples_withhpars[j];
+      double logscore_try = compute_score(get_hpars(selected_samples[i]), selected_samples[i]);
+      if (logscore_try > best_logscore)
+      {
+        best_logscore = logscore_try;
+      }
     }
-    X_init_from_FMP /= selected_samples_withhpars.size();
-    for (int j = 0; j < selected_samples_withhpars.size(); j++)
-    {
-      VectorXd x = selected_samples_withhpars[j] - X_init_from_FMP;
-      COV_init_from_FMP += x * x.transpose();
-    }
-    cout << "COV_init_from_FMP : " << endl;
-    cout << COV_init_from_FMP << endl;
-    cout << "X_init_from_FMP : " << endl;
-    cout << X_init_from_FMP.transpose() << endl;
-    vector<VectorXd> xsave;
-    vector<VectorXd> Msave;
-    xsave.push_back(X_init_from_FMP);
-    for (int i = 0; i < COV_init_from_FMP.cols(); i++)
-    {
-      Msave.push_back(COV_init_from_FMP.col(i));
-    }
-    string f1 = "results/Xinit.gnu";
-    string f2 = "results/Minit.gnu";
-    writeVector(f1, xsave);
-    writeVector(f2, Msave);
+    ofstream fout("results/koh2/scorefit.gnu");
+    fout << best_logscore << endl;
+    fout.close();
   }
 
   exit(0);
 
-  //étape 1 bis fmp: construction des vDopt, thetas,_train, hpars_train à partir de fichiers. ne doit pa être run en même temps que étape 1.
-  {
-    if (!vDopt.size() == 0)
-    {
-      cerr << "erreur !!!!!!!! vDopt déjà construit" << endl;
-      exit(0);
-    }
-    string foldname = "results/hparsopt/150/";
-    //build thetas_train
-    auto temp = ReadVector(foldname + "hopt3.gnu");
-    for (const auto v : temp)
-    {
-      VectorXd t = v.head(3);
-      thetas_train.push_back(t);
-    }
-    cout << "thetas_train loaded. size : " << thetas_train.size() << endl;
-    for (int i = 0; i < vsize; i++)
-    {
-      DensityOpt Dopt(vDens[i]);
-      temp = ReadVector(foldname + "hopt" + to_string(cases[i]) + ".gnu");
-      vector<VectorXd> hopt_train;
-      for (const auto v : temp)
-      {
-        VectorXd h = v.tail(2);
-        hopt_train.push_back(h);
-      }
-      Dopt.BuildHGPs(thetas_train, hopt_train, Kernel_GP_Matern32);
-      Dopt.OptimizeHGPs(Bounds_hpars_gp, hpars_gp_guess, 1);
-      vDopt.push_back(Dopt);
-      hpars_train.push_back(hopt_train);
-      if (!hopt_train.size() == thetas_train.size())
-      {
-        cerr << "erreur taille" << endl;
-        exit(0);
-      }
-    }
-  }
-
-
-  
   // calibration BAYES
   {
     //construction de Densities avec les hpars pas dans l'espace log.
@@ -1593,7 +1785,9 @@ int main(int argc, char **argv)
     };
     cout << "run mcmc from starting point XinitMCMC. COV init divisée par 20." << endl;
     COV_fromFMP /= 20;
-    vector<VectorXd> allsteps = Run_MCMC_hundred(200 * nsteps_mcmc, X_fromFMP, COV_fromFMP, compute_score_fb, get_hpars_fb, in_bounds_fb, generator);
+    cout << "cov matrix : " << COV_fromFMP << endl;
+    cout << "xinit : " << X_fromFMP.transpose() << endl;
+    vector<VectorXd> allsteps = Run_MCMC_hundred(20 * nsteps_mcmc, X_fromFMP, COV_fromFMP, compute_score_fb, get_hpars_fb, in_bounds_fb, generator);
 
     vector<VectorXd> selected_samples(nsamples_mcmc);
     for (int j = 0; j < selected_samples.size(); j++)
@@ -1604,8 +1798,6 @@ int main(int argc, char **argv)
     writeVector("results/bayes/sample.gnu", selected_samples);
     //diagnostic
     Selfcor_diagnosis(allsteps, nautocor, 0.5, "results/bayes/autocor.gnu");
-    cout << "autocor on the sel sample." << endl;
-    Selfcor_diagnosis(selected_samples, nautocor, 1, "results/bayes/autocorss.gnu");
     //il faut reconstruire un vecteur d'hpars...
     vector<VectorXd> selected_thetas;
     vector<vector<VectorXd>> selected_hpars_vec(vsize);
@@ -1625,7 +1817,20 @@ int main(int argc, char **argv)
       }
     }
 
-    //on tente les prédictions à la fin.
+    //estimation de la moyenne a posteriori de l'input error et écriture des observations avec.
+    for (int i = 0; i < vsize; i++)
+    {
+      double pmeaninputerr = 0;
+      for (int j = 0; j < selected_hpars_vec[i].size(); j++)
+      {
+        pmeaninputerr += selected_hpars_vec[i][j](0); //place de l'inputerr.
+      }
+      pmeaninputerr /= selected_hpars_vec[i].size();
+      string fname = "results/bayes/obs" + to_string(cases[i]) + ".gnu";
+      vDens[i].WriteObservations(pmeaninputerr, 0, fname);
+    }
+
+    //prédictions à la fin.
     for (int i = 0; i < vDens.size(); i++)
     {
       vDens[i].SetNewSamples(selected_thetas);
@@ -1637,6 +1842,150 @@ int main(int argc, char **argv)
       vDens[i].WriteSamplesFandZ(prediction_points, f1, f2);
     }
   }
+
+  exit(0);
+
+  //étape 1 fmp: construction de DoE QMC de 50 points. ne doti pas être run en même temps que étape 1bis.
+  {
+    DoE doe_coarse(lb_t, ub_t, 50, 10); //doe halton. 300 points en dimension 3 (3 paramètres incertains).
+    thetas_train = doe_coarse.GetGrid();
+    if (!vDopt.size() == 0)
+    {
+      cerr << "erreur !!!!!!!! vDopt déjà construit" << endl;
+      exit(0);
+    }
+    for (int i = 0; i < vsize; i++)
+    {
+      DensityOpt Dopt(vDens[i]);
+      Dopt.SetDoE(doe_coarse);
+      string fname = "results/hparsopt/init/";
+      vector<VectorXd> hopt_train;
+      for (int j = 0; j < thetas_train.size(); j++)
+      {
+        VectorXd hopt = Dopt.HparsOpt(thetas_train[j], hpars_z_guess, 1e-2);
+        hopt_train.push_back(hopt);
+      }
+      hpars_train.push_back(hopt_train);
+      Dopt.BuildHGPs(thetas_train, hopt_train, Kernel_GP_Matern32);
+      Dopt.OptimizeHGPs(Bounds_hpars_gp, hpars_gp_guess, 1);
+      WriteVectors(thetas_train, hopt_train, fname + "hopt" + to_string(cases[i]) + ".gnu");
+      vDopt.push_back(Dopt);
+    }
+  }
+
+  //étape 2 fmp: iterative sampling.
+  { //paramètres de l'algorithme iterative sampling.
+    int npts_init = 50;
+    int npts_per_iter = 25;
+    int nsteps_mcmc = 1e5;
+    int nsamples_mcmc = 1000;
+    int niter = 4;
+    double time_opti_fine = 1e-1; //avec gradients.
+    double time_opti_hgps = 1;
+
+    auto get_hpars = [&vDopt](VectorXd const &theta)
+    {
+      vector<VectorXd> h;
+      for (int i = 0; i < vDopt.size(); i++)
+      {
+        VectorXd ho = vDopt[i].EvaluateHparOpt(theta);
+        h.push_back(ho);
+      }
+      return h;
+    };
+
+    auto compute_score = [&vDopt](vector<VectorXd> const &h, VectorXd const &theta)
+    {
+      double res = 0;
+      for (int i = 0; i < vDopt.size(); i++)
+      {
+        res += vDopt[i].loglikelihood_theta(theta, h[i]);
+      }
+      res += logprior_pars(theta);
+      return res;
+    };
+
+    auto in_bounds = [&vDopt](VectorXd const &X)
+    {
+      return vDopt[0].in_bounds_pars(X);
+    };
+
+    auto compute_weight = [&vDopt](VectorXd const &theta)
+    {
+      //compute le poids de resampling.
+      double weight = 0;
+      for (int i = 0; i < vDopt.size(); i++)
+      {
+        weight += vDopt[i].EstimatePredError(theta);
+      }
+      return weight;
+    };
+
+    auto resample = [&compute_weight, &generator](int npts, vector<VectorXd> const &candidate_set)
+    {
+      //première chose à faire: enlever les duplicates du candidate_set.
+      vector<VectorXd> nodups = candidate_set;
+      Nodups(nodups);
+      vector<double> weights(nodups.size());
+      for (int i = 0; i < weights.size(); i++)
+      {
+        weights[i] = compute_weight(nodups[i]);
+      }
+      //tirage sans remise pondéré par les poids.
+      vector<VectorXd> selected_set;
+      for (int i = 0; i < npts; i++)
+      {
+        std::discrete_distribution<int> distribution(weights.begin(), weights.end());
+        int drawn = distribution(generator);
+        weights[drawn] = 0;
+        selected_set.push_back(nodups[drawn]);
+      }
+      return selected_set;
+    };
+
+    //algorithme principal.
+
+    auto begin = chrono::steady_clock::now();
+    for (int i = 0; i < niter; i++)
+    {
+      //run MCMC
+      vector<VectorXd> allsteps = Run_MCMC(nsteps_mcmc, X_init_mcmc, COV_init, compute_score, get_hpars, in_bounds, generator);
+      vector<VectorXd> candidate_set(nsamples_mcmc);
+      for (int j = 0; j < candidate_set.size(); j++)
+      {
+        candidate_set[j] = allsteps[j * (allsteps.size() / candidate_set.size())];
+      }
+      //resample from the candidate set
+      vector<VectorXd> selected_set = resample(npts_per_iter, candidate_set);
+      //compute optimal hpars
+      for (const auto theta : selected_set)
+      {
+        for (int j = 0; j < vDopt.size(); j++)
+        {
+          VectorXd hopt = vDopt[j].HparsOpt(theta, hpars_z_guess, time_opti_fine);
+          hpars_train[j].push_back(hopt);
+        }
+        thetas_train.push_back(theta);
+      }
+      //write training points.
+      for (int j = 0; j < cases.size(); j++)
+      {
+        string sp = "results/hparsopt/" + to_string(thetas_train.size()) + "/hopt" + to_string(cases[j]) + ".gnu";
+        WriteVectors(thetas_train, hpars_train[j], sp);
+      }
+      //update hGPs. 10s par hgp.
+      for (int j = 0; j < cases.size(); j++)
+      {
+        vDopt[j].BuildHGPs(thetas_train, hpars_train[j], Kernel_GP_Matern32);
+        vDopt[j].OptimizeHGPs(Bounds_hpars_gp, hpars_gp_guess, time_opti_hgps);
+      }
+    }
+
+    auto end = chrono::steady_clock::now();
+    cout << "temps pour algo : " << chrono::duration_cast<chrono::seconds>(end - begin).count() << " s" << endl;
+  }
+
+  //calibration KOH pooled.
 
   exit(0);
 }

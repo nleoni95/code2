@@ -1,0 +1,12 @@
+cd src/pcb++
+echo '*** Clean Polynomial Chaos Basis (PCB)'
+make clean
+echo 
+cd ../mra++
+echo '*** Clean Multi-Resolution-Analysis tools (MRA)'
+make clean
+echo
+cd ../cub++
+echo '*** Clean Cubature tools (CUB)'
+make clean
+cd ..

@@ -1,0 +1,4 @@
+patterson_rule.cpp is a C++ routine developped by John Burkardt
+http://people.sc.fsu.edu/~jburkardt/cpp_src/patterson_rule/patterson_rule.html
+
+Some pieces of it are used in quadrature.cpp

@@ -1,0 +1,27 @@
+cd includes
+/bin/rm -f *
+ln -s ../src/pcb++/gauss.h gauss.h
+ln -s ../src/pcb++/pcb++.h pcb++.h
+ln -s ../src/mra++/mra++.h mra++.h
+ln -s ../src/cub++/cub++.h cub++.h
+ln -s ../src/col++/col++.h col++.h
+ln -s ../src/utilities/regression.h regression.h
+ln -s ../src/utilities/kde++.h kde++.h
+ln -s ../src/utilities/mcmc++.h mcmc++.h
+ln -s ../src/gp++/gp++.h gp++.h
+ln -s ../src/gp++/data++.h data++.h
+ln -s ../src/gp++/tps++.h tps++.h
+ln -s ../src/gp++/my_samplers.hpp my_samplers.h
+ln -s ../src/gp++/ego++.h ego++.h
+
+ln -s ../src/tree++/tree++.h tree++.h
+ln -s ../src/tree++/basic.h basic.h
+ln -s ../src/tree++/union.h union.h
+ln -s ../src/tree++/adapt.h adapt.h
+ln -s ../src/tree++/regress.h regress.h
+ln -s ../src/tree++/optimize.h optimize.h
+
+ln -s ../src/stk++/stoch++.h stoch++.h
+ln -s ../src/stk++/vstoch++.h vstoch++.h
+ln -s ../src/stk++/mstoch++.h mstoch++.h
+cd ../

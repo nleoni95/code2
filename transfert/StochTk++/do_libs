@@ -1,0 +1,17 @@
+./do_includes
+cd src/pcb++
+echo '*** Do Polynomial Chaos Basis (PCB)'
+make clean; make
+echo 
+cd ../mra++
+echo '*** Do Multi-Resolution-Analysis tools (MRA)'
+make clean; make
+echo
+cd ../cub++
+echo '*** Do Cubature tools (CUB)'
+make clean; make
+cd ../gp++
+echo '*** Do GP tools (GP)'
+make clean; make
+cd ../
+

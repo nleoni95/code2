@@ -58,7 +58,7 @@ void WriteVector(vector<VectorXd> const &v, string const &filename)
 void WriteVectors(vector<VectorXd> const &v1, vector<VectorXd> const &v2, string const &filename)
 {
   //write two vectors of same size to a file
-  if (!v1.size() == v2.size())
+  if (!(v1.size() == v2.size()))
   {
     cerr << "warning : vecteurs de taille différente" << endl;
   }
@@ -82,7 +82,7 @@ void WriteVectors(vector<VectorXd> const &v1, vector<VectorXd> const &v2, string
 void WriteVectors(vector<VectorXd> const &v1, vector<VectorXd> const &v2, vector<VectorXd> const &v3, string const &filename)
 {
   //write two vectors of same size to a file
-  if (!v1.size() == v2.size() || !v1.size() == v3.size())
+  if (!(v1.size() == v2.size()) || !(v1.size() == v3.size()))
   {
     cerr << "warning : vecteurs de taille différente" << endl;
   }
@@ -295,7 +295,7 @@ double optfuncOpt_withgrad(const std::vector<double> &x, std::vector<double> &gr
   //compute gradient matrices
   auto kernel_gradients = d->GetKernelGrads();
   auto logprior_gradients = d->GetLogpriorGrads();
-  if (!grad.size() == 0)
+  if (!(grad.size() == 0))
   {
     int nd = xconv->size();
     MatrixXd Kinv = ldlt.solve(MatrixXd::Identity(nd, nd));
@@ -660,7 +660,7 @@ void Density::SetDoE(DoE const &g)
 
 void Density::SetObservations(vector<VectorXd> const &Xlocations, VectorXd const &observations)
 {
-  if (!Xlocations.size() == observations.size())
+  if (!(Xlocations.size() == observations.size()))
   {
     cerr << "erreur : mauvais nombre d'observations" << endl;
   }
@@ -982,7 +982,7 @@ VectorXd Density::DrawZCondTheta(vector<VectorXd> const &X, VectorXd const &thet
 void Density::WritePredictions(vector<VectorXd> const &X, string const &filename) const
 {
   // write predictions of f and f+z, with uncertainty. f+z is normally distributed so its variance is explicit. For uncertainty about f, we use all posterior samples to compute 95% confidence intervals.
-  default_random_engine generator{static_cast<long unsigned int>(time(0))};
+  default_random_engine generator;
   uniform_int_distribution<int> U(0, m_samples.size() - 1);
 
   //quantities around f + z
@@ -1029,7 +1029,7 @@ void Density::WriteSamplesFandZ(vector<VectorXd> const &X, string const &filenam
   //draw samples of f and corresponding samples of z.
   int ndraws = 10;
   cout << "drawing " << ndraws << " samples of f and z" << endl;
-  default_random_engine generator{static_cast<long unsigned int>(time(0))};
+  default_random_engine generator;
   uniform_int_distribution<int> U(0, m_samples.size() - 1);
   vector<VectorXd> fs(ndraws);
   vector<VectorXd> zs(ndraws);
@@ -1099,7 +1099,7 @@ VectorXd DensityOpt::EvaluateHparOpt(VectorXd const &theta) const
 void DensityOpt::BuildHGPs(std::vector<Eigen::VectorXd> const &thetas, std::vector<Eigen::VectorXd> const &hpars_optimaux, double (*Kernel_GP)(Eigen::VectorXd const &, Eigen::VectorXd const &, Eigen::VectorXd const &))
 {
   m_hGPs.clear();
-  if (!thetas.size() == hpars_optimaux.size())
+  if (!(thetas.size() == hpars_optimaux.size()))
   {
     cerr << "error : thetas and optimal hpars with different sizes !" << endl;
     exit(0);

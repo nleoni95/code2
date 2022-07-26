@@ -1,0 +1,15 @@
+cd src/pcb++
+echo '*** Update Polynomial Chaos Basis (PCB)'
+make
+echo 
+cd ../mra++
+echo '*** Update Multi-Resolution-Analysis tools (MRA)'
+make
+echo
+cd ../cub++
+echo '*** Update Cubature tools (CUB)'
+make
+cd ../gp++
+echo '*** Update gp++ ***'
+make 
+cd ..

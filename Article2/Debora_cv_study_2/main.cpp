@@ -694,7 +694,7 @@ VectorXd evaluate_surrogate(vector<VectorXd> const &thetas_ref, vector<VectorXd>
   //évaluation de la qualité d'un surrogate par la fonction get_hpars qu'il propose. On pourra en profiter pour vérifier que pour la densité fmp e référence ça fait bien zéro.
   //prenons l'erreur moyenne L2 relative ? Non. On va faire la moyenne + variance. averaged absolute individual standardized error. Et la moyenne a posteriori de cette quantité.
   //calcul de l'erreur dans chaque dimension.
-  if (!thetas_ref.size() == hpars_ref.size())
+  if (!(thetas_ref.size() == hpars_ref.size()))
   {
     cerr << "erreur : différentes tailles evaluate_surrogate !" << endl;
     exit(0);
@@ -716,7 +716,7 @@ VectorXd evaluate_surrogate_log(vector<VectorXd> const &thetas_ref, vector<Vecto
   //évaluation de la qualité d'un surrogate par la fonction get_hpars qu'il propose. On pourra en profiter pour vérifier que pour la densité fmp e référence ça fait bien zéro.
   //prenons l'erreur moyenne L2 relative ? Non. On va faire la moyenne + variance. averaged absolute individual standardized error. Et la moyenne a posteriori de cette quantité.
   //calcul de l'erreur dans chaque dimension.
-  if (!thetas_ref.size() == hpars_ref.size())
+  if (!(thetas_ref.size() == hpars_ref.size()))
   {
     cerr << "erreur : différentes tailles evaluate_surrogate !" << endl;
     exit(0);
@@ -741,7 +741,7 @@ VectorXd evaluate_surrogate_bof(vector<VectorXd> const &thetas_ref, vector<Vecto
 {
   //évaluation de la qualité d'un surrogate par la fonction get_hpars qu'il propose. On pourra en profiter pour vérifier que pour la densité fmp e référence ça fait bien zéro.
   //On va juste faire l'erreur L2 relative. relou mais avec la variance OLM ça marche pas trop bien.
-  if (!thetas_ref.size() == hpars_ref.size())
+  if (!(thetas_ref.size() == hpars_ref.size()))
   {
     cerr << "erreur : différentes tailles evaluate_surrogate !" << endl;
     exit(0);
@@ -759,9 +759,9 @@ VectorXd evaluate_surrogate_bof(vector<VectorXd> const &thetas_ref, vector<Vecto
 
 VectorXd evaluate_surrogate_bofplusscores(vector<VectorXd> const &thetas_ref, vector<VectorXd> const &hpars_ref, vector<double> const &scores_ref, function<pair<VectorXd, VectorXd>(VectorXd const &)> const &get_meanpred, function<double(VectorXd const &, VectorXd const &)> const &get_score)
 {
-  //On va juste faire l'erreur L2 relative. relou mais avec la variance OLM ça marche pas trop bien.
+  //On va juste faire l'erreur L2 relative.
   //dernière composante : l'erreur L2 sur la fct likelihood elle-même. Plus interprétable.
-  if (!thetas_ref.size() == hpars_ref.size())
+  if (!(thetas_ref.size() == hpars_ref.size()))
   {
     cerr << "erreur : différentes tailles evaluate_surrogate !" << endl;
     exit(0);
@@ -803,6 +803,8 @@ void Nodups(std::vector<VectorXd> &v)
 int main(int argc, char **argv)
 {
   default_random_engine generator(123456);
+  cout << "HELLO WORLD" << endl;
+  exit(0);
 
   map_doe m = read_doe("../../DEBORA/data/qmc/design_qmc_full.dat");     //read the QMC points
   map_doe m_lhs = read_doe("../../DEBORA/data/lhs/design_lhs_full.dat"); //read the LHS points

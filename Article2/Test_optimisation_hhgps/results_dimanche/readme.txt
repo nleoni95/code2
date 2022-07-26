@@ -1,0 +1,1 @@
+dossier results_dimanche : obtenus le WE du 8 mai. Les hyperparamètres optimaux, avec maximum de vraisemblance, sont trop irréugliers et le surrogate de la log likelihood directement fonctionne mieux que surrogate des hpars. Je régularise ça avec des priors.
